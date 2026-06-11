@@ -37,8 +37,10 @@ Out of scope:
 ## Decision procedure / operating order
 
 1. Start from approved season authority and deterministic exact-range context.
-2. Keep phase planning upstream-first: deterministic authority first, skills second, prompt framing third.
-3. Route unresolved exact-range semantics into phase planning/finalization, not into review/writer cleanup.
+2. Consume exact previous-week planning evidence early: `DES_ANALYSIS_REPORT`, `ACTIVITIES_ACTUAL`, and `ACTIVITIES_TREND` from completed week `W - 1`.
+3. Consume the injected `Evidence Alignment` result before synthesis; treat it as phase-shaping evidence, not as authority override.
+4. Keep phase planning upstream-first: deterministic authority first, resolved evidence second, skills third, prompt framing fourth.
+5. Route unresolved exact-range semantics into phase planning/finalization, not into review/writer cleanup.
 
 ## Hard rules
 
@@ -48,6 +50,8 @@ Out of scope:
 - Do not substitute the global season objective when a phase-local objective is present in injected authority.
 - Do not prescribe workouts.
 - Do not assume review or writer will repair exact-range semantic gaps.
+- Never use target-week report/activity evidence for phase planning; exact weekly evidence always comes from completed week `W - 1`.
+- Evidence may justify stabilization, re-entry caution, or lower density, but it must not rewrite exact legality, exact role-week load bands, or phase-local objective.
 
 ## Self-check / finalize-check
 

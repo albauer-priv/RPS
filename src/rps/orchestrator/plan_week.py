@@ -8,6 +8,7 @@ import os
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import cast
 
 from rps.agents.registry import AGENTS
 from rps.agents.runtime import AgentRuntime
@@ -24,6 +25,13 @@ from rps.orchestrator.context_snapshots import (
     save_advisory_memory,
     save_athlete_state_snapshot,
     save_planning_context_snapshot,
+)
+from rps.orchestrator.planning_evidence import (
+    PlanningEvidenceResolution,
+    build_evidence_alignment_payload,
+    load_evidence_payloads,
+    report_matches_resolved_evidence,
+    resolve_previous_week_activity_versions,
 )
 from rps.orchestrator.resolved_context import (
     build_resolved_athlete_context_block,
@@ -52,10 +60,8 @@ from rps.workspace.iso_helpers import (
     IsoWeek,
     envelope_week,
     envelope_week_range,
-    parse_iso_week,
     parse_iso_week_range,
     range_contains,
-    week_index,
 )
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.season_plan_service import resolve_season_plan_phase_info
@@ -67,6 +73,10 @@ AMBITION_IF_RANGE_LENGTH = 2
 JsonMap = dict[str, object]
 OrchestratorResult = dict[str, object]
 StepRecord = dict[str, object]
+
+
+def _as_map(value: object) -> JsonMap:
+    return value if isinstance(value, dict) else {}
 
 
 def run_agent_multi_output(
@@ -264,23 +274,100 @@ def _resolve_latest_historical_week_versions(
     athlete_id: str,
     target_week: IsoWeek,
 ) -> dict[ArtifactType, str]:
-    """Resolve the newest stored activity artefacts strictly before the target week."""
+    """Resolve exact previous-week activity artefacts for planning evidence."""
+    resolution = resolve_previous_week_activity_versions(store, athlete_id, target_week)
     resolved: dict[ArtifactType, str] = {}
-    target_index = week_index(target_week)
-    for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND):
-        candidates: list[tuple[int, str]] = []
-        for version_key in store.list_versions(athlete_id, artifact_type):
-            version_week = parse_iso_week(version_key)
-            if not version_week:
-                continue
-            version_index = week_index(version_week)
-            if version_index >= target_index:
-                continue
-            candidates.append((version_index, version_key))
-        if candidates:
-            candidates.sort()
-            resolved[artifact_type] = candidates[-1][1]
+    if resolution.activities_actual_version:
+        resolved[ArtifactType.ACTIVITIES_ACTUAL] = resolution.activities_actual_version
+    if resolution.activities_trend_version:
+        resolved[ArtifactType.ACTIVITIES_TREND] = resolution.activities_trend_version
     return resolved
+
+
+def _ensure_previous_week_report(
+    runtime_for: Callable[[str], AgentRuntime],
+    *,
+    athlete_id: str,
+    target_week: IsoWeek,
+    run_id: str,
+    model_resolver: Callable[[str], str] | None = None,
+    temperature_resolver: Callable[[str], float | None] | None = None,
+    reasoning_effort_resolver: Callable[[str], str | None] | None = None,
+    reasoning_summary_resolver: Callable[[str], str | None] | None = None,
+) -> tuple[PlanningEvidenceResolution | None, JsonMap | None, OrchestratorResult | None, str | None]:
+    """Ensure a current previous-week DES report for Phase/Week planning.
+
+    Returns the resolved evidence versions, the loaded report payload when
+    available, the report run result when report generation was triggered, and
+    an error message when the evidence/report gate cannot be satisfied.
+    """
+
+    store = LocalArtifactStore(root=runtime_for("performance_analysis").workspace_root)
+    resolution = resolve_previous_week_activity_versions(store, athlete_id, target_week)
+    if not resolution.activities_actual_version or not resolution.activities_trend_version:
+        evidence_label = f"{resolution.evidence_week.year:04d}-{resolution.evidence_week.week:02d}"
+        return None, None, None, (
+            f"Previous-week planning evidence missing for {evidence_label}: "
+            "ACTIVITIES_ACTUAL and ACTIVITIES_TREND are required."
+        )
+
+    report_payload: JsonMap | None = None
+    if resolution.des_analysis_report_version:
+        try:
+            loaded = store.load_version(
+                athlete_id,
+                ArtifactType.DES_ANALYSIS_REPORT,
+                resolution.des_analysis_report_version,
+            )
+            report_payload = loaded if isinstance(loaded, dict) else None
+        except Exception:
+            report_payload = None
+
+    if (
+        report_payload
+        and report_matches_resolved_evidence(
+            report_payload,
+            evidence_week=resolution.evidence_week,
+            activities_actual_version=resolution.activities_actual_version,
+            activities_trend_version=resolution.activities_trend_version,
+        )
+    ):
+        return resolution, report_payload, None, None
+
+    report_result = create_performance_report(
+        runtime_for,
+        athlete_id=athlete_id,
+        report_week=resolution.evidence_week,
+        run_id_prefix=f"{run_id}_evidence_report",
+        model_resolver=model_resolver,
+        temperature_resolver=temperature_resolver,
+        reasoning_effort_resolver=reasoning_effort_resolver,
+        reasoning_summary_resolver=reasoning_summary_resolver,
+    )
+    if not bool(report_result.get("ok")):
+        message = str(
+            report_result.get("error")
+            or report_result.get("message")
+            or (
+                "Failed to create DES_ANALYSIS_REPORT for previous week "
+                f"{resolution.evidence_week.year:04d}-{resolution.evidence_week.week:02d}."
+            )
+        )
+        return None, None, report_result, message
+
+    refreshed = resolve_previous_week_activity_versions(store, athlete_id, target_week)
+    if not refreshed.des_analysis_report_version:
+        return None, None, report_result, (
+            "DES_ANALYSIS_REPORT creation reported success but no previous-week report version was resolved afterwards."
+        )
+    try:
+        loaded = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, refreshed.des_analysis_report_version)
+        report_payload = loaded if isinstance(loaded, dict) else None
+    except Exception:
+        report_payload = None
+    if not report_payload:
+        return None, None, report_result, "Failed to load the refreshed previous-week DES_ANALYSIS_REPORT."
+    return refreshed, report_payload, report_result, None
 
 
 def _refresh_required_week_versions(
@@ -886,9 +973,39 @@ def plan_week(
                 season_phase_feed_forward_payload = loaded if isinstance(loaded, dict) else None
         except Exception:
             season_phase_feed_forward_payload = None
-        historical_activity_versions = _resolve_latest_historical_week_versions(store, athlete_id, target)
-        actual_version = historical_activity_versions.get(ArtifactType.ACTIVITIES_ACTUAL)
-        trend_version = historical_activity_versions.get(ArtifactType.ACTIVITIES_TREND)
+        evidence_resolution, des_analysis_payload, report_result, report_error = _ensure_previous_week_report(
+            runtime_for,
+            athlete_id=athlete_id,
+            target_week=target,
+            run_id=run_id,
+            model_resolver=model_resolver,
+            temperature_resolver=temperature_resolver,
+            reasoning_effort_resolver=reasoning_effort_resolver,
+            reasoning_summary_resolver=reasoning_summary_resolver,
+        )
+        if report_result and isinstance(report_result.get("step"), dict):
+            steps.append(cast(StepRecord, report_result["step"]))
+        if report_error or evidence_resolution is None:
+            message = report_error or "Phase evidence/report gate failed."
+            _log(message, logging.ERROR)
+            steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
+        actual_version = evidence_resolution.activities_actual_version
+        trend_version = evidence_resolution.activities_trend_version
+        evidence_payloads = load_evidence_payloads(
+            store,
+            athlete_id,
+            resolution=evidence_resolution,
+            include_report=False,
+        )
+        phase_evidence_alignment_payload = build_evidence_alignment_payload(
+            scope="phase",
+            target_week=target,
+            evidence_week=evidence_resolution.evidence_week,
+            des_analysis_payload=des_analysis_payload or {},
+            activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
+            activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
+        )
         athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
@@ -916,6 +1033,9 @@ def plan_week(
             season_phase_feed_forward_payload=season_phase_feed_forward_payload or {},
             activities_actual_version=actual_version,
             activities_trend_version=trend_version,
+            des_analysis_payload=des_analysis_payload or {},
+            des_analysis_version=evidence_resolution.des_analysis_report_version,
+            evidence_alignment_payload=phase_evidence_alignment_payload,
         )
         athlete_snapshot_blockers = blocking_messages(
             validate_snapshot_freshness(
@@ -950,6 +1070,7 @@ def plan_week(
                         ("availability", availability_payload),
                         ("planning_events", planning_events_payload),
                         ("season_phase_feed_forward", season_phase_feed_forward_payload),
+                        ("des_analysis_report", des_analysis_payload),
                     ]
                 )
                 | {
@@ -976,12 +1097,14 @@ def plan_week(
             planning_context_snapshot if isinstance(planning_context_snapshot, dict) else {}
         )
         historical_context_line = ""
-        if actual_version and trend_version:
+        if actual_version and trend_version and evidence_resolution.des_analysis_report_version:
             historical_context_line = (
-                f"Load historical ACTIVITIES_ACTUAL version_key {actual_version} and "
-                f"ACTIVITIES_TREND version_key {trend_version} "
-                "with workspace_get_version before any STOP about missing activity context; "
-                "never use workspace_get_latest for these activity artefacts. "
+                f"Load previous-week DES_ANALYSIS_REPORT version_key {evidence_resolution.des_analysis_report_version}, "
+                f"ACTIVITIES_ACTUAL version_key {actual_version}, and "
+                f"ACTIVITIES_TREND version_key {trend_version} for evidence week "
+                f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d} "
+                "with workspace_get_version before any STOP about missing evidence context; "
+                "never use workspace_get_latest for these week-sensitive evidence artefacts. "
             )
         spec = AGENTS["phase_architect"]
         phase_task_labels = ", ".join(task.value for task in phase_tasks)
@@ -1264,20 +1387,48 @@ def plan_week(
                 phase_feed_forward_payload = loaded if isinstance(loaded, dict) else None
         except Exception:
             phase_feed_forward_payload = None
-        historical_activity_versions = _resolve_latest_historical_week_versions(
+        evidence_resolution, des_analysis_payload, report_result, report_error = _ensure_previous_week_report(
+            runtime_for,
+            athlete_id=athlete_id,
+            target_week=target,
+            run_id=run_id,
+            model_resolver=model_resolver,
+            temperature_resolver=temperature_resolver,
+            reasoning_effort_resolver=reasoning_effort_resolver,
+            reasoning_summary_resolver=reasoning_summary_resolver,
+        )
+        if report_result and isinstance(report_result.get("step"), dict):
+            steps.append(cast(StepRecord, report_result["step"]))
+        if report_error or evidence_resolution is None:
+            message = report_error or "Week evidence/report gate failed."
+            _log(message, logging.ERROR)
+            steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
+            return PlanWeekResult(ok=False, steps=steps)
+        actual_version = evidence_resolution.activities_actual_version
+        trend_version = evidence_resolution.activities_trend_version
+        evidence_payloads = load_evidence_payloads(
             store,
             athlete_id,
-            target,
+            resolution=evidence_resolution,
+            include_report=False,
         )
-        actual_version = historical_activity_versions.get(ArtifactType.ACTIVITIES_ACTUAL)
-        trend_version = historical_activity_versions.get(ArtifactType.ACTIVITIES_TREND)
+        week_evidence_alignment_payload = build_evidence_alignment_payload(
+            scope="week",
+            target_week=target,
+            evidence_week=evidence_resolution.evidence_week,
+            des_analysis_payload=des_analysis_payload or {},
+            activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
+            activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
+        )
         historical_context_line = ""
-        if actual_version and trend_version:
+        if actual_version and trend_version and evidence_resolution.des_analysis_report_version:
             historical_context_line = (
-                f"Load historical ACTIVITIES_ACTUAL version_key {actual_version} and "
-                f"ACTIVITIES_TREND version_key {trend_version} "
-                "with workspace_get_version before any STOP about missing activity context; "
-                "never use workspace_get_latest for these activity artefacts. "
+                f"Load previous-week DES_ANALYSIS_REPORT version_key {evidence_resolution.des_analysis_report_version}, "
+                f"ACTIVITIES_ACTUAL version_key {actual_version}, and "
+                f"ACTIVITIES_TREND version_key {trend_version} for evidence week "
+                f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d} "
+                "with workspace_get_version before any STOP about missing evidence context; "
+                "never use workspace_get_latest for these week-sensitive evidence artefacts. "
             )
         athlete_state_snapshot = save_athlete_state_snapshot(
             store,
@@ -1308,6 +1459,9 @@ def plan_week(
             phase_feed_forward_payload=phase_feed_forward_payload or {},
             activities_actual_version=actual_version,
             activities_trend_version=trend_version,
+            des_analysis_payload=des_analysis_payload or {},
+            des_analysis_version=evidence_resolution.des_analysis_report_version,
+            evidence_alignment_payload=week_evidence_alignment_payload,
         )
         athlete_snapshot_blockers = blocking_messages(
             validate_snapshot_freshness(
@@ -1344,6 +1498,7 @@ def plan_week(
                         ("availability", availability_payload),
                         ("planning_events", planning_events_payload),
                         ("phase_feed_forward", phase_feed_forward_payload),
+                        ("des_analysis_report", des_analysis_payload),
                     ]
                 )
                 | {

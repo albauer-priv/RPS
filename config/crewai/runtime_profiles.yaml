@@ -65,6 +65,10 @@ agents:
     model: gpt-5.4-nano
     reasoning:
       enabled: false
+  week_evidence_alignment_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
   week_constraint_specialist:
     model: gpt-5.4-nano
     reasoning:
@@ -171,6 +175,10 @@ agents:
     model: gpt-5.4-nano
     reasoning:
       enabled: false
+  season_evidence_alignment_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
   season_kpi_guidance_specialist:
     model: gpt-5.4-nano
     reasoning:
@@ -197,6 +205,10 @@ agents:
     reasoning:
       enabled: false
   phase_context_specialist:
+    model: gpt-5.4-nano
+    reasoning:
+      enabled: false
+  phase_evidence_alignment_specialist:
     model: gpt-5.4-nano
     reasoning:
       enabled: false

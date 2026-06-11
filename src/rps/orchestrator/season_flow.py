@@ -18,6 +18,14 @@ from rps.orchestrator.context_snapshots import (
     save_advisory_memory,
     save_athlete_state_snapshot,
 )
+from rps.orchestrator.planning_evidence import (
+    build_evidence_alignment_payload,
+    load_evidence_payloads,
+    render_evidence_alignment_block,
+    render_historical_baseline_block,
+    render_previous_week_activity_block,
+    resolve_previous_week_activity_versions,
+)
 from rps.orchestrator.resolved_context import build_resolved_activity_context_block
 from rps.planning.contracts import blocking_messages, validate_snapshot_freshness
 from rps.planning.deterministic_context import (
@@ -35,7 +43,7 @@ from rps.planning.scenario_recommendation import (
     render_scenario_recommendation_block,
 )
 from rps.planning.season_selection_binding import resolve_bound_season_selection
-from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, week_index
+from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -180,23 +188,13 @@ def _resolve_latest_historical_week_versions(
     athlete_id: str,
     target_week: IsoWeek,
 ) -> dict[ArtifactType, str]:
-    """Return the latest available week-scoped activity versions before the target week."""
+    """Return exact previous-week activity versions for season planning evidence."""
+    resolution = resolve_previous_week_activity_versions(store, athlete_id, target_week)
     resolved: dict[ArtifactType, str] = {}
-    for artifact_type in (ArtifactType.ACTIVITIES_ACTUAL, ArtifactType.ACTIVITIES_TREND):
-        latest_version: str | None = None
-        latest_week_index: int | None = None
-        for version_key in store.list_versions(athlete_id, artifact_type):
-            version_week = parse_iso_week(version_key)
-            if version_week is None:
-                continue
-            version_index = week_index(version_week)
-            if version_index >= week_index(target_week):
-                continue
-            if latest_week_index is None or version_index > latest_week_index:
-                latest_version = version_key
-                latest_week_index = version_index
-        if latest_version:
-            resolved[artifact_type] = latest_version
+    if resolution.activities_actual_version:
+        resolved[ArtifactType.ACTIVITIES_ACTUAL] = resolution.activities_actual_version
+    if resolution.activities_trend_version:
+        resolved[ArtifactType.ACTIVITIES_TREND] = resolution.activities_trend_version
     return resolved
 
 
@@ -219,6 +217,8 @@ def create_season_scenarios(
     planning_horizon_block = ""
     cadence_options_block = ""
     scenario_recommendation_block = ""
+    season_evidence_block = ""
+    season_evidence_alignment_block = ""
     recommendation_context: JsonMap | None = None
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
@@ -232,7 +232,26 @@ def create_season_scenarios(
         zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
         wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
         historical_baseline_payload = _load_latest_payload(store, athlete_id, ArtifactType.HISTORICAL_BASELINE)
-        activities_trend_payload = _load_latest_payload(store, athlete_id, ArtifactType.ACTIVITIES_TREND)
+        evidence_resolution = resolve_previous_week_activity_versions(store, athlete_id, target_week)
+        if not historical_baseline_payload:
+            return {"ok": False, "error": "Season planning evidence missing: HISTORICAL_BASELINE not found."}
+        if not evidence_resolution.activities_actual_version or not evidence_resolution.activities_trend_version:
+            return {
+                "ok": False,
+                "error": (
+                    "Season planning evidence missing for previous week "
+                    f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d}: "
+                    "ACTIVITIES_ACTUAL and ACTIVITIES_TREND are required."
+                ),
+            }
+        evidence_payloads = load_evidence_payloads(
+            store,
+            athlete_id,
+            resolution=evidence_resolution,
+            include_report=False,
+        )
+        activities_actual_payload = _as_map(evidence_payloads.get("activities_actual"))
+        activities_trend_payload = _as_map(evidence_payloads.get("activities_trend"))
         athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
@@ -262,6 +281,24 @@ def create_season_scenarios(
         cadence_context = build_cadence_options_block(horizon_context=horizon_context.payload)
         planning_horizon_block = render_context_blocks([horizon_context])
         cadence_options_block = render_context_blocks([cadence_context])
+        season_evidence_block = (
+            render_historical_baseline_block(historical_baseline_payload)
+            + render_previous_week_activity_block(
+                store,
+                athlete_id,
+                target_week=target_week,
+                resolution=evidence_resolution,
+            )
+        )
+        season_evidence_alignment_payload = build_evidence_alignment_payload(
+            scope="season",
+            target_week=target_week,
+            evidence_week=evidence_resolution.evidence_week,
+            historical_baseline_payload=historical_baseline_payload,
+            activities_actual_payload=activities_actual_payload,
+            activities_trend_payload=activities_trend_payload,
+        )
+        season_evidence_alignment_block = render_evidence_alignment_block(season_evidence_alignment_payload)
         pseudo_scenarios_payload = {
             "meta": {
                 "temporal_scope": _as_map(horizon_context.payload.get("temporal_scope"))
@@ -290,11 +327,9 @@ def create_season_scenarios(
             wellness_payload=wellness_payload,
         )
         scenario_recommendation_block = render_scenario_recommendation_block(recommendation_context)
-    except Exception:
-        athlete_state_snapshot_block = ""
-        planning_horizon_block = ""
-        cadence_options_block = ""
-        scenario_recommendation_block = ""
+    except Exception as exc:
+        logger.exception("Season evidence alignment preparation failed.")
+        return {"ok": False, "error": f"Season evidence alignment preparation failed: {exc}"}
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -304,6 +339,8 @@ def create_season_scenarios(
         f"{athlete_state_snapshot_block}"
         f"{planning_horizon_block}"
         f"{cadence_options_block}"
+        f"{season_evidence_block}"
+        f"{season_evidence_alignment_block}"
         f"{scenario_recommendation_block}"
         f"{override_line}"
         f"{injected_block}"
@@ -430,6 +467,8 @@ def create_season_plan(
         user_data_block = _format_user_data_block({})
     athlete_state_snapshot_block = ""
     resolved_activity_block = ""
+    historical_baseline_block = ""
+    season_evidence_alignment_block = ""
     load_capacity_block = ""
     selected_scenario_structure_block = ""
     phase_slot_block = ""
@@ -449,6 +488,7 @@ def create_season_plan(
         selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
         zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
         wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
+        historical_baseline_payload = _load_latest_payload(store, athlete_id, ArtifactType.HISTORICAL_BASELINE)
         athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
@@ -487,30 +527,6 @@ def create_season_plan(
         snapshot_blockers = blocking_messages(snapshot_issues)
         if snapshot_blockers:
             return {"ok": False, "error": "Season snapshot freshness failed: " + "; ".join(snapshot_blockers[:5])}
-        historical_activity_versions = _resolve_latest_historical_week_versions(
-            store,
-            athlete_id,
-            target_week,
-        )
-        if (
-            ArtifactType.ACTIVITIES_ACTUAL in historical_activity_versions
-            and ArtifactType.ACTIVITIES_TREND in historical_activity_versions
-        ):
-            actual_version = historical_activity_versions[ArtifactType.ACTIVITIES_ACTUAL]
-            trend_version = historical_activity_versions[ArtifactType.ACTIVITIES_TREND]
-            resolved_activity_block = build_resolved_activity_context_block(
-                store,
-                athlete_id,
-                target_week=target_week,
-                activities_actual_version=actual_version,
-                activities_trend_version=trend_version,
-            )
-            historical_context_line = (
-                f"If activity context is needed, use workspace_get_version for ACTIVITIES_ACTUAL and "
-                f"ACTIVITIES_TREND with the latest historical version_key before target week {year}-{week:02d}: "
-                f"{actual_version} and {trend_version}; never use workspace_get_latest for week-sensitive "
-                "activity artefacts. "
-            )
         binding = resolve_bound_season_selection(
             season_scenarios_payload=season_scenarios_payload or {},
             selection_payload=selection_payload or {},
@@ -518,6 +534,52 @@ def create_season_plan(
         )
         if not bool(binding.get("ok")):
             return _binding_failure_result(binding)
+        evidence_resolution = resolve_previous_week_activity_versions(store, athlete_id, target_week)
+        if not historical_baseline_payload:
+            return {"ok": False, "error": "Season planning evidence missing: HISTORICAL_BASELINE not found."}
+        if not evidence_resolution.activities_actual_version or not evidence_resolution.activities_trend_version:
+            return {
+                "ok": False,
+                "error": (
+                    "Season planning evidence missing for previous week "
+                    f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d}: "
+                    "ACTIVITIES_ACTUAL and ACTIVITIES_TREND are required."
+                ),
+            }
+        evidence_payloads = load_evidence_payloads(
+            store,
+            athlete_id,
+            resolution=evidence_resolution,
+            include_report=False,
+        )
+        activities_actual_payload = _as_map(evidence_payloads.get("activities_actual"))
+        activities_trend_payload = _as_map(evidence_payloads.get("activities_trend"))
+        actual_version = evidence_resolution.activities_actual_version
+        trend_version = evidence_resolution.activities_trend_version
+        resolved_activity_block = build_resolved_activity_context_block(
+            store,
+            athlete_id,
+            target_week=target_week,
+            activities_actual_version=actual_version,
+            activities_trend_version=trend_version,
+        )
+        historical_baseline_block = render_historical_baseline_block(historical_baseline_payload)
+        season_evidence_alignment_payload = build_evidence_alignment_payload(
+            scope="season",
+            target_week=target_week,
+            evidence_week=evidence_resolution.evidence_week,
+            historical_baseline_payload=historical_baseline_payload,
+            activities_actual_payload=activities_actual_payload,
+            activities_trend_payload=activities_trend_payload,
+        )
+        season_evidence_alignment_block = render_evidence_alignment_block(season_evidence_alignment_payload)
+        historical_context_line = (
+            f"If activity context is needed, use workspace_get_version for previous-week ACTIVITIES_ACTUAL and "
+            f"ACTIVITIES_TREND at evidence week "
+            f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d}: "
+            f"{actual_version} and {trend_version}; never use workspace_get_latest for week-sensitive "
+            "activity artefacts. "
+        )
         selected_structure_payload = _as_map(binding.get("selected_scenario_structure_context"))
         selected_scenario_contract_payload = _as_map(binding.get("selected_scenario_contract"))
         season_allowed_intensity_domains = [
@@ -602,7 +664,9 @@ def create_season_plan(
         f"{historical_context_line}"
         f"{athlete_state_snapshot_block}"
         f"{user_data_block}"
+        f"{historical_baseline_block}"
         f"{resolved_activity_block}"
+        f"{season_evidence_alignment_block}"
         f"{load_capacity_block}"
         f"{selected_scenario_structure_block}"
         f"{phase_slot_block}"

@@ -36,9 +36,12 @@ Out of scope:
 
 ## Decision procedure / operating order
 
-1. Pass 1 - structural draft: assemble a structurally coherent Mon-Sun week bundle inside deterministic week authority.
-2. Pass 2 - semantic finalization: apply binding load-estimation semantics directly, keep workout/day mechanical work separate from weekly governance load, keep the active weekly band as the only week-corridor authority, operationalize inherited progressive-overload semantics, preserve durability-first behavior, and keep workout design subordinate to phase guardrails, workout policy, and export-safe syntax.
-3. Pass 3 - planner self-audit: run the final checklist below before review and classify every residual finding as either Pass 1 return or Pass 2 return.
+1. Consume exact deterministic week authority first.
+2. Consume exact previous-week evidence next: `DES_ANALYSIS_REPORT`, `ACTIVITIES_ACTUAL`, and `ACTIVITIES_TREND` from completed week `W - 1`.
+3. Consume the injected `Evidence Alignment` result before synthesis; treat it as conservative shaping input, not as authority override.
+4. Pass 1 - structural draft: assemble a structurally coherent Mon-Sun week bundle inside deterministic week authority.
+5. Pass 2 - semantic finalization: apply binding load-estimation semantics directly, keep workout/day mechanical work separate from weekly governance load, keep the active weekly band as the only week-corridor authority, operationalize inherited progressive-overload semantics, preserve durability-first behavior, and keep workout design subordinate to phase guardrails, workout policy, and export-safe syntax.
+6. Pass 3 - planner self-audit: run the final checklist below before review and classify every residual finding as either Pass 1 return or Pass 2 return.
 
 ## Hard rules
 
@@ -48,6 +51,8 @@ Out of scope:
 - Review should be formal confirmation, not week repair.
 - Do not assume the writer will heal structural or semantic defects.
 - Percent ranges must use explicit percent signs on both bounds; valid: `68%-72%`, `80%-82%`; invalid: `68-72%`, `80-82%`.
+- Never use target-week report/activity evidence for week planning; weekly evidence always comes from completed week `W - 1`.
+- Evidence may make the week more conservative or reduce quality density, but it must not rewrite fixed rest days, legality, or active weekly band authority.
 
 ## Finalize-check
 

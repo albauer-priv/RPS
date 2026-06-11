@@ -297,6 +297,7 @@ _SEASON_PLANNING_TASKS: tuple[str, ...] = (
     "season_macrocycle_draft",
     "season_constraint_review",
     "season_historical_context_review",
+    "season_evidence_alignment",
     "season_kpi_guidance_review",
     "season_load_corridor_draft",
     "season_progression_review",
@@ -313,6 +314,7 @@ _SEASON_REVIEW_TASKS: tuple[str, ...] = (
 
 _PHASE_PLANNING_TASKS: tuple[str, ...] = (
     "phase_context_read",
+    "phase_evidence_alignment",
     "phase_guardrail_band_draft",
     "phase_execution_rules_draft",
     "phase_structure_draft",
@@ -334,6 +336,7 @@ _PHASE_REVIEW_TASKS: tuple[str, ...] = (
 
 _WEEK_PLANNING_TASKS: tuple[str, ...] = (
     "week_context_read",
+    "week_evidence_alignment",
     "week_constraint_review",
     "week_load_target_draft",
     "week_revision_draft",

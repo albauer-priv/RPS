@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import UTC, date, datetime, timedelta
 
@@ -254,20 +255,33 @@ def _int_from_text(value: str | None) -> int:
         return 0
 
 
-def _build_advisory_report_block(des_analysis_payload: JsonMap | None) -> str:
+def _build_advisory_report_block(
+    des_analysis_payload: JsonMap | None,
+    report_version_key: str | None = None,
+) -> str:
     data = _as_data(des_analysis_payload)
     recommendation = data.get("recommendation")
     recommendation_map = recommendation if isinstance(recommendation, dict) else {}
     considerations = _as_str_list(recommendation_map.get("suggested_considerations"))
     rationale = _as_str_list(recommendation_map.get("rationale"))
-    if not considerations and not rationale:
+    if not considerations and not rationale and not report_version_key:
         return ""
     lines = ["**Performance Advisory Summary**"]
+    if report_version_key:
+        lines.append(f"des_analysis_report_version: {report_version_key}")
     if considerations:
         lines.append("suggested_considerations: " + " | ".join(considerations))
     if rationale:
         lines.append("rationale: " + " | ".join(rationale))
     return "\n".join(lines) + "\n"
+
+
+def _build_json_context_block(label: str, payload: JsonMap | None) -> str:
+    """Render a compact JSON context block for flexible snapshot memory."""
+
+    if not isinstance(payload, dict) or not payload:
+        return ""
+    return f"**{label}**\n{json.dumps(payload, sort_keys=True)}\n"
 
 
 def _build_advisory_season_ff_block(season_phase_feed_forward_payload: JsonMap | None) -> str:
@@ -707,6 +721,9 @@ def build_planning_context_snapshot_document(
     phase_feed_forward_payload: JsonMap | None = None,
     activities_actual_version: str | None = None,
     activities_trend_version: str | None = None,
+    des_analysis_payload: JsonMap | None = None,
+    des_analysis_version: str | None = None,
+    evidence_alignment_payload: JsonMap | None = None,
 ) -> JsonMap:
     """Build a target-week planning snapshot for phase/week planners."""
     phase_block = build_resolved_phase_context_block(target_week=target_week, phase_info=phase_info)
@@ -747,6 +764,14 @@ def build_planning_context_snapshot_document(
             activities_actual_version=activities_actual_version,
             activities_trend_version=activities_trend_version,
         )
+    des_report_block = _build_advisory_report_block(
+        des_analysis_payload,
+        report_version_key=des_analysis_version,
+    )
+    evidence_alignment_block = _build_json_context_block(
+        "Evidence Alignment",
+        evidence_alignment_payload,
+    )
     season_contract = _as_map(_as_data(season_plan_payload).get("selected_scenario_contract"))
     phase_guardrails_data = _as_data(phase_guardrails_payload)
     phase_structure_data = _as_data(phase_structure_payload)
@@ -825,6 +850,8 @@ def build_planning_context_snapshot_document(
             "season_feed_forward": season_ff_block,
             "phase_feed_forward": phase_ff_block,
             "activity": activity_block,
+            "des_report": des_report_block,
+            "evidence_alignment": evidence_alignment_block,
             "selected_scenario_contract": selected_contract_block,
             "inherited_scenario_contract": inherited_contract_block,
             "inherited_planning_posture": inherited_planning_posture_block,
@@ -847,6 +874,8 @@ def build_planning_context_snapshot_document(
         source_versions["activities_actual"] = activities_actual_version
     if activities_trend_version:
         source_versions["activities_trend"] = activities_trend_version
+    if des_analysis_version:
+        source_versions["des_analysis_report"] = des_analysis_version
 
     trace_upstream = [
         ref
@@ -854,6 +883,7 @@ def build_planning_context_snapshot_document(
             _trace_ref(ArtifactType.SEASON_PLAN, season_plan_payload),
             _trace_ref(ArtifactType.PHASE_GUARDRAILS, phase_guardrails_payload or {}),
             _trace_ref(ArtifactType.PHASE_STRUCTURE, phase_structure_payload or {}),
+            _trace_ref(ArtifactType.DES_ANALYSIS_REPORT, des_analysis_payload or {}),
             _trace_ref(ArtifactType.SEASON_PHASE_FEED_FORWARD, season_phase_feed_forward_payload or {}),
             _trace_ref(ArtifactType.PHASE_FEED_FORWARD, phase_feed_forward_payload or {}),
         )
@@ -963,6 +993,9 @@ def save_planning_context_snapshot(
     phase_feed_forward_payload: JsonMap | None = None,
     activities_actual_version: str | None = None,
     activities_trend_version: str | None = None,
+    des_analysis_payload: JsonMap | None = None,
+    des_analysis_version: str | None = None,
+    evidence_alignment_payload: JsonMap | None = None,
 ) -> JsonMap:
     snapshot = build_planning_context_snapshot_document(
         store,
@@ -979,6 +1012,9 @@ def save_planning_context_snapshot(
         phase_feed_forward_payload=phase_feed_forward_payload,
         activities_actual_version=activities_actual_version,
         activities_trend_version=activities_trend_version,
+        des_analysis_payload=des_analysis_payload,
+        des_analysis_version=des_analysis_version,
+        evidence_alignment_payload=evidence_alignment_payload,
     )
     target_label = f"{target_week.year:04d}-{target_week.week:02d}"
     store.save_document(

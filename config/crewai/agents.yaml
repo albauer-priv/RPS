@@ -25,6 +25,13 @@ agents:
     runtime_status: foundation_only
     output_mode: week_context_assessment
     prompt_agent: week_context_specialist
+  week_evidence_alignment_specialist:
+    display_name: Week Evidence Alignment Specialist
+    role: Early week evidence interpreter
+    goal: Convert exact previous-week report and activity evidence into week-planning implications before synthesis.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: week_planner
   week_constraint_specialist:
     display_name: Week Constraint Specialist
     role: Week constraint interpreter
@@ -237,6 +244,13 @@ agents:
     runtime_status: foundation_only
     output_mode: constraint_audit
     prompt_agent: historical_context_specialist
+  season_evidence_alignment_specialist:
+    display_name: Season Evidence Alignment Specialist
+    role: Early season evidence interpreter
+    goal: Convert baseline plus exact previous-week activity evidence into season-planning implications before synthesis.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: season_planner
   season_kpi_guidance_specialist:
     display_name: Season KPI Guidance Specialist
     role: KPI guidance interpreter
@@ -276,6 +290,13 @@ agents:
     display_name: Phase Context Specialist
     role: Phase context interpreter
     goal: Summarize exact phase-range authority and upstream planning context before drafting.
+    runtime_status: foundation_only
+    output_mode: planning_draft
+    prompt_agent: phase_architect
+  phase_evidence_alignment_specialist:
+    display_name: Phase Evidence Alignment Specialist
+    role: Early phase evidence interpreter
+    goal: Convert exact previous-week report and activity evidence into phase-planning implications before synthesis.
     runtime_status: foundation_only
     output_mode: planning_draft
     prompt_agent: phase_architect

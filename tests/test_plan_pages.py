@@ -14,6 +14,7 @@ from rps.orchestrator.workout_export import run_workout_export
 from rps.ui.shared import SETTINGS
 from rps.workspace.index_exact import IndexExactQuery
 from rps.workspace.index_manager import WorkspaceIndexManager
+from rps.workspace.iso_helpers import IsoWeek, previous_iso_week
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
@@ -21,6 +22,60 @@ MIN_PHASE_SELECTBOX_COUNT = 2
 EXPECTED_SCOPED_ACTION_CALLS = 2
 MIN_PLAN_HUB_NUMBER_INPUTS = 2
 JsonMap = dict[str, Any]
+
+
+def _seed_previous_week_planning_evidence(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    target_year: int,
+    target_week: int,
+) -> None:
+    evidence_week = previous_iso_week(IsoWeek(target_year, target_week))
+    version_key = f"{evidence_week.year:04d}-{evidence_week.week:02d}"
+    store.save_document(
+        athlete_id,
+        ArtifactType.HISTORICAL_BASELINE,
+        "baseline",
+        {
+            "data": {
+                "metrics": {"kj_per_year": 120000, "kj_per_activity": 650, "long_ride_tolerance_kj": 2200},
+                "source": {"source_type": "test", "range": "3y"},
+            }
+        },
+        producer_agent="test",
+        run_id="historical-baseline",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_ACTUAL,
+        version_key,
+        {"data": {"activities": []}},
+        producer_agent="test",
+        run_id=f"activities-actual-{version_key}",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.ACTIVITIES_TREND,
+        version_key,
+        {
+            "data": {
+                "weekly_trends": [
+                    {
+                        "year": evidence_week.year,
+                        "iso_week": evidence_week.week,
+                        "weekly_aggregates": {"activity_count": 4, "moving_time": "10:30", "work_kj": 6400},
+                        "intensity_load_metrics": {"durability_index": 0.91},
+                    }
+                ]
+            }
+        },
+        producer_agent="test",
+        run_id=f"activities-trend-{version_key}",
+        update_latest=True,
+    )
 
 
 def _write_minimal_scenario_chain(
@@ -1162,6 +1217,7 @@ def test_season_flow_scoped_actions_do_not_short_circuit(monkeypatch, tmp_path):
         json.dumps({"data": {"kpi_moving_time_rate_guidance_selection": None}}),
         encoding="utf-8",
     )
+    _seed_previous_week_planning_evidence(store, "test_athlete", target_year=2026, target_week=12)
     _write_minimal_scenario_chain(store, "test_athlete", horizon_weeks=8)
 
     season_flow.create_season_scenarios(
@@ -1311,6 +1367,7 @@ def test_create_season_plan_includes_selected_kpi_guidance(
         run_id="test_kpi_profile",
         update_latest=True,
     )
+    _seed_previous_week_planning_evidence(store, "test_athlete", target_year=2026, target_week=12)
     _write_minimal_scenario_chain(store, "test_athlete", horizon_weeks=8)
 
     season_flow.create_season_plan(
@@ -1442,6 +1499,7 @@ def test_create_season_plan_injects_selected_scenario_phase_math(
         run_id="test_selection",
         update_latest=True,
     )
+    _seed_previous_week_planning_evidence(store, "test_athlete", target_year=2026, target_week=12)
 
     season_flow.create_season_plan(
         _fake_runtime_for,
@@ -2490,6 +2548,7 @@ def test_create_season_plan_injects_resolved_logistics_and_zone_context(
         ),
         encoding="utf-8",
     )
+    _seed_previous_week_planning_evidence(store, "test_athlete", target_year=2026, target_week=12)
     _write_minimal_scenario_chain(store, "test_athlete", horizon_weeks=8)
 
     season_flow.create_season_plan(
@@ -2567,6 +2626,20 @@ def test_create_season_plan_uses_historical_activity_versions(
         run_id="activities_trend_202616",
         update_latest=True,
     )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.HISTORICAL_BASELINE,
+        "baseline",
+        {
+            "data": {
+                "metrics": {"kj_per_year": 120000},
+                "source": {"source_type": "test", "range": "3y"},
+            }
+        },
+        producer_agent="user",
+        run_id="historical-baseline",
+        update_latest=True,
+    )
     _write_minimal_scenario_chain(store, "test_athlete")
 
     season_flow.create_season_plan(
@@ -2580,7 +2653,7 @@ def test_create_season_plan_uses_historical_activity_versions(
     )
 
     assert captured_inputs
-    assert "latest historical version_key before target week 2026-17: 2026-16 and 2026-16" in captured_inputs[0]
+    assert "previous-week ACTIVITIES_ACTUAL and ACTIVITIES_TREND at evidence week 2026-16: 2026-16 and 2026-16" in captured_inputs[0]
     assert "**Resolved Activity Context**" in captured_inputs[0]
     assert "historical_reference_week: 2026-16" in captured_inputs[0]
     assert "activities_actual_version: 2026-16" in captured_inputs[0]
@@ -2705,6 +2778,7 @@ def test_create_season_scenarios_injects_resolved_context(
         run_id="test_kpi_profile",
         update_latest=True,
     )
+    _seed_previous_week_planning_evidence(store, "test_athlete", target_year=2026, target_week=12)
 
     season_flow.create_season_scenarios(
         _fake_runtime_for,
@@ -2716,13 +2790,16 @@ def test_create_season_scenarios_injects_resolved_context(
     )
 
     assert captured_inputs
-    assert "**Resolved Athlete Context**" in captured_inputs[0]
+    assert "**Athlete State Snapshot**" in captured_inputs[0]
     assert "athlete_name: Test Rider" in captured_inputs[0]
     assert "endurance_anchor_w: 210" in captured_inputs[0]
-    assert "**Resolved KPI Context**" in captured_inputs[0]
-    assert "**Resolved Availability Context**" in captured_inputs[0]
-    assert "**Resolved Logistics Context**" in captured_inputs[0]
-    assert "**Resolved Planning Event Context**" in captured_inputs[0]
+    assert "kpi_profile" in captured_inputs[0]
+    assert "availability" in captured_inputs[0]
+    assert "Spring 200" in captured_inputs[0]
+    assert "Main 400" in captured_inputs[0]
+    assert "**Historical Baseline Evidence**" in captured_inputs[0]
+    assert "**Resolved Activity Context**" in captured_inputs[0]
+    assert "**Evidence Alignment**" in captured_inputs[0]
     assert "**Deterministic Season Scenario Horizon Context**" in captured_inputs[0]
     assert "target_week_start_date: 2026-03-16" in captured_inputs[0]
     assert "last_event_date: 2026-05-10" in captured_inputs[0]
@@ -2733,6 +2810,114 @@ def test_create_season_scenarios_injects_resolved_context(
     assert "**Deterministic Cadence Options Context**" in captured_inputs[0]
     assert "cadence 2:1" in captured_inputs[0]
     assert "phase_count_expected 3" in captured_inputs[0]
+
+
+def test_create_season_scenarios_fails_closed_when_activity_resolution_errors(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    invoked = False
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*_args, **_kwargs):
+        nonlocal invoked
+        invoked = True
+        return {"ok": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text(
+        json.dumps({"data": {"profile": {"athlete_id": "test_athlete", "athlete_name": "Test Rider"}}}),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.AVAILABILITY).write_text(
+        json.dumps({"data": {"weekly_hours": {"typical": 12.0}, "fixed_rest_days": ["Mon", "Fri"]}}),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps({"data": {"events": []}}),
+        encoding="utf-8",
+    )
+    store.save_document(
+        "test_athlete",
+        ArtifactType.HISTORICAL_BASELINE,
+        "baseline",
+        {"data": {"metrics": {"kj_per_year": 120000}, "source": {"source_type": "test", "range": "3y"}}},
+        producer_agent="test",
+        run_id="historical-baseline",
+        update_latest=True,
+    )
+
+    def _raise_resolution(*_args, **_kwargs):
+        raise RuntimeError("resolution boom")
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.resolve_previous_week_activity_versions", _raise_resolution)
+
+    result = season_flow.create_season_scenarios(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_scenarios",
+        override_text=None,
+    )
+
+    assert result["ok"] is False
+    assert "Season evidence alignment preparation failed: resolution boom" in str(result["error"])
+    assert invoked is False
+
+
+def test_create_season_scenarios_fails_closed_when_recommendation_context_errors(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    invoked = False
+
+    def _fake_runtime_for(_agent_name):
+        return SimpleNamespace(workspace_root=tmp_path)
+
+    def _fake_run_agent_multi_output(*_args, **_kwargs):
+        nonlocal invoked
+        invoked = True
+        return {"ok": True}
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.run_agent_multi_output", _fake_run_agent_multi_output)
+
+    store = LocalArtifactStore(root=tmp_path)
+    store.ensure_workspace("test_athlete")
+    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text(
+        json.dumps({"data": {"profile": {"athlete_id": "test_athlete", "athlete_name": "Test Rider"}}}),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.AVAILABILITY).write_text(
+        json.dumps({"data": {"weekly_hours": {"typical": 12.0}, "fixed_rest_days": ["Mon", "Fri"]}}),
+        encoding="utf-8",
+    )
+    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps({"data": {"events": []}}),
+        encoding="utf-8",
+    )
+    _seed_previous_week_planning_evidence(store, "test_athlete", target_year=2026, target_week=12)
+
+    def _raise_recommendation(*_args, **_kwargs):
+        raise RuntimeError("recommendation boom")
+
+    monkeypatch.setattr("rps.orchestrator.season_flow.build_scenario_recommendation_context", _raise_recommendation)
+
+    result = season_flow.create_season_scenarios(
+        _fake_runtime_for,
+        athlete_id="test_athlete",
+        year=2026,
+        week=12,
+        run_id="run_scenarios",
+        override_text=None,
+    )
+
+    assert result["ok"] is False
+    assert "Season evidence alignment preparation failed: recommendation boom" in str(result["error"])
+    assert invoked is False
 
 
 def test_plan_week_injects_resolved_activity_context(

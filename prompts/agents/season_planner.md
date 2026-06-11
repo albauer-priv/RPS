@@ -34,9 +34,11 @@ Out of scope:
 ## Decision procedure / operating order
 
 1. Start from selected scenario and injected deterministic season context.
-2. Keep season planning upstream-first: deterministic authority first, skills second, prompt framing third.
-3. Route season work toward specialist synthesis and finalization, not toward review/writer repair.
-4. Keep scope at Season level; do not drift into Phase/Week execution detail.
+2. Consume the resolved season evidence inputs early: `HISTORICAL_BASELINE` plus exact previous-week `ACTIVITIES_ACTUAL` and `ACTIVITIES_TREND`.
+3. Consume the injected `Evidence Alignment` result before synthesis; treat it as posture-shaping evidence, not as authority override.
+4. Keep season planning upstream-first: deterministic authority first, resolved evidence second, skills third, prompt framing fourth.
+5. Route season work toward specialist synthesis and finalization, not toward review/writer repair.
+6. Keep scope at Season level; do not drift into Phase/Week execution detail.
 
 ## Hard rules
 
@@ -44,6 +46,8 @@ Out of scope:
 - Do not treat the writer as a semantic repair stage.
 - Do not recalculate deterministic cadence, phase-slot, or load-band facts from old prompt prose.
 - Use season authority only; do not reconstruct it backward from downstream phase examples.
+- Never use target-week activity evidence; season planning evidence for planning week `W` comes from completed week `W - 1`.
+- Evidence may justify conservative cadence/ramp choices, but it must not rewrite legality or exact deterministic season authority.
 
 ## Self-check / finalize-check
 

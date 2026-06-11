@@ -104,6 +104,8 @@ agents:
 
   week_context_specialist:
     skill: skills/week/context-analysis
+  week_evidence_alignment_specialist:
+    skill: skills/week/evidence-alignment
   week_constraint_specialist:
     skill: skills/week/constraint-analysis
   week_recommendation_specialist:
@@ -147,6 +149,8 @@ agents:
     skill: skills/season/constraint-synthesis
   season_historical_context_specialist:
     skill: skills/season/historical-context
+  season_evidence_alignment_specialist:
+    skill: skills/season/evidence-alignment
   season_kpi_guidance_specialist:
     skill: skills/season/kpi-guidance
   season_load_corridor_specialist:
@@ -174,6 +178,8 @@ agents:
     skill: skills/phase/context-analysis
   phase_context_specialist:
     skill: skills/phase/context-analysis
+  phase_evidence_alignment_specialist:
+    skill: skills/phase/evidence-alignment
   phase_guardrail_band_specialist:
     skill: skills/phase/guardrails-authoring
   phase_execution_rules_specialist:

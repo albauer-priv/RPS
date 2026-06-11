@@ -16,6 +16,12 @@ from rps.crewai_runtime.models import (
     WeekReviewDecisionModel,
     WeekWorkoutBlueprintModel,
 )
+from rps.orchestrator.planning_evidence import (
+    build_evidence_alignment_payload,
+    load_evidence_payloads,
+    report_matches_resolved_evidence,
+    resolve_previous_week_activity_versions,
+)
 from rps.planning.contracts import (
     blocking_messages,
     validate_week_plan_against_week_context,
@@ -103,6 +109,51 @@ def execute_week_engine(
     zone_model = _load_latest_optional(store, athlete_id, ArtifactType.ZONE_MODEL)
     kpi_profile = _load_latest_optional(store, athlete_id, ArtifactType.KPI_PROFILE)
     scenario_selection = _load_latest_optional(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+    evidence_resolution = resolve_previous_week_activity_versions(store, athlete_id, target)
+    if not evidence_resolution.activities_actual_version or not evidence_resolution.activities_trend_version:
+        evidence_label = f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d}"
+        return {
+            "ok": False,
+            "error": (
+                f"Week planning evidence missing for previous week {evidence_label}: "
+                "ACTIVITIES_ACTUAL and ACTIVITIES_TREND are required."
+            ),
+            "produced": {},
+        }
+    if not evidence_resolution.des_analysis_report_version:
+        return {
+            "ok": False,
+            "error": (
+                "Week planning requires a current previous-week DES_ANALYSIS_REPORT before deterministic week synthesis."
+            ),
+            "produced": {},
+        }
+    evidence_payloads = load_evidence_payloads(
+        store,
+        athlete_id,
+        resolution=evidence_resolution,
+        include_report=True,
+    )
+    des_analysis_report = _as_map(evidence_payloads.get("des_analysis_report"))
+    if not report_matches_resolved_evidence(
+        des_analysis_report,
+        evidence_week=evidence_resolution.evidence_week,
+        activities_actual_version=evidence_resolution.activities_actual_version,
+        activities_trend_version=evidence_resolution.activities_trend_version,
+    ):
+        return {
+            "ok": False,
+            "error": "Week planning evidence report is missing, stale, or not aligned to the resolved previous-week activity versions.",
+            "produced": {},
+        }
+    evidence_alignment = build_evidence_alignment_payload(
+        scope="week",
+        target_week=target,
+        evidence_week=evidence_resolution.evidence_week,
+        des_analysis_payload=des_analysis_report,
+        activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
+        activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
+    )
     kpi_rate_band = selected_kpi_rate_band_from_selection(scenario_selection if isinstance(scenario_selection, dict) else None)
 
     load_capacity = build_load_capacity_block(
@@ -150,7 +201,10 @@ def execute_week_engine(
     protocol_config = load_week_workout_protocol_config(repo_root)
     selection_rule_config = load_week_workout_selection_rule_config(repo_root)
     progression_history = _load_prior_progression_signatures(store=store, athlete_id=athlete_id, target_week=target)
-    adjustment = parse_week_adjustment_intent(user_message)
+    adjustment = _apply_evidence_alignment_to_adjustment(
+        parse_week_adjustment_intent(user_message),
+        evidence_alignment=evidence_alignment,
+    )
     planning_bundle, selection_audit = _build_week_plan_bundle(
         athlete_id=athlete_id,
         week_calendar_context=week_calendar,
@@ -163,7 +217,10 @@ def execute_week_engine(
         phase_type=str(phase_info.phase_type or week_calendar.get("phase_cycle") or ""),
         season_archetype=str(load_capacity.payload.get("season_archetype") or ""),
         adjustment=adjustment,
-        initial_warnings=week_context_warnings,
+        initial_warnings=[
+            *week_context_warnings,
+            *[f"evidence_alignment:{item}" for item in evidence_alignment.get("caution_flags") or []],
+        ],
     )
     review_decision = _review_bundle(planning_bundle=planning_bundle, week_calendar_context=week_calendar)
     document = build_week_plan_document_from_bundle(
@@ -175,6 +232,7 @@ def execute_week_engine(
         "planning_bundle": planning_bundle.model_dump(mode="json"),
         "review_decision": review_decision.model_dump(mode="json"),
         "week_calendar_context": week_calendar,
+        "evidence_alignment": evidence_alignment,
     }
     if review_decision.status != "approved":
         return {
@@ -210,6 +268,7 @@ def execute_week_engine(
         [
             (ArtifactType.PHASE_GUARDRAILS, phase_guardrails),
             (ArtifactType.PHASE_STRUCTURE, phase_structure),
+            (ArtifactType.DES_ANALYSIS_REPORT, des_analysis_report),
         ]
     )
     previous_payload = _load_previous_week_plan_payload(store=store, athlete_id=athlete_id, target_week=target)
@@ -221,6 +280,7 @@ def execute_week_engine(
             ("phase_guardrails", phase_guardrails),
             ("phase_structure", phase_structure),
             ("phase_preview", phase_preview),
+            ("des_analysis_report", des_analysis_report),
             ("previous_week_plan", previous_payload or {}),
         ]
     )
@@ -280,6 +340,32 @@ def parse_week_adjustment_intent(message: str) -> WeekAdjustmentIntent:
         target_load_fraction=target_load_fraction,
         forced_quality_family=forced_quality_family,
         preserve_sat_anchor=preserve_sat_anchor or True,
+    )
+
+
+def _apply_evidence_alignment_to_adjustment(
+    adjustment: WeekAdjustmentIntent,
+    *,
+    evidence_alignment: JsonMap,
+) -> WeekAdjustmentIntent:
+    """Apply bounded conservative shaping from early evidence alignment.
+
+    Evidence alignment may reduce weekly ambition or suppress an explicit forced
+    quality family, but it never widens deterministic week authority.
+    """
+
+    cap = evidence_alignment.get("conservative_load_fraction_cap")
+    target_fraction = adjustment.target_load_fraction
+    if isinstance(cap, (int, float)) and cap > 0:
+        target_fraction = min(target_fraction, float(cap))
+    forced_quality_family = adjustment.forced_quality_family
+    if bool(evidence_alignment.get("reduce_quality_density")):
+        forced_quality_family = None
+    return WeekAdjustmentIntent(
+        message=adjustment.message,
+        target_load_fraction=target_fraction,
+        forced_quality_family=forced_quality_family,
+        preserve_sat_anchor=adjustment.preserve_sat_anchor,
     )
 
 

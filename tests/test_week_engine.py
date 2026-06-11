@@ -161,6 +161,127 @@ def _seed_week_workspace(
         "meta": {"artifact_type": "ATHLETE_PROFILE", "schema_id": "AthleteProfileInterface"},
         "data": {"profile": {"endurance_anchor_w": 210}},
     }
+    activities_actual = {
+        "meta": {"artifact_type": "ACTIVITIES_ACTUAL", "schema_id": "ActivitiesActualInterface", "version_key": "2026-20", "run_id": "aa"},
+        "data": {
+            "activities": [
+                {
+                    "day": "Sat",
+                    "type": "Endurance Ride",
+                    "moving_time": "04:10:00",
+                    "work_kj": 2500,
+                    "load_tss": 210,
+                    "intensity_factor": 0.68,
+                    "flags": {"flag_long_ride_240min_bool": True},
+                }
+            ]
+        },
+    }
+    activities_trend = {
+        "meta": {"artifact_type": "ACTIVITIES_TREND", "schema_id": "ActivitiesTrendInterface", "version_key": "2026-20", "run_id": "at"},
+        "data": {
+            "weekly_trends": [
+                {
+                    "year": 2026,
+                    "iso_week": 20,
+                    "period": {"from": "2026-05-11", "to": "2026-05-17"},
+                    "weekly_aggregates": {
+                        "activity_count": 4,
+                        "moving_time": "08:00",
+                        "distance_km": 210.0,
+                        "load_tss": 430.0,
+                        "work_kj": 5100.0,
+                    },
+                    "intensity_load_metrics": {
+                        "normalized_power_w": 205.0,
+                        "intensity_factor": 0.72,
+                        "decoupling_percent": 4.0,
+                        "durability_index": 0.92,
+                        "efficiency_factor": 1.18,
+                        "functional_intensity_ratio": 0.82,
+                        "ftp_estimated_w": 300.0,
+                        "vo2_ftp": 1.16,
+                    },
+                    "power_tiz": {"z1": None, "z2": None, "z3": None, "z4": None, "z5": None, "z6": None, "z7": None},
+                    "hr_tiz": {"z1": None, "z2": None, "z3": None, "z4": None, "z5": None},
+                    "optional_tiz": {"ss": None},
+                    "distribution_metrics": {
+                        "z1_z2_time_percent": 78.0,
+                        "z5_time_percent": 2.0,
+                        "z2_share_power_percent": 66.0,
+                        "back_to_back_z2_days_count": 2,
+                    },
+                    "peak_metrics": {},
+                    "flag_counts": {},
+                    "flag_any": {
+                        "flag_long_ride_180min_bool": True,
+                        "flag_long_ride_240min_bool": True,
+                        "flag_des_long_base_candidate_bool": True,
+                        "flag_des_long_build_candidate_bool": False,
+                        "flag_brevet_long_candidate_bool": False,
+                    },
+                    "metrics": {
+                        "weekly_moving_time_total_min": 480,
+                        "weekly_z2_time_total_min": 310,
+                        "weekly_moving_time_max_min": 250,
+                        "weekly_z2_time_max_min": 180,
+                        "weekly_moving_time_180min_sum_min": 250,
+                        "weekly_moving_time_240min_sum_min": 250,
+                        "weekly_z2_time_180min_sum_min": 180,
+                        "weekly_z2_time_240min_sum_min": 180,
+                        "weekly_moving_time_des_base_sum_min": 250,
+                        "weekly_moving_time_des_build_sum_min": 0,
+                        "weekly_z2_time_des_base_sum_min": 180,
+                        "weekly_z2_time_des_build_sum_min": 0,
+                    },
+                }
+            ],
+            "notes": "test",
+        },
+    }
+    des_analysis_report = {
+        "meta": {
+            "artifact_type": "DES_ANALYSIS_REPORT",
+            "schema_id": "DESAnalysisInterface",
+            "iso_week": "2026-20",
+            "trace_upstream": [
+                {"artifact": "ACTIVITIES_ACTUAL", "version": "2026-20", "version_key": "2026-20", "run_id": "aa", "schema_version": "1.0"},
+                {"artifact": "ACTIVITIES_TREND", "version": "2026-20", "version_key": "2026-20", "run_id": "at", "schema_version": "1.0"},
+            ],
+        },
+        "data": {
+            "summary_meta": {"year": 2026, "iso_week": 20, "run_id": "des"},
+            "kpi_summary": {
+                "durability": {"status": "green", "confidence": "high", "rationale": "Stable durability."},
+                "fatigue_resistance": {"status": "green", "confidence": "high", "rationale": "No fatigue concern."},
+                "fueling_stability": {"status": "green", "confidence": "medium", "rationale": "Stable fueling."},
+            },
+            "weekly_analysis": {
+                "context": {"phase_week": 1, "phase_focus": "re-entry"},
+                "signals": [{"metric": "work_kj", "observation": "Stable recent week.", "confidence": "high"}],
+                "interpretation": {"summary": "Stable prior week with repeatable endurance load."},
+            },
+            "trend_analysis": {
+                "horizon_weeks": 4,
+                "observations": [{"metric": "durability", "trend": "stable", "interpretation": "No negative drift."}],
+            },
+            "recommendation": {
+                "type": "advisory",
+                "scope": "Season-Planner",
+                "urgency": "low",
+                "rationale": ["Stay inside the active band."],
+                "suggested_considerations": ["Preserve conservative spacing."],
+                "explicitly_not": ["direct_phase_change", "weekly_intervention"],
+            },
+            "narrative_report": {
+                "overview_current_status": "Stable",
+                "detailed_analysis_last_week": "Stable",
+                "trend_analysis_within_phase": "Stable",
+                "trend_analysis_season": "Stable",
+                "recommendations_for_coach_planner": "Stay conservative but normal.",
+            },
+        },
+    }
     for artifact_type, version_key, payload in (
         (ArtifactType.PHASE_GUARDRAILS, "2026-21--2026-23", phase_guardrails),
         (ArtifactType.PHASE_STRUCTURE, "2026-21--2026-23", phase_structure),
@@ -168,6 +289,9 @@ def _seed_week_workspace(
         (ArtifactType.AVAILABILITY, "20260316_000000", availability),
         (ArtifactType.ZONE_MODEL, "20260520_000000", zone_model),
         (ArtifactType.ATHLETE_PROFILE, "20260315_000000", athlete_profile),
+        (ArtifactType.ACTIVITIES_ACTUAL, "2026-20", activities_actual),
+        (ArtifactType.ACTIVITIES_TREND, "2026-20", activities_trend),
+        (ArtifactType.DES_ANALYSIS_REPORT, "2026-20", des_analysis_report),
     ):
         store.save_document(
             athlete_id,

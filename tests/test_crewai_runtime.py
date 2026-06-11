@@ -489,6 +489,7 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle_draft"
     assert tasks["phase_bundle_finalize"].context_names == (
         "phase_context_read",
+        "phase_evidence_alignment",
         "phase_guardrail_band_draft",
         "phase_execution_rules_draft",
         "phase_structure_draft",
@@ -5210,6 +5211,31 @@ def test_season_scenarios_task_uses_narrow_workspace_tools() -> None:
     assert task.config["tools"] == ["workspace_get_input", "workspace_get_latest"]
 
 
+def test_early_planning_tasks_consume_evidence_alignment_context_before_synthesis() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+
+    expected_contexts = {
+        "season_macrocycle_draft": "season_evidence_alignment",
+        "season_load_corridor_draft": "season_evidence_alignment",
+        "season_progression_review": "season_evidence_alignment",
+        "phase_guardrail_band_draft": "phase_evidence_alignment",
+        "phase_structure_draft": "phase_evidence_alignment",
+        "phase_cadence_recovery_draft": "phase_evidence_alignment",
+        "week_load_target_draft": "week_evidence_alignment",
+        "week_revision_draft": "week_evidence_alignment",
+        "week_workout_text_draft": "week_evidence_alignment",
+    }
+
+    for task_name, context_name in expected_contexts.items():
+        task = blueprints[task_name]
+        assert context_name in task.context_names
+        assert "exact deterministic authority first" in task.description
+        assert "resolved previous-week evidence" in task.description
+        assert "evidence-alignment implications" in task.description
+        assert "must not rewrite authority" in task.description
+
+
 def test_phase_s5_band_guardrail_rejects_explicit_s5_mismatch() -> None:
     failed, message = phase_s5_band_match(
         {
@@ -6684,6 +6710,7 @@ def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_exec
         crew_name="week_planning",
         crew_task_names=(
             "week_context_read",
+            "week_evidence_alignment",
             "week_constraint_review",
             "week_load_target_draft",
             "week_revision_draft",

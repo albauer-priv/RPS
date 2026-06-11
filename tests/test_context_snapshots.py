@@ -254,11 +254,24 @@ def test_planning_snapshot_includes_inherited_posture_blocks(tmp_path):
                 }
             },
         },
+        des_analysis_payload={
+            "meta": {"artifact_type": "DES_ANALYSIS_REPORT", "version_key": "2026-21", "run_id": "des"},
+            "data": {"recommendation": {"suggested_considerations": ["Stay conservative"], "rationale": ["Recent fatigue drift"]}},
+        },
+        des_analysis_version="2026-21",
+        evidence_alignment_payload={
+            "scope": "phase",
+            "evidence_week": "2026-21",
+            "planning_implications": ["Keep opening week conservative."],
+        },
     )
     blocks = snapshot["data"]["prompt_blocks"]
     assert "selected_scenario_contract" in blocks
     assert "inherited_scenario_contract" in blocks
     assert "inherited_planning_posture" in blocks
+    assert "des_report" in blocks
+    assert "evidence_alignment" in blocks
+    assert snapshot["data"]["source_versions"]["des_analysis_report"] == "2026-21"
 
 
 def test_build_advisory_memory_prompt_block_marks_memory_as_non_binding():
