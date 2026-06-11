@@ -24,6 +24,7 @@ Authority / injected sources:
 - `inherited_scenario_contract` is an exact deterministic contract object; freeze it verbatim and do not paraphrase nested fields such as `constraint_summary` or `risk_flags`
 - `structure.upstream_intent.constraints` is planning-facts only: inherited availability/logistics constraints, risk/recovery constraints, event-window anchors, and genuine external planning constraints
 - keep runtime/process/governance rules out of `structure.upstream_intent.constraints`
+- when injected season/global wording exists, keep that wording instead of paraphrasing it
 - if deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`
 - use tools only as fallback for genuinely missing authority fields
 - use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them

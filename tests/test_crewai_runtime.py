@@ -3601,6 +3601,7 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
     assert "do not include `NONE` in `PHASE_STRUCTURE.allowed_intensity_domains`" in tasks_text
     assert "`upstream_intent.constraints` is a closed field for real inherited planning facts only" in tasks_text
     assert "Invalid examples: `Use the injected role-week banding exactly.`" in tasks_text
+    assert "use that wording rather than paraphrasing it" in tasks_text
     assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in tasks_text
     assert "Exact week bands come from persisted Season phase authority and must be copied, not recomputed from S5." in tasks_text
     assert "canonical `quality_intent` is `Stabilization`" in tasks_text
@@ -3610,6 +3611,7 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
     assert "allowed_intensity_domains" in structure_skill_text
     assert "do not add `NONE`" in structure_skill_text
     assert "must not contain runtime/process rules" in structure_skill_text
+    assert "use that wording rather than paraphrasing it" in structure_skill_text
     assert "Invalid examples:" in structure_skill_text
     assert "must not include `NONE`" in writer_skill_text
     assert "weekly_kj_bands` must be copied from injected deterministic phase authority" in writer_skill_text
@@ -3617,9 +3619,11 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
     assert "Preview may use `NONE` only on `REST` or fixed non-training days" in preview_skill_text
     assert "Phase Finalizer Authority Freeze" in finalizer_prompt_text
     assert "do not serialize runtime/process/governance rules into `structure.upstream_intent.constraints`" in finalizer_prompt_text
+    assert "keep that wording instead of paraphrasing it" in finalizer_prompt_text
     assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in finalizer_prompt_text
     assert "Compact authority-freeze example" in finalizer_skill_text
     assert "keep runtime/process/governance rules out of `structure.upstream_intent.constraints`" in finalizer_skill_text
+    assert "keep that wording instead of paraphrasing it" in finalizer_skill_text
     assert "use tools only as fallback for genuinely missing authority fields" in finalizer_skill_text
 
 

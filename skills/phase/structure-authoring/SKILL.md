@@ -38,6 +38,7 @@ Required structure rules:
 - `load_ranges.source` must use the stored phase-guardrails filename, not a guessed name.
 - `upstream_intent.constraints` must include inherited planning constraints only and use season/global wording verbatim where required.
 - `upstream_intent.constraints` must not contain runtime/process rules, authority-copy reminders, validation discipline, or preview-only semantics.
+- When injected season/global wording exists, use that wording rather than paraphrasing it.
 - Valid examples:
   - `Fixed rest days are Monday and Friday.`
   - `Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.`

@@ -1,15 +1,15 @@
 ---
-Version: 1.0
-Status: Implemented
-Last-Updated: 2026-05-20
+Version: 1.1
+Status: Updated
+Last-Updated: 2026-06-10
 Owner: Planning Runtime
 ---
 # FEAT: Phase Structure Constraint Projection
 
 * **ID:** FEAT_phase_structure_constraint_projection
-* **Status:** Implemented
+* **Status:** Updated
 * **Owner/Area:** Planning Runtime / Phase Structure
-* **Last-Updated:** 2026-05-20
+* **Last-Updated:** 2026-06-10
 * **Related:** `src/rps/agents/output_normalization.py`, `src/rps/workspace/guarded_store.py`, `doc/specs/features/FEAT_phase_guardrails_season_constraint_projection.md`
 
 ---
@@ -44,6 +44,8 @@ Owner: Planning Runtime
 * [x] Deterministically project missing season constraints into `upstream_intent.constraints`.
 * [x] Deterministically align `load_ranges.weekly_kj_bands` and `load_ranges.source` with stored `PHASE_GUARDRAILS`.
 * [x] Keep the fix runtime-owned and exact-range aware.
+* [x] Shift-left canonicalization of `upstream_intent.constraints` to phase bundle normalization before writer handoff.
+* [x] Restrict the field to inherited planning facts plus narrow residual external constraints.
 
 **Non-Goals**
 
@@ -64,11 +66,15 @@ Owner: Planning Runtime
 * Final `PHASE_STRUCTURE` normalization also canonicalizes `upstream_intent.constraints` against deterministic upstream fact groups:
   * one canonical injected sentence per known season/global fact
   * no surviving writer paraphrase for the same fact
-  * exact residual free-text constraints preserved once when they do not map to a deterministic upstream fact
+  * exact residual external planning constraints preserved once when they do not map to a deterministic upstream fact
+  * runtime/process/governance reminders removed
+* Phase bundle normalization now applies the same canonicalization before writer handoff:
+  * primary source is the loaded `season_plan`
+  * if the loaded `season_plan` is unavailable, normalization strips process-rule entries and exact duplicates only
+  * no canonical inherited wording is invented from free prose when season authority is absent at that boundary
 * Stored constraint order is stabilized as:
   * availability/logistics
   * risk/recovery resilience
-  * phase-local residual directives
   * event windows/anchors
   * remaining residual exact strings
 
@@ -88,19 +94,25 @@ Owner: Planning Runtime
 **Components / Modules**
 
 * `src/rps/agents/output_normalization.py`
-  * add a deterministic `PHASE_STRUCTURE` normalization helper
+  * add a shared deterministic phase-structure constraint canonicalizer
+* `src/rps/agents/crewai_backend.py`
+  * apply phase-structure constraint canonicalization at bundle normalization time
 * `src/rps/workspace/guarded_store.py`
   * apply structure normalization once the exact-range guardrails payload/version is loaded
 * `tests/test_output_normalization.py`
-  * verify constraint projection and exact `load_ranges.source` rewrite
+  * verify constraint projection, residual filtering, and exact `load_ranges.source` rewrite
+* `tests/test_crewai_runtime.py`
+  * verify active-file frontloading and bundle-stage canonicalization
 * `tests/test_guarded_store.py`
   * verify a paraphrased structure payload is repaired and accepted
 
 **Data flow**
 
-* Inputs: draft `PHASE_STRUCTURE`, loaded `SEASON_PLAN`, loaded exact-range `PHASE_GUARDRAILS`
-* Processing: append constraints and overwrite guardrails-owned load metadata
-* Outputs: store-ready `PHASE_STRUCTURE`
+* Inputs: draft phase bundle structure payload, loaded `SEASON_PLAN`, loaded exact-range `PHASE_GUARDRAILS`
+* Processing:
+  * bundle normalization canonicalizes and freezes `upstream_intent.constraints`
+  * final structure normalization re-applies the same deterministic canonicalization and overwrites guardrails-owned load metadata
+* Outputs: writer-ready structure bundle and store-ready `PHASE_STRUCTURE`
 
 **Schema / Artefacts**
 
@@ -134,13 +146,13 @@ Owner: Planning Runtime
 
 **Required refactoring**
 
-* Factor phase-structure repair into a shared normalizer helper
+* Factor phase-structure constraint repair into a shared normalizer helper used by bundle and final normalization
 
 ---
 
 ## 6) Options & Recommendation
 
-### Option A — Normalize inside guarded-store with loaded guardrails
+### Option A — Normalize only inside guarded-store / final artifact path
 
 **Summary**
 
@@ -149,14 +161,15 @@ Owner: Planning Runtime
 **Pros**
 
 * Uses authoritative runtime data
-* Avoids guessing filenames upstream
 * Keeps validation strict
 
 **Cons**
 
-* Slightly more guarded-store mutation logic
+* Fixes too late
+* Writer still sees noisy structure constraints
+* Does not shift left
 
-### Option B — Keep retrying the writer prompt
+### Option B — Shift canonicalization to bundle normalization and keep final normalization as safety net
 
 **Summary**
 
@@ -164,27 +177,33 @@ Owner: Planning Runtime
 
 **Pros**
 
-* Smaller code change
+* Moves correction to the earliest common Phase boundary
+* Writer receives pre-cleaned constraints
+* Final normalization still guarantees stored correctness
 
 **Cons**
 
-* Still brittle
-* Wrong ownership for exact runtime filename
+* Slightly more shared normalization logic
 
 ### Recommendation
 
-* Choose: Option A
-* Rationale: the filename and exact guardrails payload are runtime facts, so the runtime should own them.
+* Choose: Option B
+* Rationale: this closes the defect as far left as possible without inventing truth when season authority is absent.
 
 ---
 
 ## 7) Acceptance Criteria (Definition of Done)
 
 * [x] Missing season constraints are appended to `upstream_intent.constraints`.
+* [x] Process/runtime/governance sentences are removed from `upstream_intent.constraints`.
+* [x] Same-fact paraphrases collapse to canonical inherited wording.
+* [x] Bundle normalization canonicalizes the field before writer handoff.
 * [x] `load_ranges.weekly_kj_bands` matches stored `PHASE_GUARDRAILS`.
 * [x] `load_ranges.source` matches `phase_guardrails_<version>.json`.
-* [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
-* [x] Validation passes: `pytest -q tests/test_output_normalization.py tests/test_guarded_store.py`
+* [ ] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
+* [ ] Validation passes: `./scripts/run_lint.sh`
+* [ ] Validation passes: `./scripts/run_typecheck.sh`
+* [ ] Validation passes: targeted `pytest` for runtime and output normalization
 
 ---
 
@@ -219,7 +238,7 @@ Owner: Planning Runtime
 **Diagnostics**
 
 * guarded-store persistence errors for `PHASE_STRUCTURE`
-* regression tests covering exact `source` rewrite
+* regression tests covering bundle-stage and final-stage canonicalization
 
 ---
 

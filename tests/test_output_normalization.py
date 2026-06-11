@@ -406,7 +406,6 @@ def test_normalize_phase_structure_projects_constraints_and_guardrails_source() 
         "Weekly availability is bounded by min 10.5 h, typical 14.0 h, max 17.5 h.",
         "Moderate fatigue accumulation may blunt one or two key weeks if recovery is underestimated.",
         "Respect the locked rest days as hard recovery boundaries.",
-        "Do not widen the phase beyond 2026-21--2026-23.",
         "2026-15 B Brevet 200 km Toelzer-Land-Runde",
     ]
     assert normalized["data"]["load_ranges"]["weekly_kj_bands"] == [
@@ -495,7 +494,31 @@ def test_normalize_phase_structure_canonicalizes_paraphrased_constraints_by_know
         "Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding.",
         "Monday and Friday are fixed no-ride days.",
         "Business travel has previously caused missed sessions, so the scenario needs some resilience without becoming overly conservative.",
-        "Do not escalate to VO2MAX; it is forbidden for this season.",
+    ]
+
+
+def test_normalize_phase_structure_upstream_constraints_without_season_plan_strips_process_rules_and_only_exact_dedupes() -> None:
+    document = {
+        "meta": {"artifact_type": "PHASE_STRUCTURE", "trace_upstream": []},
+        "data": {
+            "upstream_intent": {
+                "constraints": [
+                    "Travel logistics may occasionally compress the available weekend window.",
+                    "Travel logistics may occasionally compress the available weekend window.",
+                    "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+                    "Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.",
+                    "Use the injected role-week banding exactly.",
+                ]
+            }
+        },
+    }
+
+    normalized = normalize_phase_structure_document(document, season_plan_document=None)
+
+    assert normalized["data"]["upstream_intent"]["constraints"] == [
+        "Travel logistics may occasionally compress the available weekend window.",
+        "Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.",
+        "Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.",
     ]
 
 

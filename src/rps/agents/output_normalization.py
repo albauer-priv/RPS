@@ -306,6 +306,54 @@ _PHASE_STRUCTURE_PROCESS_RULE_MARKERS = (
     "exact week bands",
     "injected role-week banding",
 )
+_PHASE_STRUCTURE_RESIDUAL_EXTERNAL_MARKERS = (
+    "availability",
+    "available",
+    "hours",
+    "hour",
+    "weekday",
+    "weekend",
+    "window",
+    "windows",
+    "travel",
+    "weather",
+    "indoor",
+    "trainer",
+    "logistics",
+    "rest day",
+    "rest days",
+    "fatigue",
+    "recovery",
+    "event",
+    "brevet",
+    "ride",
+    "rides",
+    "route",
+    "terrain",
+    "fueling",
+    "pacing",
+    "duration",
+)
+_PHASE_STRUCTURE_INTERPRETIVE_MARKERS = (
+    "hold the line",
+    "mini-reset rhythm",
+    "load/reload rhythm",
+    "preserve quality across",
+    "remain resilient to continuity breaks",
+    "active horizon includes",
+)
+_PHASE_STRUCTURE_IMPERATIVE_LEADS = (
+    "use ",
+    "keep ",
+    "hold ",
+    "preserve ",
+    "maintain ",
+    "align ",
+    "plan ",
+    "rewrite ",
+    "re-fetch ",
+    "do not ",
+)
 
 
 def _is_phase_structure_process_rule(value: object) -> bool:
@@ -323,6 +371,22 @@ def _is_phase_structure_process_rule(value: object) -> bool:
     if {"widen", "legality", "scenario", "eligibility"} <= tokens:
         return True
     return {"operational", "none", "preview"} <= tokens
+
+
+def _is_phase_structure_residual_constraint(value: object) -> bool:
+    """Return True when a non-canonical sentence still looks like a real external planning constraint."""
+
+    text = str(value or "").strip()
+    if not text:
+        return False
+    lowered = text.lower()
+    if any(lowered.startswith(prefix) for prefix in _PHASE_STRUCTURE_IMPERATIVE_LEADS):
+        return False
+    if any(marker in lowered for marker in _PHASE_STRUCTURE_INTERPRETIVE_MARKERS):
+        return False
+    if _is_phase_structure_process_rule(text):
+        return False
+    return any(marker in lowered for marker in _PHASE_STRUCTURE_RESIDUAL_EXTERNAL_MARKERS)
 
 
 def _phase_structure_constraint_groups_from_season_plan(
@@ -386,6 +450,8 @@ def _canonicalize_phase_structure_constraints(
         if not token or token in seen_exact:
             continue
         seen_exact.add(token)
+        if signature is None and not _is_phase_structure_residual_constraint(item):
+            continue
         if signature is None or signature[0] != "event_window":
             residual_phase.append(item)
         else:
