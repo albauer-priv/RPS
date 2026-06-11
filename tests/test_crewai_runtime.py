@@ -14,6 +14,7 @@ import pytest
 
 from rps.agents import runtime as agent_runtime
 from rps.agents.crewai_backend import (
+    _SEASON_PLANNING_TASKS,
     _TASK_BLUEPRINT_BY_AGENT_TASK,
     _build_crewai_task,
     _build_internal_task_description,
@@ -5234,6 +5235,25 @@ def test_early_planning_tasks_consume_evidence_alignment_context_before_synthesi
         assert "resolved previous-week evidence" in task.description
         assert "evidence-alignment implications" in task.description
         assert "must not rewrite authority" in task.description
+
+
+def test_season_planning_task_order_places_evidence_alignment_before_its_consumers() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+    seen: set[str] = set()
+    for task_name in _SEASON_PLANNING_TASKS:
+        blueprint = blueprints[task_name]
+        missing = [item for item in blueprint.context_names if item not in seen]
+        assert missing == [], f"{task_name} has unresolved early contexts: {missing}"
+        seen.add(task_name)
+
+    evidence_idx = _SEASON_PLANNING_TASKS.index("season_evidence_alignment")
+
+    assert evidence_idx > _SEASON_PLANNING_TASKS.index("season_historical_context_review")
+    assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_macrocycle_draft")
+    assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_load_corridor_draft")
+    assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_progression_review")
+    assert evidence_idx < _SEASON_PLANNING_TASKS.index("season_plan_finalize")
 
 
 def test_phase_s5_band_guardrail_rejects_explicit_s5_mismatch() -> None:

@@ -76,6 +76,7 @@ Owner: Planning / Orchestration
   * previous-week `ACTIVITIES_TREND`
   * early week evidence-alignment output
 * Phase and Week planning abort if the required previous-week report cannot be created.
+* For Season, `season_evidence_alignment` is consumed as a real early CrewAI task context by the first synthesis tasks; the Season task order must therefore keep `season_evidence_alignment` before `season_macrocycle_draft`, `season_load_corridor_draft`, `season_progression_review`, and `season_plan_finalize`.
 
 **UI impact**
 
@@ -107,6 +108,7 @@ Owner: Planning / Orchestration
 * `context_snapshots.py`: accept and persist `des_report` and `evidence_alignment` prompt blocks plus source versions.
 * `week_engine.py`: consume exact previous-week evidence and early evidence-alignment output in the deterministic week planner.
 * `config/crewai/*`, `prompts/agents/*`, `skills/*`: active task/skill/prompt frontloading.
+* `agents/crewai_backend.py`: season planning task order must satisfy the builder rule that task `context` can only reference earlier tasks.
 
 **Data flow**
 
