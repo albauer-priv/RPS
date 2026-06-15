@@ -1,7 +1,7 @@
 version: 2
 library_type: applied_sources
 curation_schema_version: '1'
-generated_at: '2026-06-08T09:05:36.230007Z'
+generated_at: '2026-06-15T10:35:27.118373Z'
 entries:
 - id: dur_app_001
   source_kind: applied
