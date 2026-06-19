@@ -193,10 +193,21 @@ Use `.clinerules.d/` as supporting checklists:
 - `30-ui-streamlit.md`
 - `40-validation-release.md`
 - `50-change-impact.md`
+- `60-test-runtime-env.md`
 
 When touching agent/runtime/prompt/skill/schema areas, read the relevant file before editing.
 
-## 11) Default working style
+## 11) Context window management
+
+As sessions progress, context window usage grows. Manage it proactively:
+
+- When context window exceeds ~50% usage, prioritize reading only targeted sections of files.
+- Use `start_line`/`end_line` parameters for large files instead of reading the entire file.
+- Summarize findings in `task_progress` notes rather than keeping full file text in conversational memory.
+- For long multi-phase tasks, scope each session to one coherent deliverable.
+- If you encounter "result missing" or context overflow errors, the session is at capacity—complete current work and recommend starting a fresh session for remaining tasks.
+
+## 12) Default working style
 
 - Prefer small, architecture-aligned changes over clever shortcuts.
 - Preserve traceability and explicit ownership.

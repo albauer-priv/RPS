@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [0.20.27] - 2026-06-19
+
+### Added
+- Added comprehensive workflow-hardening rules to `.clinerules` and `.clinerules.d/`: new `60-test-runtime-env.md` defines canonical test invocation patterns (pytest with `PYTHONPATH=src`, targeted smoke runs, `.env` requirements), git-hygiene rules now mandate `--no-pager` usage and safe non-interactive patterns, iterative-fix discipline now requires reproducing tests before bug fixes and guards against trial-and-error commit loops, and context-window management rules now guide proactive session scoping when memory usage exceeds ~50%.
 - Added `season_bundle_audit_slot_integrity` as a dedicated Season-finalizer guardrail: Season planning now explicitly preserves canonical audit-object ownership for `constraints[]` and `load_governance[]`, active finalizer task/prompt/skill guidance forbids row-shaped finding drift in those slots, runtime contract-context freezing now injects audit-slot ownership into Season finalize, and new runtime regressions lock the guardrail plus freeze behavior.
 - Added shift-left stabilization for `season_plan_finalize`: Season planning now produces `phase_blueprints` in a dedicated early `season_phase_blueprint_draft` task, `season_plan_finalize` consumes that draft as formal context instead of owning first structural authorship, and the Season finalizer boundary now decodes raw/fenced JSON-object output plus canonicalizes singular audit-slot aliases before strict guardrail and repo-owned bundle validation continue to enforce real missing-structure failures.
 - Added a shift-left Season-finalizer bundle-shape hardening pass: `season_plan_finalize` now frontloads its canonical top-level bundle contract in injected runtime context, task-scoped pre-guardrail normalization projects known singular audit-slot aliases into canonical `constraints[]` / `load_governance[]` lists before guardrail evaluation, and the raw-boundary fallback coercion accepts the same alias drift without weakening strict failure for genuinely missing structural Season fields.

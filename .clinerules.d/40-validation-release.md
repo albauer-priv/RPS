@@ -7,7 +7,17 @@ Unless the user explicitly narrows scope, run:
 - `python3 -m py_compile $(git ls-files '*.py')`
 - `./scripts/run_lint.sh`
 - `./scripts/run_typecheck.sh`
-- one relevant smoke run
+- one relevant smoke run (see `.clinerules.d/60-test-runtime-env.md` for invocation patterns)
+
+## Iterative-fix discipline
+
+Prevent trial-and-error fix loops:
+
+- **Before fixing a bug, add a reproducing test first.**
+- If you make more than 2 fix commits in the same file/area in one session, **STOP** and do explicit root-cause analysis before the next commit.
+- Do not commit "fix: repair X" without at least one test that would have caught the original bug.
+- Fix commits without a repro test need an explicit note in the commit message explaining why no test is possible.
+- Prefer one deliberate fix with test over multiple iterative trial commits.
 
 ## Schema / contract changes
 
@@ -17,12 +27,27 @@ Also run as needed:
 - `python3 scripts/bundle_schemas.py`
 - relevant artifact validation / output validation
 
+## CHANGELOG discipline
+
+Format follows [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/):
+
+- Use `## [version] - YYYY-MM-DD` format for version sections
+- Never use raw date headers (`## 2026-05-19`) or unbracketed headers (`# Unreleased`)
+- Only one `## [Unreleased]` section, always at the top
+- `[Unreleased]` stays empty except for truly uncommitted changes
+- When tagging a version:
+  1. Rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD`
+  2. Add a new empty `## [Unreleased]` section at the top
+- Never embed version-bump decisions inside `### Changed` bullet text
+- Entries must be under `### Added`, `### Changed`, `### Fixed`, or `### Removed` only
+- No inline prose sections, no raw commit dumps
+
 ## Commit / push discipline
 
 Before commit or push:
 
 - check whether a SemVer version bump is required
-- update `CHANGELOG.md`
+- update `CHANGELOG.md` per the CHANGELOG discipline rules above
 - record if no version bump was needed and why
 
 Before creating a non-WIP commit intended for push:

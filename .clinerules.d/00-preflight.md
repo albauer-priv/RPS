@@ -17,6 +17,18 @@ Use this checklist for any non-trivial task.
 - Summarize existing local changes before editing overlapping files.
 - If scope overlaps with local changes, clarify preserve/revert strategy first.
 
+## Git command hygiene
+
+Always use safe, non-interactive git patterns:
+
+- **Always use `--no-pager`** for all git commands to prevent hanging pager sessions.
+- Use `git --no-pager diff --stat HEAD` to understand the current change surface.
+- Use `git --no-pager show <hash> --stat` to inspect recent commits before editing overlapping files.
+- Use `git stash` before risky multi-file changes when uncommitted work exists.
+- Never use interactive git commands (`git rebase -i`, `git add -p`) in automated flows.
+- Pipe long outputs through `head`: `git --no-pager show <hash> | head -100`
+- For multi-file diffs, use `--stat` first, then targeted `git show <hash> -- path/to/file` for details.
+
 ## Scope classification
 
 Classify the task before editing:
