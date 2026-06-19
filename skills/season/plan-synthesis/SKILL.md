@@ -36,12 +36,15 @@ Audit-slot discipline:
 - season final output uses `constraints[]` and `load_governance[]` only
 - singular top-level `constraint_audit` and `load_governance_audit` are invalid final manager output keys
 - `phase_blueprints` are produced first by the early structural draft step and must be preserved and consolidated by the finalizer, not invented from scratch there
+- `constraints[]` are produced first by `season_constraint_review`, `season_historical_context_review`, and `season_kpi_guidance_review` and must be preserved as canonical audit objects
+- `load_governance[]` are produced first by `season_load_corridor_draft` and `season_progression_review` and must be preserved as canonical governance audit objects
 - `constraints[]` contains constraint-audit entries only.
 - `load_governance[]` contains governance-audit entries only.
 - `cadence_authority_preserved` belongs only in `load_governance[]`.
 - `durability_first_respected` belongs only in `load_governance[]`.
 - do not place governance audit items in `constraints[]`
 - do not collapse both audit families into one list
+- do not flatten final Season audit slots into row-shaped findings such as `constraint_type`, `status`, or `summary`
 
 Method:
 1. Pass 1 - structural draft: preserve event hierarchy and macrocycle logic while assembling a structurally coherent candidate bundle.

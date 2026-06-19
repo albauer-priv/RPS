@@ -329,6 +329,17 @@ _SEASON_PLANNING_TASKS: tuple[str, ...] = (
     "season_plan_finalize",
 )
 
+_SEASON_CONSTRAINT_AUDIT_TASKS: tuple[str, ...] = (
+    "season_constraint_review",
+    "season_historical_context_review",
+    "season_kpi_guidance_review",
+)
+
+_SEASON_LOAD_GOVERNANCE_TASKS: tuple[str, ...] = (
+    "season_load_corridor_draft",
+    "season_progression_review",
+)
+
 _SEASON_REVIEW_TASKS: tuple[str, ...] = (
     "season_governance_review",
     "season_constraints_review",
@@ -1891,6 +1902,12 @@ def _contract_context_blocks_for_task(*, crew_name: str, task_name: str) -> list
                 "`phase_blueprints` are produced earlier by `season_phase_blueprint_draft` and must be preserved here."
             )
             blocks.append(
+                "Season audit-slot ownership: preserve and consolidate canonical `constraints[]` from "
+                "`season_constraint_review`, `season_historical_context_review`, and `season_kpi_guidance_review`, "
+                "and canonical `load_governance[]` from `season_load_corridor_draft` and `season_progression_review`. "
+                "Do not flatten them into row-shaped findings such as `constraint_type`, `status`, or `summary`."
+            )
+            blocks.append(
                 "Season finalization rule: consume these deterministic contracts directly. "
                 "Do not search the workspace for non-persisted phase-load recommendation artifacts."
             )
@@ -2368,6 +2385,54 @@ def _extract_structured_output(
         f"CrewAI task '{task_name}' did not produce a typed pydantic output."
         + (f" Raw output: {raw}" if raw else "")
     )
+
+
+def _freeze_season_bundle_audit_slots(
+    final_output: Any,
+    *,
+    result: object,
+    tasks_by_name: dict[str, object],
+    task_blueprints: dict[str, Any],
+) -> Any:
+    """Project canonical Season audit slots from typed specialist outputs onto the final bundle."""
+
+    if not isinstance(final_output, dict):
+        return final_output
+
+    frozen = dict(final_output)
+
+    def _collect(task_names: tuple[str, ...]) -> list[JsonMap]:
+        collected: list[JsonMap] = []
+        for task_name in task_names:
+            task_obj = tasks_by_name.get(task_name)
+            task_blueprint = task_blueprints.get(task_name)
+            if task_obj is None or task_blueprint is None:
+                continue
+            execution_policy = _as_map(getattr(task_blueprint, "execution_policy", {}))
+            output_mode = str(execution_policy.get("output_mode") or "pydantic")
+            try:
+                structured = _extract_structured_output(
+                    result,
+                    task_obj,
+                    task_name=task_name,
+                    output_mode=output_mode,
+                )
+            except Exception:
+                continue
+            mapping = structured.model_dump() if hasattr(structured, "model_dump") else structured
+            if isinstance(mapping, dict):
+                collected.append(mapping)
+        return collected
+
+    constraints = _collect(_SEASON_CONSTRAINT_AUDIT_TASKS)
+    if constraints:
+        frozen["constraints"] = constraints
+    load_governance = _collect(_SEASON_LOAD_GOVERNANCE_TASKS)
+    if load_governance:
+        frozen["load_governance"] = load_governance
+    frozen.pop("constraint_audit", None)
+    frozen.pop("load_governance_audit", None)
+    return frozen
 
 
 def _classify_season_audit_item(item: JsonMap) -> str:
@@ -2923,12 +2988,20 @@ def _execute_crewai_multiagent_crew(
         return _parse_json_document(raw)
     policy = build_task_guardrail_kwargs(task_blueprints[final_task_name], bundle.task_policies)
     output_mode = str(policy.get("_resolved_output_mode", "pydantic"))
-    return _extract_structured_output(
+    structured_output = _extract_structured_output(
         result,
         final_task_obj,
         task_name=final_task_name,
         output_mode=output_mode,
     )
+    if final_task_name == "season_plan_finalize":
+        structured_output = _freeze_season_bundle_audit_slots(
+            structured_output,
+            result=result,
+            tasks_by_name=tasks_by_name,
+            task_blueprints=task_blueprints,
+        )
+    return structured_output
 
 
 def _build_internal_task_description(

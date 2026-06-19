@@ -1,7 +1,7 @@
 ---
 Version: 1.0
 Status: Updated
-Last-Updated: 2026-06-09
+Last-Updated: 2026-06-10
 Owner: Product
 ---
 # Feature Backlog
@@ -72,23 +72,25 @@ flowchart TD
 
 When resuming work, follow this order so context stays consistent:
 
-1) Read `AGENTS.md` (rules, doc placement, feature-first workflow).
-2) Review [doc/specs/features/FEAT_user_inputs_modular.md](/doc/specs/features/FEAT_user_inputs_modular.md) for scope and current status.
-3) Verify current backlog order and dependencies in this file.
-4) Check repo for in-flight changes:
+1) Read `.clinerules` for operative Cline rules.
+2) Read `AGENTS.md` as the agent entry/source map.
+3) Review [doc/specs/features/FEAT_user_inputs_modular.md](/doc/specs/features/FEAT_user_inputs_modular.md) for scope and current status.
+4) Verify current backlog order and dependencies in this file.
+5) Check repo for in-flight changes:
    - `git status`
    - recently modified files in `src/rps/ui/pages/athlete_profile/` and `specs/schemas/`
-5) Implement the next backlog item only after the related feature doc is **Reviewed/Approved**.
-6) Keep docs in sync:
+6) Implement the next backlog item only after the related feature doc is **Reviewed/Approved**.
+7) Keep docs in sync:
    - [doc/ui/ui_spec.md](/doc/ui/ui_spec.md), [doc/architecture/workspace.md](/doc/architecture/workspace.md), [doc/overview/artefact_flow.md](/doc/overview/artefact_flow.md)
    - update [doc/README.md](/doc/README.md) index if files move
-7) Run required checks:
+8) Run required checks:
    - `python -m py_compile $(git ls-files '*.py')`
    - one relevant smoke run (UI/CLI)
-8) Update `CHANGELOG.md`, then commit and push.
+9) Update `CHANGELOG.md`, then commit and push.
 
 ## Deferred / Ideas
 
+- [ ] Full-run observation follow-up — before fixing the remaining Phase artifact quality gaps, rerun one complete Season→Phase→Week chain in the real runtime and analyze the resulting artefacts for: (a) canonical Season lineage `run_id` quality in Phase `trace_upstream`, (b) empty inherited `selection_rationale`, and (c) duplicated / partially rephrased `PHASE_STRUCTURE.upstream_intent.constraints`. Treat this as a post-run analysis gate, not an immediate code patch.
 - [ ] Manual smoke pass for `Workout Editor` — verify preview/apply flows for move, start-time change, and workout-text replacement against a real athlete week in the UI.
 - [ ] FEAT_workout_editor_swap_days — support bounded swap of two occupied workout days instead of move-to-empty-day only.
 - [ ] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.

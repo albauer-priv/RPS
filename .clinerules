@@ -1,0 +1,205 @@
+# RPS Cline Rules
+
+## Purpose and scope
+
+These rules define the operative working behavior for Cline in this repository.
+
+Canonical system truth remains in:
+
+- `doc/architecture/`
+- `doc/adr/`
+- `doc/specs/`
+- `doc/overview/feature_backlog.md`
+- validated workspace artefacts and code-owned deterministic context
+
+Use these rules whenever working in this repository, especially for CrewAI runtime, prompts, skills, tasks, orchestrators, guardrails, schemas, and artifact contracts.
+
+## 1) Required preflight for non-trivial work
+
+Before implementation:
+
+1. Read `doc/overview/feature_backlog.md`.
+2. Read `AGENTS.md` as the agent entry/source map.
+3. Read `doc/architecture/agents.md`.
+4. Read relevant ADRs.
+5. Read relevant feature specs.
+
+Always also check:
+
+- `git status -sb`
+- `git --no-pager log --oneline -5`
+
+If uncommitted changes exist, summarize them and do not edit overlapping files until preserve/revert strategy is clear.
+
+For detailed preflight guidance, see `.clinerules.d/00-preflight.md`.
+
+## 2) Feature-first workflow
+
+Behavior-affecting changes require a feature spec first.
+
+- Use `doc/specs/features/FEAT_<slug>.md`.
+- Use `doc/specs/features/FEAT_TEMPLATE.md`.
+- Update or create an ADR when architecture, persistence, schema strategy, cross-cutting contracts, or authority/orchestration boundaries change.
+
+Before implementation, do a plan audit:
+
+1. Are all affected modules/contracts/tests/docs included?
+2. Is the plan executable without inventing missing behavior?
+3. Does it conform to active ADRs and authority boundaries?
+
+For details, see `.clinerules.d/10-docs-specs-adr.md`.
+
+## 3) Authority and runtime boundaries
+
+Respect the canonical authority map in `doc/architecture/agents.md`.
+
+Non-negotiables:
+
+- `Season-Scenario-Agent` is advisory only.
+- `Season-Planner` is the first binding season authority.
+- `Phase-Architect` owns phase artifacts only.
+- `Week-Planner` owns the week plan only.
+- `Performance-Analyst` is diagnostic only.
+- `Coach` is an orchestration surface, not a planning artifact authority.
+- Internal specialists do not create new persisted artifact authorities.
+
+## 4) Planning / review / writer discipline
+
+Keep the stage model explicit:
+
+- Planning / finalize owns domain reasoning and semantic completion.
+- Review owns audit, approval/rejection, warnings, and bounded replan requests.
+- Writer owns serialization and deterministic final projection only.
+
+Hard rules:
+
+- Do not move planner-owned decisions into review.
+- Do not make review a second planner.
+- Do not make writer a semantic repair stage.
+- Catch semantic blockers in finalize or review, not first in writer.
+- Writer may still overwrite code-owned fields deterministically where architecture requires it.
+
+## 5) Deterministic truth stays code-owned
+
+When code-owned context exists, treat it as runtime truth.
+
+Examples include:
+
+- `src/rps/planning/load_bands.py`
+- `src/rps/planning/deterministic_context.py`
+- runtime-built guardrail context
+- workspace metadata and version keys
+
+Do not recompute, widen, or override code-owned truth in prompts, skills, or YAML config.
+
+## 6) Prompt, skill, and task ownership
+
+- Each agent gets exactly one method skill package.
+- Crew-level skills are operational cross-cutting helpers only.
+- Active planning logic must live in the owning prompt/skill/task layer.
+- Writer prompts serialize; they do not re-plan.
+- Review prompts audit; they do not invent planning logic.
+
+For active Season / Phase / Week files:
+
+- operative rules must be locally usable
+- variable-like terms must be locally defined, mapped to injected deterministic/runtime truth, or explicitly forbidden
+- thin “see reference X” wrappers are not sufficient
+
+For details, see `.clinerules.d/20-agent-runtime.md`.
+
+## 7) UI and Streamlit minimum rules
+
+- UI pages stay thin and delegate to orchestrator/service helpers.
+- UI pages must not call agents directly.
+- No `st.*` calls from worker threads.
+- Use `st.plotly_chart(...)` only for charts.
+- For UI changes, add or update `streamlit.testing.v1.AppTest` coverage under `tests/`.
+
+For details, see `.clinerules.d/30-ui-streamlit.md`.
+
+## 8) Validation and completion expectations
+
+Unless the user explicitly narrows scope, run before completion:
+
+- `python3 -m py_compile $(git ls-files '*.py')`
+- `./scripts/run_lint.sh`
+- `./scripts/run_typecheck.sh`
+- one relevant smoke run
+
+For schema/contract changes, also run the relevant schema validation/bundling commands.
+
+Before commit/push:
+
+- check whether a SemVer version bump is required
+- update `CHANGELOG.md`
+- record if no version bump was needed and why
+
+Before creating a non-WIP commit intended for push:
+
+- review all documentation affected by the implementation
+- update canonical docs so they match the implemented behavior
+- if no documentation update is needed, record why
+- do not commit implementation changes that knowingly leave affected documentation stale
+
+For non-WIP commits intended for push:
+
+- make an explicit SemVer decision before the commit is finalized for push
+- if a version bump is required, update the canonical version file(s), update `CHANGELOG.md`, create a Git tag for the new version, and push both commit and tag together
+- if no version bump is required, record why no version bump/tag was needed before push
+
+Do not tag without a version bump.
+Do not require a version bump or tag for purely local WIP commits.
+
+For details, see `.clinerules.d/40-validation-release.md`.
+
+## 9) Runtime memory vs local developer handoff
+
+RPS runtime memory already exists and must remain architecture-conformant.
+
+Authoritative runtime truth lives in:
+
+- validated workspace artifacts
+- code-owned snapshots and deterministic context
+- runtime-owned metadata/state where defined by architecture
+
+Do not introduce generic runtime `memory.md`, `memory.json`, or similar files as runtime truth.
+
+Local `.developer_handoff/` notes are allowed only as:
+
+- local
+- optional
+- non-authoritative
+- development-time only
+
+They must not define or override runtime behavior, architecture decisions, schemas, artifact contracts, planning rules, selected versions, pending operations, or workspace truth.
+
+For non-trivial development tasks, if `.developer_handoff/` exists, keep it current:
+
+- update it at task start
+- update it after each completed meaningful task_progress milestone
+- update it when scope, risks, blockers, or next steps change
+- update it before completion
+
+These updates must summarize and link only. They must not become a canonical source of runtime truth, product behavior, architecture decisions, schemas, artifact contracts, or workspace state.
+
+## 10) Area-specific rule files
+
+Use `.clinerules.d/` as supporting checklists:
+
+- `00-preflight.md`
+- `10-docs-specs-adr.md`
+- `20-agent-runtime.md`
+- `30-ui-streamlit.md`
+- `40-validation-release.md`
+- `50-change-impact.md`
+
+When touching agent/runtime/prompt/skill/schema areas, read the relevant file before editing.
+
+## 11) Default working style
+
+- Prefer small, architecture-aligned changes over clever shortcuts.
+- Preserve traceability and explicit ownership.
+- Keep outputs grounded in canonical docs, ADRs, and runtime-owned truth.
+- Prefer linking to canonical docs over duplicating them.
+- If in doubt, ask clarifying questions instead of inventing missing behavior.
