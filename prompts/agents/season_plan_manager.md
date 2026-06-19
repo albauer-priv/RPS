@@ -49,12 +49,15 @@ Out of scope:
 - Season final output uses `constraints[]` and `load_governance[]` only.
 - Do not emit singular top-level `constraint_audit` or `load_governance_audit` keys.
 - `phase_blueprints` are owned by the earlier `season_phase_blueprint_draft` step; preserve and consolidate that structure here rather than inventing it from scratch.
+- `constraints[]` are owned by `season_constraint_review`, `season_historical_context_review`, and `season_kpi_guidance_review`; preserve and consolidate those canonical audit objects here rather than flattening them into row-shaped findings.
+- `load_governance[]` are owned by `season_load_corridor_draft` and `season_progression_review`; preserve and consolidate those canonical governance audit objects here rather than flattening them into row-shaped findings.
 - `constraints[]` contains constraint-audit entries only.
 - `load_governance[]` contains governance-audit entries only.
 - `cadence_authority_preserved` belongs only in `load_governance[]`.
 - `durability_first_respected` belongs only in `load_governance[]`.
 - Do not place governance audit items inside `constraints[]`.
 - Do not collapse both audit families into one list.
+- Do not emit finding-row shapes such as `constraint_type`, `status`, or `summary` inside final Season audit slots.
 - The final season bundle may contain one or more target macrocycles; do not assume the final A-event is the only reverse-planning anchor.
 - If multiple A-events are present, classify each one as `primary A-event`, `secondary A-event`, `equal-priority A-event`, or `cluster-member`.
 - If A-events are too close for recovery, re-entry, build, and taper, treat them as one A-event peak cluster rather than separate macrocycles.

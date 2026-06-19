@@ -26,6 +26,7 @@ from rps.agents.crewai_backend import (
     _execute_crewai_multiagent_crew,
     _extract_authoritative_runtime_blocks,
     _extract_structured_output,
+    _freeze_season_bundle_audit_slots,
     _normalize_final_season_plan_semantics,
     _normalize_publication_link,
     _phase_bundle_finalize_authority_freeze_block,
@@ -76,6 +77,7 @@ from rps.crewai_runtime.guardrails import (
     phase_weeks_match_range,
     resolve_task_policy,
     review_decision_integrity,
+    season_bundle_audit_slot_integrity,
     season_bundle_integrity,
     season_bundle_matches_contract,
     season_bundle_review_readiness,
@@ -539,6 +541,9 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     ).guardrails
     assert "phase_s5_band_match" in resolve_task_policy(tasks["phase_guardrails"], bundle.task_policies).guardrails
     assert "phase_weeks_match_range" in resolve_task_policy(tasks["phase_structure"], bundle.task_policies).guardrails
+    assert "season_bundle_audit_slot_integrity" in resolve_task_policy(
+        tasks["season_plan_finalize"], bundle.task_policies
+    ).guardrails
     assert "season_phase_load_feasibility" in resolve_task_policy(
         tasks["season_plan_finalize"], bundle.task_policies
     ).guardrails
@@ -1877,6 +1882,7 @@ def test_contract_context_blocks_for_season_finalize_include_bound_contracts() -
 
     assert any("Deterministic Season Phase Slot Contract" in block for block in blocks)
     assert any("Deterministic Season Phase Load Contract" in block for block in blocks)
+    assert any("Season audit-slot ownership" in block for block in blocks)
     assert any("Do not search the workspace" in block for block in blocks)
 
 
@@ -1905,6 +1911,151 @@ def test_classify_season_audit_item_recognizes_constraint_and_governance_shapes(
             "durability_first_respected": True,
         }
     ) == "governance"
+
+
+def test_season_bundle_audit_slot_integrity_rejects_row_shaped_constraint_findings() -> None:
+    ok, reason = season_bundle_audit_slot_integrity(
+        {
+            "event_priority": {},
+            "macrocycle": {},
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "scenario_cadence": "2:1",
+                }
+            ],
+            "constraints": [
+                {
+                    "constraint_type": "availability",
+                    "status": "warning",
+                    "summary": "Weekday time is limited.",
+                }
+            ],
+            "load_governance": [],
+        }
+    )
+
+    assert ok is False
+    assert "canonical audit objects" in reason
+
+
+def test_season_bundle_audit_slot_integrity_accepts_canonical_audit_objects() -> None:
+    ok, payload = season_bundle_audit_slot_integrity(
+        {
+            "event_priority": {},
+            "macrocycle": {},
+            "phase_blueprints": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "scenario_cadence": "2:1",
+                }
+            ],
+            "constraints": [
+                {
+                    "blocking_issues": [],
+                    "warnings": ["Keep fixed rest days."],
+                    "recommended_adjustments": [],
+                    "applied_sources": ["availability"],
+                }
+            ],
+            "load_governance": [
+                {
+                    "blocking_issues": [],
+                    "warnings": [],
+                    "recommended_adjustments": [],
+                    "cadence_authority_preserved": True,
+                    "durability_first_respected": True,
+                }
+            ],
+        }
+    )
+
+    assert ok is True
+    assert payload["constraints"][0]["applied_sources"] == ["availability"]
+
+
+def test_freeze_season_bundle_audit_slots_overlays_canonical_specialist_outputs() -> None:
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    blueprints = build_task_blueprints(bundle)
+    final_output = {
+        "event_priority": {},
+        "macrocycle": {},
+        "phase_blueprints": [{"phase_id": "P01", "iso_week_range": "2026-21--2026-23", "scenario_cadence": "2:1"}],
+        "constraints": [{"constraint_type": "availability", "status": "warning", "summary": "bad shape"}],
+        "load_governance": [{"status": "warning", "summary": "bad governance shape"}],
+    }
+    tasks_by_name = {
+        "season_constraint_review": SimpleNamespace(
+            output=SimpleNamespace(
+                pydantic=ConstraintAuditModel(
+                    blocking_issues=[],
+                    warnings=["Fixed rest days are binding."],
+                    recommended_adjustments=[],
+                    applied_sources=["availability"],
+                )
+            )
+        ),
+        "season_historical_context_review": SimpleNamespace(
+            output=SimpleNamespace(
+                pydantic=ConstraintAuditModel(
+                    blocking_issues=[],
+                    warnings=["Recent disruption argues for caution."],
+                    recommended_adjustments=[],
+                    applied_sources=["history"],
+                )
+            )
+        ),
+        "season_kpi_guidance_review": SimpleNamespace(
+            output=SimpleNamespace(
+                pydantic=ConstraintAuditModel(
+                    blocking_issues=[],
+                    warnings=["Pacing guidance remains secondary to constraints."],
+                    recommended_adjustments=[],
+                    applied_sources=["kpi_profile"],
+                )
+            )
+        ),
+        "season_load_corridor_draft": SimpleNamespace(
+            output=SimpleNamespace(
+                pydantic=LoadGovernanceAuditModel(
+                    blocking_issues=[],
+                    warnings=["Use a conservative ramp class."],
+                    recommended_adjustments=[],
+                    cadence_authority_preserved=True,
+                    durability_first_respected=True,
+                )
+            )
+        ),
+        "season_progression_review": SimpleNamespace(
+            output=SimpleNamespace(
+                pydantic=LoadGovernanceAuditModel(
+                    blocking_issues=[],
+                    warnings=["Keep build entry readiness-gated."],
+                    recommended_adjustments=[],
+                    cadence_authority_preserved=True,
+                    durability_first_respected=True,
+                )
+            )
+        ),
+    }
+
+    frozen = _freeze_season_bundle_audit_slots(
+        final_output,
+        result=SimpleNamespace(),
+        tasks_by_name=tasks_by_name,
+        task_blueprints=blueprints,
+    )
+
+    assert [item["applied_sources"] for item in frozen["constraints"]] == [
+        ["availability"],
+        ["history"],
+        ["kpi_profile"],
+    ]
+    assert all("summary" not in item for item in frozen["constraints"])
+    assert len(frozen["load_governance"]) == 2
+    assert all("status" not in item for item in frozen["load_governance"])
 
 
 def test_classify_season_audit_item_fails_on_mixed_or_unknown_shapes() -> None:
@@ -2162,6 +2313,9 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
     assert "`cadence_authority_preserved` plus `durability_first_respected` belong only inside `load_governance[]`" in season_finalize_description
     assert "emit top-level `event_priority`, `macrocycle`, and `phase_blueprints`" in season_finalize_description
     assert "singular top-level `constraint_audit` and `load_governance_audit` keys are invalid" in season_finalize_description
+    assert "`constraints[]` are owned by `season_constraint_review`, `season_historical_context_review`, and `season_kpi_guidance_review`" in season_finalize_description
+    assert "`load_governance[]` are owned by `season_load_corridor_draft` and `season_progression_review`" in season_finalize_description
+    assert "`constraint_type`, `status`, or `summary`" in season_finalize_description
     assert "Return exactly one structured object with top-level `phase_blueprints` only" in blueprint_draft_description
     assert "`phase_blueprints` are owned here first" in blueprint_draft_description
     assert "raw JSON object only" in season_finalize_description
@@ -2184,6 +2338,13 @@ def test_season_macrocycle_and_finalize_guidance_support_multi_a_event_backplann
         assert "load_governance[]" in text
         assert "constraint_audit" in text
         assert "load_governance_audit" in text
+        assert "season_constraint_review" in text
+        assert "season_historical_context_review" in text
+        assert "season_kpi_guidance_review" in text
+        assert "season_load_corridor_draft" in text
+        assert "season_progression_review" in text
+        assert "constraint_type" in text
+        assert "summary" in text
 
     assert "phase_blueprints" in blueprint_prompt_text
     assert "Do not emit a full Season bundle." in blueprint_prompt_text

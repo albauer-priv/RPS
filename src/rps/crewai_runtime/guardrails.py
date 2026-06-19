@@ -381,6 +381,36 @@ def season_bundle_integrity(result: Any) -> GuardrailResult:
     return (True, mapping)
 
 
+def season_bundle_audit_slot_integrity(result: Any) -> GuardrailResult:
+    """Ensure Season bundle audit slots keep canonical audit-object shapes."""
+
+    mapping = _coerce_mapping(result)
+    if not isinstance(mapping, dict):
+        return (False, "Season bundle must decode to an object.")
+    normalized = canonicalize_season_bundle_shape_aliases(mapping)
+    constraint_keys = {"blocking_issues", "warnings", "recommended_adjustments", "applied_sources"}
+    governance_keys = {
+        "blocking_issues",
+        "warnings",
+        "recommended_adjustments",
+        "cadence_authority_preserved",
+        "durability_first_respected",
+    }
+    for item in _as_list(normalized.get("constraints")):
+        if not isinstance(item, dict):
+            return (False, "Season constraints[] entries must be canonical audit objects.")
+        keys = {str(key).strip() for key in item.keys() if str(key).strip()}
+        if not keys <= constraint_keys:
+            return (False, "Season constraints[] entries must be canonical audit objects, not finding rows.")
+    for item in _as_list(normalized.get("load_governance")):
+        if not isinstance(item, dict):
+            return (False, "Season load_governance[] entries must be canonical audit objects.")
+        keys = {str(key).strip() for key in item.keys() if str(key).strip()}
+        if not keys <= governance_keys:
+            return (False, "Season load_governance[] entries must be canonical audit objects, not finding rows.")
+    return (True, normalized)
+
+
 def season_bundle_matches_contract(result: Any) -> GuardrailResult:
     """Validate internal Season bundle phase blueprints against deterministic context."""
 
@@ -1899,6 +1929,7 @@ REGISTRY: dict[str, GuardrailFn] = {
     "phase_week_role_load_coherence": phase_week_role_load_coherence,
     "phase_bundle_review_readiness": phase_bundle_review_readiness,
     "season_bundle_integrity": season_bundle_integrity,
+    "season_bundle_audit_slot_integrity": season_bundle_audit_slot_integrity,
     "season_bundle_matches_contract": season_bundle_matches_contract,
     "season_phase_load_feasibility": season_phase_load_feasibility,
     "season_bundle_review_readiness": season_bundle_review_readiness,

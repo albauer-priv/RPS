@@ -39,6 +39,7 @@ tasks:
     guardrails:
       - typed_output_present
       - season_bundle_integrity
+      - season_bundle_audit_slot_integrity
       - season_phase_load_feasibility
       - season_bundle_review_readiness
     guardrail_max_retries: 2

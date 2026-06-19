@@ -239,3 +239,9 @@ vectorstore_exports/
 *.embeddings
 *.faiss
 retrieval_cache/
+
+# Local developer handoff notes; non-authoritative and machine/session-specific
+.developer_handoff/
+
+.clinerules
+.clinerules.d/

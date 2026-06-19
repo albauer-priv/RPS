@@ -73,5 +73,5 @@ This directory contains the canonical documentation for the platform. It is a na
 
 ## Conventions (short)
 
-- Doc-writing rules live in [AGENTS.md](../AGENTS.md).
+- Agent working rules live in [`.clinerules`](../.clinerules); [AGENTS.md](../AGENTS.md) is the agent entry/source map.
 - Every doc must have Version/Status/Last-Updated/Owner header.
