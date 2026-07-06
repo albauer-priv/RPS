@@ -3,8 +3,11 @@ from types import SimpleNamespace
 from rps.planning.deterministic_context import (
     PhaseExecutionContext,
     PhaseExecutionResolution,
+    WeekCalendarContext,
+    WeekDayContext,
     _resolve_phase_execution_roles,
     build_phase_execution_context,
+    build_week_calendar_context,
 )
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 
@@ -209,3 +212,114 @@ def test_build_phase_execution_context_remains_dict_compatible() -> None:
     }
     assert context["fixed_rest_days"] == ["Mon", "Fri"]
     assert context["blocking_issues"] == []
+
+
+def test_week_calendar_context_to_payload_projects_public_lists() -> None:
+    payload = WeekCalendarContext(
+        target_iso_week="2026-21",
+        week_start_date="2026-05-18",
+        week_end_date="2026-05-24",
+        phase_id="P01",
+        phase_iso_week_range="2026-20--2026-22",
+        phase_cycle="Build",
+        phase_role="Build",
+        phase_intent="durability_build",
+        phase_week_role="LOAD_2",
+        inherited_planning_posture={"selected_scenario_id": "B"},
+        phase_role_for_week="LOAD_2",
+        phase_week_role_source="PHASE_STRUCTURE.week_skeleton_logic.week_roles",
+        day_matrix=(
+            WeekDayContext(
+                day="Mon",
+                date="2026-05-18",
+                fixed_rest_day=True,
+                availability_min=1,
+                availability_typical=2,
+                availability_max=3,
+                logistics=({"date": "2026-05-18", "type": "TRAVEL"},),
+                events=({"date": "2026-05-18", "type": "B", "name": "Spring 200"},),
+            ),
+        ),
+        fixed_rest_days=("Mon", "Fri"),
+        active_s5_band={"min": 1000, "max": 2000},
+        active_s5_trace={"source": "test"},
+        phase_weekly_kj_band={"min": 1000, "max": 2000},
+        active_weekly_kj_band={"min": 1000, "max": 2000},
+        allowed_day_roles=("REST", "ENDURANCE", "QUALITY"),
+        forbidden_day_roles=(),
+        allowed_intensity_domains=("ENDURANCE", "TEMPO"),
+        forbidden_intensity_domains=("THRESHOLD",),
+        allowed_load_modalities=("NONE",),
+        quality_day_cap=1,
+        target_week_skeleton={"days": []},
+        week_skeleton_mandatory_elements={"recovery_opportunities_min": 2},
+        event_proximity={"weeks_delta": 0},
+    ).to_payload()
+
+    assert payload["fixed_rest_days"] == ["Mon", "Fri"]
+    assert payload["allowed_day_roles"] == ["REST", "ENDURANCE", "QUALITY"]
+    assert payload["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
+    assert payload["day_matrix"][0]["availability_hours"] == {"min": 1, "typical": 2, "max": 3}
+    assert payload["day_matrix"][0]["events"] == [{"date": "2026-05-18", "type": "B", "name": "Spring 200"}]
+
+
+def test_build_week_calendar_context_remains_dict_compatible() -> None:
+    phase_info = SimpleNamespace(phase_id="P01", phase_type="Build", raw={"cycle": "Build"})
+    context = build_week_calendar_context(
+        target_week=IsoWeek(2026, 21),
+        phase_info=phase_info,
+        phase_range=IsoWeekRange(start=IsoWeek(2026, 20), end=IsoWeek(2026, 22)),
+        availability_payload={
+            "data": {
+                "fixed_rest_days": ["Mon", "Fri"],
+                "availability_table": [
+                    {"weekday": "Mon", "hours_min": 1, "hours_typical": 2, "hours_max": 3},
+                ],
+            }
+        },
+        logistics_payload={"data": {"events": [{"date": "2026-05-18", "event_type": "TRAVEL", "description": "Trip"}]}},
+        planning_events_payload={"data": {"events": [{"date": "2026-05-18", "type": "B", "event_name": "Spring 200"}]}},
+        phase_structure_payload={
+            "data": {
+                "execution_principles": {"phase_role": "Build"},
+                "week_skeleton_logic": {
+                    "week_roles": {
+                        "week_roles": [
+                            {"week": "2026-20", "role": "LOAD_1"},
+                            {"week": "2026-21", "role": "LOAD_2"},
+                            {"week": "2026-22", "role": "DELOAD"},
+                        ]
+                    },
+                    "mandatory_elements": {"recovery_opportunities_min": 2},
+                },
+                "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            }
+        },
+        phase_guardrails_payload={
+            "data": {
+                "load_guardrails": {
+                    "weekly_kj_bands": [{"week": "2026-21", "band": {"min": 1000, "max": 2000}}]
+                },
+                "allowed_forbidden_semantics": {
+                    "allowed_day_roles": ["REST", "ENDURANCE", "QUALITY"],
+                    "forbidden_day_roles": [],
+                    "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                    "forbidden_intensity_domains": ["THRESHOLD"],
+                    "allowed_load_modalities": ["NONE"],
+                    "quality_density": {"max_quality_days_per_week": 1},
+                },
+                "inherited_scenario_contract": {"selected_scenario_id": "B"},
+            }
+        },
+        load_capacity_context={
+            "s5_bands": [{"week": "2026-21", "band": {"min": 1200, "max": 2200}, "trace": {"source": "test"}}]
+        },
+    )
+
+    assert isinstance(context, dict)
+    assert context["phase_week_role"] == "LOAD_2"
+    assert context["phase_week_role_source"] == "PHASE_STRUCTURE.week_skeleton_logic.week_roles"
+    assert context["active_weekly_kj_band"] == {"min": 1000, "max": 2000}
+    assert context["quality_day_cap"] == 1
+    assert context["fixed_rest_days"] == ["Mon", "Fri"]
+    assert context["day_matrix"][0]["day"] == "Mon"

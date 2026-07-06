@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Changed `src/rps/orchestrator/plan_week.py` to use staged internal helper extraction and typed request/report-gate/preflight boundaries while preserving existing planning/report/export behavior and external artifact contracts.
 - Changed `src/rps/planning/deterministic_context.py` so phase-execution cadence/week-role fallback logic now resolves through an internal typed `PhaseExecutionResolution`, while `build_phase_execution_context(...)` remains outwardly dict-compatible for prompts, guardrails, snapshots, and existing consumers.
+- Changed `src/rps/planning/deterministic_context.py` so `build_week_calendar_context(...)` now assembles a typed `WeekCalendarContext` / `WeekDayContext` pair with explicit `to_payload()` projection, while preserving the existing dict-compatible week-calendar payload contract for prompts, guardrails, and current consumers.
 
 ### Fixed
 

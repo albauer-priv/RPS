@@ -191,6 +191,102 @@ class PhaseExecutionContext:
         }
 
 
+@dataclass(frozen=True)
+class WeekDayContext:
+    """Typed single-day week calendar context before payload projection."""
+
+    day: str
+    date: str
+    fixed_rest_day: bool
+    availability_min: object
+    availability_typical: object
+    availability_max: object
+    logistics: tuple[JsonMap, ...]
+    events: tuple[JsonMap, ...]
+
+    def to_payload(self) -> JsonMap:
+        """Project one typed day row to the existing dict-compatible payload."""
+
+        return {
+            "day": self.day,
+            "date": self.date,
+            "fixed_rest_day": self.fixed_rest_day,
+            "availability_hours": {
+                "min": self.availability_min,
+                "typical": self.availability_typical,
+                "max": self.availability_max,
+            },
+            "logistics": [dict(item) for item in self.logistics],
+            "events": [dict(item) for item in self.events],
+        }
+
+
+@dataclass(frozen=True)
+class WeekCalendarContext:
+    """Typed target-week calendar context with explicit payload projection."""
+
+    target_iso_week: str
+    week_start_date: str
+    week_end_date: str
+    phase_id: str
+    phase_iso_week_range: str
+    phase_cycle: str
+    phase_role: str
+    phase_intent: str
+    phase_week_role: str
+    inherited_planning_posture: JsonMap
+    phase_role_for_week: str
+    phase_week_role_source: str
+    day_matrix: tuple[WeekDayContext, ...]
+    fixed_rest_days: tuple[str, ...]
+    active_s5_band: object
+    active_s5_trace: object
+    phase_weekly_kj_band: JsonMap
+    active_weekly_kj_band: object
+    allowed_day_roles: tuple[str, ...]
+    forbidden_day_roles: tuple[str, ...]
+    allowed_intensity_domains: tuple[str, ...]
+    forbidden_intensity_domains: tuple[str, ...]
+    allowed_load_modalities: tuple[str, ...]
+    quality_day_cap: object
+    target_week_skeleton: JsonMap
+    week_skeleton_mandatory_elements: JsonMap
+    event_proximity: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed week calendar context to the existing payload shape."""
+
+        return {
+            "target_iso_week": self.target_iso_week,
+            "week_start_date": self.week_start_date,
+            "week_end_date": self.week_end_date,
+            "phase_id": self.phase_id,
+            "phase_iso_week_range": self.phase_iso_week_range,
+            "phase_cycle": self.phase_cycle,
+            "phase_role": self.phase_role,
+            "phase_intent": self.phase_intent,
+            "phase_week_role": self.phase_week_role,
+            "inherited_planning_posture": dict(self.inherited_planning_posture),
+            "phase_role_for_week": self.phase_role_for_week,
+            "phase_week_role_source": self.phase_week_role_source,
+            "day_matrix": [row.to_payload() for row in self.day_matrix],
+            "fixed_rest_days": list(self.fixed_rest_days),
+            "active_s5_band": self.active_s5_band,
+            "active_s5_trace": self.active_s5_trace,
+            "phase_weekly_kj_band": dict(self.phase_weekly_kj_band),
+            "active_weekly_kj_band": self.active_weekly_kj_band,
+            "allowed_day_roles": list(self.allowed_day_roles),
+            "forbidden_day_roles": list(self.forbidden_day_roles),
+            "allowed_intensity_domains": list(self.allowed_intensity_domains),
+            "forbidden_intensity_domains": list(self.forbidden_intensity_domains),
+            "allowed_load_modalities": list(self.allowed_load_modalities),
+            "quality_day_cap": self.quality_day_cap,
+            "target_week_skeleton": dict(self.target_week_skeleton),
+            "week_skeleton_mandatory_elements": dict(self.week_skeleton_mandatory_elements),
+            "event_proximity": dict(self.event_proximity),
+        }
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -547,7 +643,7 @@ def build_week_calendar_context(
 
     target_key = _week_key(target_week)
     week_start = date.fromisocalendar(target_week.year, target_week.week, 1)
-    fixed_rest = _fixed_rest_days(availability_payload or {})
+    fixed_rest = tuple(_fixed_rest_days(availability_payload or {}))
     table = _availability_table(availability_payload or {})
     active_s5 = _active_s5_band(load_capacity_context or {}, target_key)
     phase_band = _phase_guardrail_band(phase_guardrails_payload or {}, target_key)
@@ -560,17 +656,19 @@ def build_week_calendar_context(
     week_role_source = "PHASE_STRUCTURE.week_skeleton_logic.week_roles" if phase_week_role else "phase_position_fallback"
     if not phase_week_role:
         phase_week_role = _phase_role_for_week(phase_info, target_week, phase_range)
-    allowed_day_roles = _allowed_day_roles(phase_guardrails_payload or {})
-    allowed_intensity_domains = _allowed_intensity_domains(phase_guardrails_payload or {})
-    allowed_load_modalities = _allowed_load_modalities(phase_guardrails_payload or {})
+    allowed_day_roles = tuple(_allowed_day_roles(phase_guardrails_payload or {}))
+    forbidden_day_roles = tuple(_forbidden_day_roles(phase_guardrails_payload or {}))
+    allowed_intensity_domains = tuple(_allowed_intensity_domains(phase_guardrails_payload or {}))
+    forbidden_intensity_domains = tuple(_forbidden_intensity_domains(phase_guardrails_payload or {}))
+    allowed_load_modalities = tuple(_allowed_load_modalities(phase_guardrails_payload or {}))
     quality_day_cap = _quality_day_cap(phase_guardrails_payload or {})
     target_week_skeleton = build_week_skeleton_for_phase(
         week_keys=[target_key],
         week_role_by_iso_week={target_key: phase_week_role},
-        fixed_rest_days=fixed_rest,
-        allowed_day_roles=allowed_day_roles,
-        allowed_intensity_domains=allowed_intensity_domains,
-        allowed_load_modalities=allowed_load_modalities or ["NONE"],
+        fixed_rest_days=list(fixed_rest),
+        allowed_day_roles=list(allowed_day_roles),
+        allowed_intensity_domains=list(allowed_intensity_domains),
+        allowed_load_modalities=list(allowed_load_modalities) or ["NONE"],
         quality_cap=quality_day_cap,
         phase_intent=phase_intent,
     )
@@ -587,41 +685,60 @@ def build_week_calendar_context(
         "phase_intent": phase_intent,
         "phase_week_role": phase_week_role,
     }
-    return {
-        "target_iso_week": target_key,
-        "week_start_date": week_start.isoformat(),
-        "week_end_date": (week_start + timedelta(days=6)).isoformat(),
-        "phase_id": getattr(phase_info, "phase_id", ""),
-        "phase_iso_week_range": phase_range.range_key,
-        "phase_cycle": phase_role,
-        "phase_role": phase_role,
-        "phase_intent": phase_intent,
-        "phase_week_role": phase_week_role,
-        "inherited_planning_posture": inherited_planning_posture,
-        "phase_role_for_week": phase_week_role,
-        "phase_week_role_source": week_role_source,
-        "day_matrix": [
-            _day_context_row(week_start + timedelta(days=offset), table, fixed_rest, logistics_payload or {}, planning_events_payload or {})
-            for offset in range(7)
-        ],
-        "fixed_rest_days": fixed_rest,
-        "active_s5_band": active_s5.get("band"),
-        "active_s5_trace": active_s5.get("trace"),
-        "phase_weekly_kj_band": phase_band,
-        "active_weekly_kj_band": phase_band or active_s5.get("band"),
-        "allowed_day_roles": allowed_day_roles,
-        "forbidden_day_roles": _forbidden_day_roles(phase_guardrails_payload or {}),
-        "allowed_intensity_domains": allowed_intensity_domains,
-        "forbidden_intensity_domains": _forbidden_intensity_domains(phase_guardrails_payload or {}),
-        "allowed_load_modalities": allowed_load_modalities,
-        "quality_day_cap": quality_day_cap,
-        "target_week_skeleton": target_week_skeleton[0] if target_week_skeleton else {},
-        "week_skeleton_mandatory_elements": _week_skeleton_mandatory_elements(phase_structure_payload or {}),
-        "event_proximity": build_event_proximity_context(
+    week_calendar_context = WeekCalendarContext(
+        target_iso_week=target_key,
+        week_start_date=week_start.isoformat(),
+        week_end_date=(week_start + timedelta(days=6)).isoformat(),
+        phase_id=str(getattr(phase_info, "phase_id", "")),
+        phase_iso_week_range=phase_range.range_key,
+        phase_cycle=phase_role,
+        phase_role=phase_role,
+        phase_intent=phase_intent,
+        phase_week_role=phase_week_role,
+        inherited_planning_posture=inherited_planning_posture,
+        phase_role_for_week=phase_week_role,
+        phase_week_role_source=week_role_source,
+        day_matrix=tuple(
+            WeekDayContext(
+                day=row.get("day") or "",
+                date=row.get("date") or "",
+                fixed_rest_day=bool(row.get("fixed_rest_day")),
+                availability_min=_as_map(row.get("availability_hours")).get("min"),
+                availability_typical=_as_map(row.get("availability_hours")).get("typical"),
+                availability_max=_as_map(row.get("availability_hours")).get("max"),
+                logistics=tuple(_as_map(item) for item in _as_list(row.get("logistics"))),
+                events=tuple(_as_map(item) for item in _as_list(row.get("events"))),
+            )
+            for row in [
+                _day_context_row(
+                    week_start + timedelta(days=offset),
+                    table,
+                    list(fixed_rest),
+                    logistics_payload or {},
+                    planning_events_payload or {},
+                )
+                for offset in range(7)
+            ]
+        ),
+        fixed_rest_days=fixed_rest,
+        active_s5_band=active_s5.get("band"),
+        active_s5_trace=active_s5.get("trace"),
+        phase_weekly_kj_band=phase_band,
+        active_weekly_kj_band=phase_band or active_s5.get("band"),
+        allowed_day_roles=allowed_day_roles,
+        forbidden_day_roles=forbidden_day_roles,
+        allowed_intensity_domains=allowed_intensity_domains,
+        forbidden_intensity_domains=forbidden_intensity_domains,
+        allowed_load_modalities=allowed_load_modalities,
+        quality_day_cap=quality_day_cap,
+        target_week_skeleton=_as_map(target_week_skeleton[0]) if target_week_skeleton else {},
+        week_skeleton_mandatory_elements=_week_skeleton_mandatory_elements(phase_structure_payload or {}),
+        event_proximity=build_event_proximity_context(
             target_week=target_week,
             planning_events_payload=planning_events_payload or {},
         ),
-    }
+    )
+    return week_calendar_context.to_payload()
 
 
 def build_effective_week_constraints_block(context: JsonMap) -> JsonMap:
