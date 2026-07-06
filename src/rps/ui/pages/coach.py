@@ -88,17 +88,6 @@ def _as_map(value: object) -> dict[str, object]:
     return value if isinstance(value, dict) else {}
 
 
-def _load_latest_payload(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-) -> dict[str, object] | None:
-    try:
-        return _as_map(store.load_latest(athlete_id, artifact_type))
-    except Exception:
-        return None
-
-
 def _load_selected_week_artifact(
     store: LocalArtifactStore,
     athlete_id: str,
@@ -141,7 +130,7 @@ def _coach_memory_payloads(athlete_id: str, year: int, week: int) -> dict[str, d
     week_plan_payload = _load_selected_week_artifact(store, athlete_id, ArtifactType.WEEK_PLAN, week_key) or {}
     return {
         "week_plan": week_plan_payload,
-        "athlete_snapshot": _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT) or {},
+        "athlete_snapshot": store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT) or {},
         "planning_snapshot": _load_selected_week_artifact(
             store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
         )

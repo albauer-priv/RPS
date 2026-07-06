@@ -163,6 +163,34 @@ class LocalStoreTests(unittest.TestCase):
 
             self.assertEqual(versions, ["2026-15", "2026-16"])
 
+    def test_load_latest_payload_returns_none_when_missing(self) -> None:
+        """Verify load_latest_payload returns None for a missing artifact."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_003"
+
+            payload = store.load_latest_payload(athlete_id, ArtifactType.WEEK_PLAN)
+
+            self.assertIsNone(payload)
+
+    def test_load_latest_payload_returns_dict_when_present(self) -> None:
+        """Verify load_latest_payload returns the latest artifact as a mapping."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_003"
+            store.save_version(
+                athlete_id=athlete_id,
+                artifact_type=ArtifactType.WEEK_PLAN,
+                version_key="2026-06__20260201_120000",
+                payload={"foo": "bar"},
+            )
+
+            payload = store.load_latest_payload(athlete_id, ArtifactType.WEEK_PLAN)
+
+            self.assertIsInstance(payload, dict)
+            assert payload is not None
+            self.assertEqual(payload.get("data", {}).get("foo"), "bar")
+
     def test_exists_and_latest_version_key(self) -> None:
         """Verify existence checks and latest version key lookup."""
         with tempfile.TemporaryDirectory() as tmpdir:

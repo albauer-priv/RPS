@@ -292,6 +292,14 @@ class LocalArtifactStore:
             self._latest_version_key_from_index(athlete_id, artifact_type),
         )
 
+    def load_latest_payload(self, athlete_id: str, artifact_type: ArtifactType) -> JsonMap | None:
+        """Load the latest artifact as a mapping, or None if missing/unreadable."""
+        try:
+            payload = self.load_latest(athlete_id, artifact_type)
+        except Exception:
+            return None
+        return _as_map(payload)
+
     def load_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> object:
         """Load a specific artifact version."""
         path = self._path_for_version(athlete_id, artifact_type, version_key)

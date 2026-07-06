@@ -55,18 +55,6 @@ def _load_selected_week_artifact(
     return _as_map(payload)
 
 
-def _load_latest_payload(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-) -> JsonMap | None:
-    try:
-        payload = store.load_latest(athlete_id, artifact_type)
-    except Exception:
-        return None
-    return _as_map(payload)
-
-
 @dataclass(frozen=True)
 class FeedForwardChainResult:
     """Structured result for report + feed-forward execution."""
@@ -132,14 +120,14 @@ def run_feed_forward_chain(
             error="Season plan or covering phase context missing for feed forward.",
         )
 
-    athlete_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
-    kpi_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE)
-    availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
-    planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
-    logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
-    selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-    zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
-    wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
+    athlete_profile_payload = store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_PROFILE)
+    kpi_profile_payload = store.load_latest_payload(athlete_id, ArtifactType.KPI_PROFILE)
+    availability_payload = store.load_latest_payload(athlete_id, ArtifactType.AVAILABILITY)
+    planning_events_payload = store.load_latest_payload(athlete_id, ArtifactType.PLANNING_EVENTS)
+    logistics_payload = store.load_latest_payload(athlete_id, ArtifactType.LOGISTICS)
+    selection_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+    zone_model_payload = store.load_latest_payload(athlete_id, ArtifactType.ZONE_MODEL)
+    wellness_payload = store.load_latest_payload(athlete_id, ArtifactType.WELLNESS)
 
     selected_report_payload = _load_selected_week_artifact(store, athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
     report_version = store.resolve_week_version_key(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
