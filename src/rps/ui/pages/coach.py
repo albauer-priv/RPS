@@ -84,25 +84,6 @@ def _coach_preload_specs(year: int, week: int) -> list[tuple[str, str, dict[str,
     ]
 
 
-def _as_map(value: object) -> dict[str, object]:
-    return value if isinstance(value, dict) else {}
-
-
-def _load_selected_week_artifact(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-    week_key: str,
-) -> dict[str, object] | None:
-    version_key = store.resolve_week_version_key(athlete_id, artifact_type, week_key)
-    if not version_key:
-        return None
-    try:
-        return _as_map(store.load_version(athlete_id, artifact_type, version_key))
-    except FileNotFoundError:
-        return None
-
-
 def _coach_memory_blocks(athlete_id: str, year: int, week: int) -> list[str]:
     """Load preferred snapshot/advisory memory blocks for Coach."""
     payloads = _coach_memory_payloads(athlete_id, year, week)
@@ -127,12 +108,12 @@ def _coach_memory_payloads(athlete_id: str, year: int, week: int) -> dict[str, d
 
     store = LocalArtifactStore(root=SETTINGS.workspace_root)
     week_key = f"{year:04d}-{week:02d}"
-    week_plan_payload = _load_selected_week_artifact(store, athlete_id, ArtifactType.WEEK_PLAN, week_key) or {}
+    week_plan_payload = store.load_selected_week_payload(athlete_id, ArtifactType.WEEK_PLAN, week_key) or {}
     return {
         "week_plan": week_plan_payload,
         "athlete_snapshot": store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_STATE_SNAPSHOT) or {},
-        "planning_snapshot": _load_selected_week_artifact(
-            store, athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
+        "planning_snapshot": store.load_selected_week_payload(
+            athlete_id, ArtifactType.PLANNING_CONTEXT_SNAPSHOT, week_key
         )
         or {},
         "current_week_status": ensure_current_week_status_snapshot(
@@ -143,7 +124,7 @@ def _coach_memory_payloads(athlete_id: str, year: int, week: int) -> dict[str, d
             week_plan_payload=week_plan_payload,
         )
         or {},
-        "advisory_memory": _load_selected_week_artifact(store, athlete_id, ArtifactType.ADVISORY_MEMORY, week_key)
+        "advisory_memory": store.load_selected_week_payload(athlete_id, ArtifactType.ADVISORY_MEMORY, week_key)
         or {},
     }
 

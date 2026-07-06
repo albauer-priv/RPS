@@ -39,22 +39,6 @@ def _as_map(value: object) -> JsonMap:
     return value if isinstance(value, dict) else {}
 
 
-def _load_selected_week_artifact(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-    week_key: str,
-) -> JsonMap | None:
-    version_key = store.resolve_week_version_key(athlete_id, artifact_type, week_key)
-    if not version_key:
-        return None
-    try:
-        payload = store.load_version(athlete_id, artifact_type, version_key)
-    except FileNotFoundError:
-        return None
-    return _as_map(payload)
-
-
 @dataclass(frozen=True)
 class FeedForwardChainResult:
     """Structured result for report + feed-forward execution."""
@@ -104,7 +88,7 @@ def run_feed_forward_chain(
             error=str(message),
         )
 
-    season_plan_payload = _load_selected_week_artifact(store, athlete_id, ArtifactType.SEASON_PLAN, selected_week_key)
+    season_plan_payload = store.load_selected_week_payload(athlete_id, ArtifactType.SEASON_PLAN, selected_week_key)
     if not season_plan_payload and store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
         season_plan_payload = _as_map(store.load_latest(athlete_id, ArtifactType.SEASON_PLAN))
     phase_info = resolve_season_plan_phase_info(season_plan_payload or {}, target_week)
@@ -129,7 +113,7 @@ def run_feed_forward_chain(
     zone_model_payload = store.load_latest_payload(athlete_id, ArtifactType.ZONE_MODEL)
     wellness_payload = store.load_latest_payload(athlete_id, ArtifactType.WELLNESS)
 
-    selected_report_payload = _load_selected_week_artifact(store, athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
+    selected_report_payload = store.load_selected_week_payload(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
     report_version = store.resolve_week_version_key(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
     report_ref = f"des_analysis_report_{report_version}.json" if report_version else ""
     season_plan_ref = ""
@@ -211,8 +195,7 @@ def run_feed_forward_chain(
     phase_ff_run_id = f"{run_id_prefix}_phase"
 
     def _run_phase_feed_forward() -> JsonMap:
-        selected_season_phase_ff_payload = _load_selected_week_artifact(
-            store,
+        selected_season_phase_ff_payload = store.load_selected_week_payload(
             athlete_id,
             ArtifactType.SEASON_PHASE_FEED_FORWARD,
             selected_week_key,
@@ -328,14 +311,12 @@ def run_feed_forward_chain(
         ArtifactType.PHASE_FEED_FORWARD,
         selected_week_key,
     )
-    final_selected_season_phase_ff_payload = _load_selected_week_artifact(
-        store,
+    final_selected_season_phase_ff_payload = store.load_selected_week_payload(
         athlete_id,
         ArtifactType.SEASON_PHASE_FEED_FORWARD,
         selected_week_key,
     )
-    selected_phase_ff_payload = _load_selected_week_artifact(
-        store,
+    selected_phase_ff_payload = store.load_selected_week_payload(
         athlete_id,
         ArtifactType.PHASE_FEED_FORWARD,
         selected_week_key,

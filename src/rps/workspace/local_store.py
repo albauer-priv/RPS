@@ -300,6 +300,19 @@ class LocalArtifactStore:
             return None
         return _as_map(payload)
 
+    def load_selected_week_payload(
+        self, athlete_id: str, artifact_type: ArtifactType, week_key: str
+    ) -> JsonMap | None:
+        """Load a week-scoped artifact payload for the selected ISO week, or None if unavailable."""
+        version_key = self.resolve_week_version_key(athlete_id, artifact_type, week_key)
+        if not version_key:
+            return None
+        try:
+            payload = self.load_version(athlete_id, artifact_type, version_key)
+        except FileNotFoundError:
+            return None
+        return _as_map(payload)
+
     def load_version(self, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> object:
         """Load a specific artifact version."""
         path = self._path_for_version(athlete_id, artifact_type, version_key)

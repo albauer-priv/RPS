@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed the Feed Forward page calling agents directly: `src/rps/ui/pages/performance/feed_forward.py` no longer builds snapshots and invokes `run_agent_multi_output` inline, and now delegates to the existing shared `run_feed_forward_chain` orchestrator helper in `src/rps/orchestrator/advisory_actions.py` (the same helper Coach already uses), restoring the ADR-001 / `.clinerules` UI-agent boundary. Added `tests/test_advisory_actions.py` for direct coverage of `run_feed_forward_chain`'s success/failure branching, which previously had none.
 - Fixed duplicated latest-artifact loading logic: `src/rps/orchestrator/advisory_actions.py` and `src/rps/ui/pages/coach.py` each reimplemented an identical private `_load_latest_payload` helper; both now use a new shared `LocalArtifactStore.load_latest_payload(...)` method in `src/rps/workspace/local_store.py` instead. The other three known `_load_latest_payload`-style variants (`plan_week.py`, `plan/season.py`, `week_engine.py`) have genuinely different failure semantics and remain separate pending a per-call-site behavioral audit.
+- Fixed duplicated selected-week-artifact loading logic: `src/rps/orchestrator/advisory_actions.py`, `src/rps/ui/pages/coach.py`, and `src/rps/ui/pages/performance/feed_forward.py` each reimplemented an identical private `_load_selected_week_artifact` helper; all three now use a new shared `LocalArtifactStore.load_selected_week_payload(...)` method instead.
 
 ## [0.20.27] - 2026-06-19
 

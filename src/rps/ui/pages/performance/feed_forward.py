@@ -41,22 +41,6 @@ def _as_str_list(value: object) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list) else []
 
 
-def _load_selected_week_artifact(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-    week_key: str,
-) -> JsonMap | None:
-    """Load a week-scoped artifact payload for the selected ISO week when available."""
-    version_key = store.resolve_week_version_key(athlete_id, artifact_type, week_key)
-    if not version_key:
-        return None
-    try:
-        payload = store.load_version(athlete_id, artifact_type, version_key)
-    except FileNotFoundError:
-        return None
-    return _as_map(payload)
-
 
 st.title("Feed Forward")
 
@@ -218,20 +202,17 @@ if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
         )
         st.error(message)
 
-report_payload = _load_selected_week_artifact(
-    store,
+report_payload = store.load_selected_week_payload(
     athlete_id,
     ArtifactType.DES_ANALYSIS_REPORT,
     selected_week_key,
 )
-season_phase_feed_forward_payload = _load_selected_week_artifact(
-    store,
+season_phase_feed_forward_payload = store.load_selected_week_payload(
     athlete_id,
     ArtifactType.SEASON_PHASE_FEED_FORWARD,
     selected_week_key,
 )
-phase_feed_forward_payload = _load_selected_week_artifact(
-    store,
+phase_feed_forward_payload = store.load_selected_week_payload(
     athlete_id,
     ArtifactType.PHASE_FEED_FORWARD,
     selected_week_key,

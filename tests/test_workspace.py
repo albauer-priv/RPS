@@ -191,6 +191,34 @@ class LocalStoreTests(unittest.TestCase):
             assert payload is not None
             self.assertEqual(payload.get("data", {}).get("foo"), "bar")
 
+    def test_load_selected_week_payload_returns_none_when_missing(self) -> None:
+        """Verify load_selected_week_payload returns None for a missing week version."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_004"
+
+            payload = store.load_selected_week_payload(athlete_id, ArtifactType.WEEK_PLAN, "2026-07")
+
+            self.assertIsNone(payload)
+
+    def test_load_selected_week_payload_returns_dict_when_present(self) -> None:
+        """Verify load_selected_week_payload returns the week-scoped artifact as a mapping."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = LocalArtifactStore(root=Path(tmpdir))
+            athlete_id = "ath_004"
+            store.save_version(
+                athlete_id=athlete_id,
+                artifact_type=ArtifactType.WEEK_PLAN,
+                version_key="2026-06__20260201_120000",
+                payload={"foo": "bar"},
+            )
+
+            payload = store.load_selected_week_payload(athlete_id, ArtifactType.WEEK_PLAN, "2026-06")
+
+            self.assertIsInstance(payload, dict)
+            assert payload is not None
+            self.assertEqual(payload.get("data", {}).get("foo"), "bar")
+
     def test_exists_and_latest_version_key(self) -> None:
         """Verify existence checks and latest version key lookup."""
         with tempfile.TemporaryDirectory() as tmpdir:
