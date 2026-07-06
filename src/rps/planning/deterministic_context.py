@@ -300,6 +300,42 @@ class LoadCapacityContext:
         return deepcopy(self.payload)
 
 
+@dataclass(frozen=True)
+class SelectedScenarioStructureContext:
+    """Typed selected-scenario structure wrapper with explicit payload projection."""
+
+    payload: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed wrapper back to a detached dict-compatible payload."""
+
+        return deepcopy(self.payload)
+
+
+@dataclass(frozen=True)
+class SelectedScenarioContractContext:
+    """Typed selected-scenario contract wrapper with explicit payload projection."""
+
+    payload: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed wrapper back to a detached dict-compatible payload."""
+
+        return deepcopy(self.payload)
+
+
+@dataclass(frozen=True)
+class SeasonPhaseSlotContext:
+    """Typed season phase-slot wrapper with explicit payload projection."""
+
+    payload: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed wrapper back to a detached dict-compatible payload."""
+
+        return deepcopy(self.payload)
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -345,11 +381,13 @@ def build_selected_scenario_structure_block(
 ) -> DeterministicContextBlock:
     """Build deterministic selected-scenario structure context."""
 
-    payload = build_selected_scenario_structure_context(
-        season_scenarios_payload=season_scenarios_payload or {},
-        selection_payload=selection_payload or {},
-        selected_scenario_id=selected_scenario_id,
-    )
+    payload = SelectedScenarioStructureContext(
+        build_selected_scenario_structure_context(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=selected_scenario_id,
+        )
+    ).to_payload()
     return DeterministicContextBlock(
         name="selected_scenario_structure",
         title="Deterministic Selected Scenario Structure Context",
@@ -366,11 +404,13 @@ def build_selected_scenario_contract_block(
 ) -> DeterministicContextBlock:
     """Build deterministic selected-scenario posture contract."""
 
-    payload = build_selected_scenario_contract_context(
-        season_scenarios_payload=season_scenarios_payload or {},
-        selection_payload=selection_payload or {},
-        selected_scenario_id=selected_scenario_id,
-    )
+    payload = SelectedScenarioContractContext(
+        build_selected_scenario_contract_context(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=selected_scenario_id,
+        )
+    ).to_payload()
     return DeterministicContextBlock(
         name="selected_scenario_contract",
         title="Deterministic Selected Scenario Contract Context",
@@ -386,10 +426,12 @@ def build_season_phase_slot_block(
 ) -> DeterministicContextBlock:
     """Build deterministic phase-slot skeleton from selected scenario math."""
 
-    payload = build_phase_slot_context(
-        selected_structure_context=selected_structure_context,
-        target_week=target_week,
-    )
+    payload = SeasonPhaseSlotContext(
+        build_phase_slot_context(
+            selected_structure_context=selected_structure_context,
+            target_week=target_week,
+        )
+    ).to_payload()
     return DeterministicContextBlock(
         name="season_phase_slots",
         title="Deterministic Season Phase Slot Context",

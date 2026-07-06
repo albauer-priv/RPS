@@ -4,11 +4,17 @@ from rps.planning.deterministic_context import (
     LoadCapacityContext,
     PhaseExecutionContext,
     PhaseExecutionResolution,
+    SeasonPhaseSlotContext,
+    SelectedScenarioContractContext,
+    SelectedScenarioStructureContext,
     WeekCalendarContext,
     WeekDayContext,
     _resolve_phase_execution_roles,
     build_load_capacity_block,
     build_phase_execution_context,
+    build_season_phase_slot_block,
+    build_selected_scenario_contract_block,
+    build_selected_scenario_structure_block,
     build_week_calendar_context,
 )
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
@@ -356,3 +362,132 @@ def test_build_load_capacity_block_remains_payload_compatible() -> None:
     assert isinstance(block.payload, dict)
     assert block.payload["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
     assert block.payload["availability_load_capacity_kj"]["max"] > block.payload["availability_load_capacity_kj"]["min"]
+
+
+def test_selected_scenario_structure_context_to_payload_detaches_nested_payload() -> None:
+    original = {"selected_scenario_id": "B", "allowed_intensity_domains": ["ENDURANCE", "TEMPO"]}
+
+    payload = SelectedScenarioStructureContext(payload=original).to_payload()
+
+    assert payload == original
+    assert payload is not original
+    assert payload["allowed_intensity_domains"] is not original["allowed_intensity_domains"]
+
+
+def test_selected_scenario_contract_context_to_payload_detaches_nested_payload() -> None:
+    original = {"selected_scenario_id": "B", "constraint_summary": ["Preserve continuity."]}
+
+    payload = SelectedScenarioContractContext(payload=original).to_payload()
+
+    assert payload == original
+    assert payload is not original
+    assert payload["constraint_summary"] is not original["constraint_summary"]
+
+
+def test_season_phase_slot_context_to_payload_detaches_nested_payload() -> None:
+    original = {"phase_slots": [{"phase_id": "P01", "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"]}]}
+
+    payload = SeasonPhaseSlotContext(payload=original).to_payload()
+
+    assert payload == original
+    assert payload is not original
+    assert payload["phase_slots"] is not original["phase_slots"]
+
+
+def test_selected_scenario_structure_block_remains_payload_compatible() -> None:
+    block = build_selected_scenario_structure_block(
+        season_scenarios_payload={
+            "data": {
+                "planning_horizon_weeks": 17,
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Compact resilient build",
+                        "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"]},
+                        "scenario_guidance": {
+                            "deload_cadence": "2:1",
+                            "phase_length_weeks": 3,
+                            "phase_count_expected": 6,
+                            "max_shortened_phases": 2,
+                            "shortening_budget_weeks": 1,
+                            "phase_plan_summary": {"full_phases": 5, "shortened_phases": [{"len": 2, "count": 1}]},
+                        },
+                    }
+                ],
+            }
+        },
+        selection_payload={"data": {"selected_scenario_id": "B"}},
+        selected_scenario_id=None,
+    )
+
+    assert block.name == "selected_scenario_structure"
+    assert block.payload["selected_scenario_id"] == "B"
+    assert block.payload["phase_length_weeks"] == 3
+
+
+def test_selected_scenario_contract_block_remains_payload_compatible() -> None:
+    block = build_selected_scenario_contract_block(
+        season_scenarios_payload={
+            "data": {
+                "scenarios": [
+                    {
+                        "scenario_id": "B",
+                        "name": "Balanced build",
+                        "load_philosophy": "balanced_progressive",
+                        "risk_profile": "medium",
+                        "best_suited_if": "stable recovery",
+                        "key_differences": "balanced pressure",
+                        "main_payoff": "repeatable progression",
+                        "main_cost": "less conservative than A",
+                        "scenario_guidance": {
+                            "recovery_margin": "medium",
+                            "fatigue_exposure": "moderate",
+                            "specificity_density": "controlled",
+                            "constraint_summary": ["Preserve continuity."],
+                            "event_alignment_notes": ["B-event rehearsal."],
+                            "risk_flags": ["Needs stable recovery."],
+                            "kpi_guardrail_notes": ["Stay repeatable."],
+                            "decision_notes": ["Chosen for balanced progression."],
+                            "deload_cadence": "2:1:1",
+                            "phase_length_weeks": 4,
+                            "phase_count_expected": 4,
+                            "max_shortened_phases": 0,
+                            "shortening_budget_weeks": 0,
+                            "phase_plan_summary": {"full_phases": 4, "shortened_phases": []},
+                            "intensity_guidance": {"allowed_domains": ["ENDURANCE", "TEMPO"], "avoid_domains": ["VO2MAX"]},
+                        },
+                    }
+                ]
+            }
+        },
+        selection_payload={"data": {"selected_scenario_id": "B", "selection_source": "user", "selection_rationale": "Balanced choice"}},
+        selected_scenario_id=None,
+    )
+
+    assert block.name == "selected_scenario_contract"
+    assert block.payload["selected_scenario_id"] == "B"
+    assert block.payload["constraint_summary"] == ["Preserve continuity."]
+
+
+def test_season_phase_slot_block_remains_payload_compatible() -> None:
+    block = build_season_phase_slot_block(
+        selected_structure_context={
+            "selected_scenario_id": "B",
+            "deload_cadence": "2:1",
+            "phase_length_weeks": 3,
+            "phase_count_expected": 6,
+            "max_shortened_phases": 2,
+            "shortening_budget_weeks": 1,
+            "full_phases": 5,
+            "planning_horizon_weeks": 17,
+            "reconstructed_horizon_weeks": 17,
+            "consistent_with_horizon": True,
+            "shortened_phases": [{"len": 2, "count": 1}],
+        },
+        target_week=IsoWeek(2026, 20),
+    )
+
+    assert block.name == "season_phase_slots"
+    assert isinstance(block.payload, dict)
+    assert "phase_slots" in block.payload
+    assert block.payload["phase_slots"]

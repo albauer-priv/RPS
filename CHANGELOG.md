@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed `src/rps/planning/deterministic_context.py` so phase-execution cadence/week-role fallback logic now resolves through an internal typed `PhaseExecutionResolution`, while `build_phase_execution_context(...)` remains outwardly dict-compatible for prompts, guardrails, snapshots, and existing consumers.
 - Changed `src/rps/planning/deterministic_context.py` so `build_week_calendar_context(...)` now assembles a typed `WeekCalendarContext` / `WeekDayContext` pair with explicit `to_payload()` projection, while preserving the existing dict-compatible week-calendar payload contract for prompts, guardrails, and current consumers.
 - Changed `src/rps/planning/deterministic_context.py` so `build_load_capacity_block(...)` now routes through a typed `LoadCapacityContext` wrapper with explicit `to_payload()` projection, preserving the existing dict-compatible load-capacity payload contract while introducing an internal typed seam for the next migration slices.
+- Changed `src/rps/planning/deterministic_context.py` so the selected-scenario structure, selected-scenario contract, and season phase-slot block builders now route through typed wrapper projections (`SelectedScenarioStructureContext`, `SelectedScenarioContractContext`, `SeasonPhaseSlotContext`) while preserving the existing dict-compatible payload contracts for prompts, guardrails, and snapshots.
 
 ### Fixed
 
