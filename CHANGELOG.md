@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added shared `plan_week` regression helpers and focused tests for orchestration/testability hardening: `tests/planning_context_helpers.py`, `tests/test_plan_week_helpers.py`, and `tests/test_deterministic_context.py` now cover shared latest/exact-range loading, snapshot preflight/report-gate helpers, and typed deterministic phase-execution fallback resolution.
+
 ### Changed
+
+- Changed `src/rps/orchestrator/plan_week.py` to use staged internal helper extraction and typed request/report-gate/preflight boundaries while preserving existing planning/report/export behavior and external artifact contracts.
+- Changed `src/rps/planning/deterministic_context.py` so phase-execution cadence/week-role fallback logic now resolves through an internal typed `PhaseExecutionResolution`, while `build_phase_execution_context(...)` remains outwardly dict-compatible for prompts, guardrails, snapshots, and existing consumers.
 
 ### Fixed
 

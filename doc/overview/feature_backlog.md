@@ -23,6 +23,8 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
    Depends on: none (better after user_management for env clarity)
 6) **FEAT_posting_receipts_conflict_ux** — receipts diff + conflict UX.  
    Depends on: FEAT_posting_receipts_inspection
+7) **[FEAT_plan_week_testability_and_resolution_refactor](/doc/specs/features/FEAT_plan_week_testability_and_resolution_refactor.md)** — refactor `plan_week` test setup, resolver boundaries, and deterministic context typing for maintainability and lower regression risk.  
+   Depends on: none
 
 ## Implemented / In-Progress
 

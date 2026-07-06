@@ -104,6 +104,17 @@ class DeterministicContextBlock:
     markdown: str
 
 
+@dataclass(frozen=True)
+class PhaseExecutionResolution:
+    """Typed phase-execution cadence/role resolution before payload projection."""
+
+    scenario_cadence: str | None
+    cadence_week_roles: tuple[str, ...]
+    week_role_by_iso_week: dict[str, str]
+    blocking_issues: tuple[str, ...]
+    used_fallbacks: tuple[str, ...]
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -299,17 +310,11 @@ def build_phase_execution_context(
         phase_id=str(getattr(phase_info, "phase_id", "")),
         phase_range=phase_range,
     )
-    scenario_cadence = str(active_slot.get("scenario_cadence") or "").strip() or None
-    cadence_week_roles = [
-        str(item)
-        for item in _as_list(active_slot.get("cadence_week_roles"))
-        if str(item).strip()
-    ]
-    week_role_by_iso_week = {
-        _week_key(week): cadence_week_roles[idx]
-        for idx, week in enumerate(weeks)
-        if idx < len(cadence_week_roles)
-    }
+    resolution = _resolve_phase_execution_roles(
+        weeks=weeks,
+        active_slot=active_slot,
+        phase_raw=phase_raw,
+    )
     season_data = _as_map((season_plan_payload or {}).get("data"))
     selected_scenario_contract = _as_map(season_data.get("selected_scenario_contract"))
     phase_semantics = _as_map(phase_raw.get("allowed_forbidden_semantics"))
@@ -330,7 +335,7 @@ def build_phase_execution_context(
     phase_allowed_load_modalities = list(phase_semantics.get("allowed_load_modalities") or [])
     phase_week_skeleton = build_week_skeleton_for_phase(
         week_keys=[_week_key(week) for week in weeks],
-        week_role_by_iso_week=week_role_by_iso_week,
+        week_role_by_iso_week=resolution.week_role_by_iso_week,
         fixed_rest_days=_fixed_rest_days(availability_payload or {}),
         allowed_day_roles=allowed_day_roles,
         allowed_intensity_domains=phase_allowed_intensity_domains,
@@ -356,14 +361,14 @@ def build_phase_execution_context(
         "phase_role_week_load_bands": structured_role_week_bands,
         "phase_primary_objective": phase_primary_objective,
         "objective_mismatch_warning": objective_warning,
-        "scenario_cadence": scenario_cadence,
+        "scenario_cadence": resolution.scenario_cadence,
         "selected_scenario_contract": selected_scenario_contract,
         "inherited_scenario_contract": selected_scenario_contract,
-        "phase_cadence_week_roles": cadence_week_roles,
-        "week_role_by_iso_week": week_role_by_iso_week,
+        "phase_cadence_week_roles": list(resolution.cadence_week_roles),
+        "week_role_by_iso_week": resolution.week_role_by_iso_week,
         "season_phase_slot_source": "Deterministic Season Phase Slot Context",
         "season_phase_slot": active_slot,
-        "is_shortened_phase": any(str(role).startswith("SHORTENED_") for role in cadence_week_roles),
+        "is_shortened_phase": any(str(role).startswith("SHORTENED_") for role in resolution.cadence_week_roles),
         "deload_intent": phase_raw.get("deload"),
         "deload_rationale": phase_raw.get("deload_rationale"),
         "target_week_s5_band": active_s5.get("band"),
@@ -373,11 +378,7 @@ def build_phase_execution_context(
         "fixed_rest_days": _fixed_rest_days(availability_payload or {}),
         "logistics_in_phase": _dated_items_in_range(logistics_payload or {}, phase_range, field="events"),
         "events_in_phase": _dated_items_in_range(planning_events_payload or {}, phase_range, field="events"),
-        "blocking_issues": _phase_execution_blocking_issues(
-            weeks=weeks,
-            cadence_week_roles=cadence_week_roles,
-            scenario_cadence=scenario_cadence,
-        ),
+        "blocking_issues": list(resolution.blocking_issues),
     }
 
 
@@ -857,11 +858,94 @@ def _s5_bands_for_weeks(load_context: JsonMap, weeks: list[IsoWeek]) -> list[Jso
 
 
 def _scenario_cadence_from_phase(phase_raw: JsonMap) -> str | None:
+    for candidate in (
+        phase_raw.get("scenario_cadence"),
+        phase_raw.get("deload_cadence"),
+        _as_map(phase_raw.get("scenario_guidance")).get("deload_cadence"),
+        _as_map(phase_raw.get("selected_scenario_contract")).get("deload_cadence"),
+    ):
+        value = str(candidate or "").strip()
+        if value:
+            return value
     return None
 
 
 def _cadence_week_roles_for_phase(*, phase_raw: JsonMap, cadence: str | None, length_weeks: int) -> list[str]:
-    return []
+    if length_weeks <= 0:
+        return []
+
+    explicit_roles = [str(item).strip() for item in _as_list(phase_raw.get("cadence_week_roles")) if str(item).strip()]
+    if len(explicit_roles) >= length_weeks:
+        return explicit_roles[:length_weeks]
+
+    is_shortened = any(role.startswith("SHORTENED_") for role in explicit_roles) or str(
+        phase_raw.get("phase_intent") or ""
+    ).strip().lower().startswith("shortened_")
+    pattern = SHORTENED_WEEK_ROLE_PATTERN if is_shortened else CADENCE_WEEK_ROLE_PATTERNS.get(str(cadence or "").strip())
+
+    roles = list(explicit_roles)
+    if not pattern:
+        return roles
+    while len(roles) < length_weeks:
+        roles.append(pattern[min(len(roles), len(pattern) - 1)])
+    return roles[:length_weeks]
+
+
+def _resolve_phase_execution_roles(
+    *,
+    weeks: list[IsoWeek],
+    active_slot: JsonMap,
+    phase_raw: JsonMap,
+) -> PhaseExecutionResolution:
+    """Resolve phase cadence/week-role state before public payload projection."""
+
+    used_fallbacks: list[str] = []
+
+    scenario_cadence = str(active_slot.get("scenario_cadence") or "").strip() or None
+    if not scenario_cadence:
+        scenario_cadence = _scenario_cadence_from_phase(phase_raw)
+        if scenario_cadence:
+            used_fallbacks.append("scenario_cadence_from_phase_raw")
+
+    active_slot_roles = [
+        str(item)
+        for item in _as_list(active_slot.get("cadence_week_roles"))
+        if str(item).strip()
+    ]
+    cadence_week_roles = list(active_slot_roles)
+    if not cadence_week_roles:
+        cadence_week_roles = _cadence_week_roles_for_phase(
+            phase_raw=phase_raw,
+            cadence=scenario_cadence,
+            length_weeks=len(weeks),
+        )
+        if cadence_week_roles:
+            explicit_phase_roles = [
+                str(item).strip() for item in _as_list(phase_raw.get("cadence_week_roles")) if str(item).strip()
+            ]
+            if explicit_phase_roles:
+                used_fallbacks.append("cadence_week_roles_from_phase_raw")
+            else:
+                used_fallbacks.append("cadence_week_roles_from_cadence_pattern")
+
+    week_role_by_iso_week = {
+        _week_key(week): cadence_week_roles[idx]
+        for idx, week in enumerate(weeks)
+        if idx < len(cadence_week_roles)
+    }
+    blocking_issues = _phase_execution_blocking_issues(
+        weeks=weeks,
+        cadence_week_roles=cadence_week_roles,
+        scenario_cadence=scenario_cadence,
+    )
+
+    return PhaseExecutionResolution(
+        scenario_cadence=scenario_cadence,
+        cadence_week_roles=tuple(cadence_week_roles),
+        week_role_by_iso_week=week_role_by_iso_week,
+        blocking_issues=tuple(blocking_issues),
+        used_fallbacks=tuple(used_fallbacks),
+    )
 
 
 def _phase_slot_for_context(*, phase_slot_context: JsonMap, phase_id: str, phase_range: IsoWeekRange) -> JsonMap:
