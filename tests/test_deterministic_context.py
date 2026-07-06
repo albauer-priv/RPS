@@ -1,5 +1,12 @@
-from rps.planning.deterministic_context import _resolve_phase_execution_roles
-from rps.workspace.iso_helpers import IsoWeek
+from types import SimpleNamespace
+
+from rps.planning.deterministic_context import (
+    PhaseExecutionContext,
+    PhaseExecutionResolution,
+    _resolve_phase_execution_roles,
+    build_phase_execution_context,
+)
+from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 
 
 def test_resolve_phase_execution_roles_prefers_active_slot_values() -> None:
@@ -94,3 +101,111 @@ def test_resolve_phase_execution_roles_reports_role_count_mismatch() -> None:
     assert resolution.blocking_issues == (
         "phase cadence week roles do not cover every phase week.",
     )
+
+
+def test_phase_execution_context_to_payload_projects_public_lists() -> None:
+    payload = PhaseExecutionContext(
+        target_iso_week="2026-12",
+        phase_id="P01",
+        phase_index=1,
+        phase_iso_week_range="2026-12--2026-14",
+        phase_length_weeks=3,
+        week_keys=("2026-12", "2026-13", "2026-14"),
+        week_index_within_phase=1,
+        phase_type="BUILD",
+        phase_role="BUILD",
+        phase_intent="durability_build",
+        build_subtype="durability_build",
+        phase_allowed_intensity_domains=("ENDURANCE", "TEMPO"),
+        phase_forbidden_intensity_domains=("VO2MAX",),
+        phase_allowed_load_modalities=("NONE",),
+        phase_role_week_load_bands=({"week": "2026-12", "role": "LOAD_1", "band": {"min": 1, "max": 2}},),
+        phase_primary_objective="Build durable load.",
+        objective_mismatch_warning=None,
+        resolution=PhaseExecutionResolution(
+            scenario_cadence="2:1",
+            cadence_week_roles=("LOAD_1", "LOAD_2", "DELOAD"),
+            week_role_by_iso_week={"2026-12": "LOAD_1", "2026-13": "LOAD_2", "2026-14": "DELOAD"},
+            blocking_issues=(),
+            used_fallbacks=("scenario_cadence_from_phase_raw",),
+        ),
+        selected_scenario_contract={"selected_scenario_id": "B"},
+        season_phase_slot={"phase_id": "P01"},
+        deload_intent=False,
+        deload_rationale="planned",
+        target_week_s5_band={"min": 10, "max": 20},
+        target_week_s5_trace={"source": "test"},
+        phase_s5_bands=({"week": "2026-12", "band": {"min": 10, "max": 20}},),
+        phase_week_skeleton=({"week": "2026-12", "days": []},),
+        fixed_rest_days=("Mon", "Fri"),
+        logistics_in_phase=({"date": "2026-03-16", "type": "TRAVEL"},),
+        events_in_phase=({"date": "2026-03-17", "type": "B", "name": "Spring 200"},),
+    ).to_payload()
+
+    assert payload["week_keys"] == ["2026-12", "2026-13", "2026-14"]
+    assert payload["phase_cadence_week_roles"] == ["LOAD_1", "LOAD_2", "DELOAD"]
+    assert payload["phase_allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
+    assert payload["fixed_rest_days"] == ["Mon", "Fri"]
+    assert payload["blocking_issues"] == []
+
+
+def test_build_phase_execution_context_remains_dict_compatible() -> None:
+    context = build_phase_execution_context(
+        target_week=IsoWeek(2026, 12),
+        phase_info=SimpleNamespace(
+            phase_id="P01",
+            phase_type="BUILD",
+            raw={
+                "phase_type": "BUILD",
+                "phase_intent": "durability_build",
+                "build_subtype": "durability_build",
+                "allowed_forbidden_semantics": {
+                    "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                    "forbidden_intensity_domains": ["VO2MAX"],
+                    "allowed_load_modalities": ["NONE"],
+                },
+                "role_week_load_bands": [{"week": "2026-12", "role": "LOAD_1", "band": {"min": 1, "max": 2}}],
+                "overview": {"phase_goals": {"primary": "Build durable load."}},
+                "deload": False,
+                "deload_rationale": "planned",
+            },
+        ),
+        phase_range=IsoWeekRange(start=IsoWeek(2026, 12), end=IsoWeek(2026, 14)),
+        season_plan_payload={
+            "data": {
+                "phases": [{"phase_id": "P01"}],
+                "selected_scenario_contract": {"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+                "season_intent_principles": {"season_objective": "Ride 200 km well"},
+            }
+        },
+        phase_slot_context={
+            "phase_slots": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-12--2026-14",
+                    "scenario_cadence": "2:1",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                }
+            ]
+        },
+        availability_payload={"data": {"fixed_rest_days": ["Mon", "Fri"]}},
+        logistics_payload={"data": {"events": []}},
+        planning_events_payload={"data": {"events": []}},
+        load_capacity_context={
+            "s5_bands": [
+                {"week": "2026-12", "band": {"min": 10, "max": 20}, "trace": {"source": "test"}},
+                {"week": "2026-13", "band": {"min": 11, "max": 21}},
+                {"week": "2026-14", "band": {"min": 12, "max": 22}},
+            ]
+        },
+    )
+
+    assert isinstance(context, dict)
+    assert context["phase_cadence_week_roles"] == ["LOAD_1", "LOAD_2", "DELOAD"]
+    assert context["week_role_by_iso_week"] == {
+        "2026-12": "LOAD_1",
+        "2026-13": "LOAD_2",
+        "2026-14": "DELOAD",
+    }
+    assert context["fixed_rest_days"] == ["Mon", "Fri"]
+    assert context["blocking_issues"] == []

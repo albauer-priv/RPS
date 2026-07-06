@@ -115,6 +115,82 @@ class PhaseExecutionResolution:
     used_fallbacks: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class PhaseExecutionContext:
+    """Typed phase-execution context with explicit payload projection."""
+
+    target_iso_week: str
+    phase_id: str
+    phase_index: int | None
+    phase_iso_week_range: str
+    phase_length_weeks: int
+    week_keys: tuple[str, ...]
+    week_index_within_phase: int
+    phase_type: str
+    phase_role: str
+    phase_intent: str
+    build_subtype: str | None
+    phase_allowed_intensity_domains: tuple[str, ...]
+    phase_forbidden_intensity_domains: tuple[str, ...]
+    phase_allowed_load_modalities: tuple[str, ...]
+    phase_role_week_load_bands: tuple[JsonMap, ...]
+    phase_primary_objective: str
+    objective_mismatch_warning: str | None
+    resolution: PhaseExecutionResolution
+    selected_scenario_contract: JsonMap
+    season_phase_slot: JsonMap
+    deload_intent: object
+    deload_rationale: object
+    target_week_s5_band: object
+    target_week_s5_trace: object
+    phase_s5_bands: tuple[JsonMap, ...]
+    phase_week_skeleton: tuple[JsonMap, ...]
+    fixed_rest_days: tuple[str, ...]
+    logistics_in_phase: tuple[JsonMap, ...]
+    events_in_phase: tuple[JsonMap, ...]
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed context back to the existing dict-compatible payload."""
+
+        return {
+            "target_iso_week": self.target_iso_week,
+            "phase_id": self.phase_id,
+            "phase_index": self.phase_index,
+            "phase_iso_week_range": self.phase_iso_week_range,
+            "phase_length_weeks": self.phase_length_weeks,
+            "week_keys": list(self.week_keys),
+            "week_index_within_phase": self.week_index_within_phase,
+            "phase_type": self.phase_type,
+            "phase_role": self.phase_role,
+            "phase_intent": self.phase_intent,
+            "build_subtype": self.build_subtype,
+            "phase_allowed_intensity_domains": list(self.phase_allowed_intensity_domains),
+            "phase_forbidden_intensity_domains": list(self.phase_forbidden_intensity_domains),
+            "phase_allowed_load_modalities": list(self.phase_allowed_load_modalities),
+            "phase_role_week_load_bands": [dict(item) for item in self.phase_role_week_load_bands],
+            "phase_primary_objective": self.phase_primary_objective,
+            "objective_mismatch_warning": self.objective_mismatch_warning,
+            "scenario_cadence": self.resolution.scenario_cadence,
+            "selected_scenario_contract": dict(self.selected_scenario_contract),
+            "inherited_scenario_contract": dict(self.selected_scenario_contract),
+            "phase_cadence_week_roles": list(self.resolution.cadence_week_roles),
+            "week_role_by_iso_week": dict(self.resolution.week_role_by_iso_week),
+            "season_phase_slot_source": "Deterministic Season Phase Slot Context",
+            "season_phase_slot": dict(self.season_phase_slot),
+            "is_shortened_phase": any(str(role).startswith("SHORTENED_") for role in self.resolution.cadence_week_roles),
+            "deload_intent": self.deload_intent,
+            "deload_rationale": self.deload_rationale,
+            "target_week_s5_band": self.target_week_s5_band,
+            "target_week_s5_trace": self.target_week_s5_trace,
+            "phase_s5_bands": [dict(item) for item in self.phase_s5_bands],
+            "phase_week_skeleton": [dict(item) for item in self.phase_week_skeleton],
+            "fixed_rest_days": list(self.fixed_rest_days),
+            "logistics_in_phase": [dict(item) for item in self.logistics_in_phase],
+            "events_in_phase": [dict(item) for item in self.events_in_phase],
+            "blocking_issues": list(self.resolution.blocking_issues),
+        }
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -330,56 +406,56 @@ def build_phase_execution_context(
         season_objective=_as_map(season_data.get("season_intent_principles")).get("season_objective"),
         a_events=[item for item in _dated_items_in_range(planning_events_payload or {}, phase_range, field="events") if str(_as_map(item).get("type") or "").strip().upper() == "A"],
     )
+    week_keys = tuple(_week_key(week) for week in weeks)
     allowed_day_roles = ["REST", "RECOVERY", "ENDURANCE", "QUALITY"]
-    phase_allowed_intensity_domains = list(phase_semantics.get("allowed_intensity_domains") or [])
-    phase_allowed_load_modalities = list(phase_semantics.get("allowed_load_modalities") or [])
-    phase_week_skeleton = build_week_skeleton_for_phase(
-        week_keys=[_week_key(week) for week in weeks],
-        week_role_by_iso_week=resolution.week_role_by_iso_week,
-        fixed_rest_days=_fixed_rest_days(availability_payload or {}),
-        allowed_day_roles=allowed_day_roles,
-        allowed_intensity_domains=phase_allowed_intensity_domains,
-        allowed_load_modalities=phase_allowed_load_modalities or ["NONE"],
-        quality_cap=2,
-        phase_intent=str(phase_raw.get("phase_intent") or ""),
+    phase_allowed_intensity_domains = tuple(str(item) for item in phase_semantics.get("allowed_intensity_domains") or [])
+    phase_forbidden_intensity_domains = tuple(str(item) for item in phase_semantics.get("forbidden_intensity_domains") or [])
+    phase_allowed_load_modalities = tuple(str(item) for item in phase_semantics.get("allowed_load_modalities") or [])
+    fixed_rest_days = tuple(_fixed_rest_days(availability_payload or {}))
+    phase_week_skeleton = tuple(
+        build_week_skeleton_for_phase(
+            week_keys=list(week_keys),
+            week_role_by_iso_week=resolution.week_role_by_iso_week,
+            fixed_rest_days=list(fixed_rest_days),
+            allowed_day_roles=allowed_day_roles,
+            allowed_intensity_domains=list(phase_allowed_intensity_domains),
+            allowed_load_modalities=list(phase_allowed_load_modalities) or ["NONE"],
+            quality_cap=2,
+            phase_intent=str(phase_raw.get("phase_intent") or ""),
+        )
     )
-    return {
-        "target_iso_week": target_key,
-        "phase_id": getattr(phase_info, "phase_id", ""),
-        "phase_index": phase_index,
-        "phase_iso_week_range": phase_range.range_key,
-        "phase_length_weeks": len(weeks),
-        "week_keys": [_week_key(week) for week in weeks],
-        "week_index_within_phase": max(1, week_index(target_week) - week_index(phase_range.start) + 1),
-        "phase_type": phase_raw.get("phase_type") or phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
-        "phase_role": phase_raw.get("phase_type") or phase_raw.get("cycle") or getattr(phase_info, "phase_type", ""),
-        "phase_intent": phase_raw.get("phase_intent") or "",
-        "build_subtype": phase_raw.get("build_subtype"),
-        "phase_allowed_intensity_domains": phase_allowed_intensity_domains,
-        "phase_forbidden_intensity_domains": list(phase_semantics.get("forbidden_intensity_domains") or []),
-        "phase_allowed_load_modalities": phase_allowed_load_modalities,
-        "phase_role_week_load_bands": structured_role_week_bands,
-        "phase_primary_objective": phase_primary_objective,
-        "objective_mismatch_warning": objective_warning,
-        "scenario_cadence": resolution.scenario_cadence,
-        "selected_scenario_contract": selected_scenario_contract,
-        "inherited_scenario_contract": selected_scenario_contract,
-        "phase_cadence_week_roles": list(resolution.cadence_week_roles),
-        "week_role_by_iso_week": resolution.week_role_by_iso_week,
-        "season_phase_slot_source": "Deterministic Season Phase Slot Context",
-        "season_phase_slot": active_slot,
-        "is_shortened_phase": any(str(role).startswith("SHORTENED_") for role in resolution.cadence_week_roles),
-        "deload_intent": phase_raw.get("deload"),
-        "deload_rationale": phase_raw.get("deload_rationale"),
-        "target_week_s5_band": active_s5.get("band"),
-        "target_week_s5_trace": active_s5.get("trace"),
-        "phase_s5_bands": _s5_bands_for_weeks(load_capacity_context or {}, weeks),
-        "phase_week_skeleton": phase_week_skeleton,
-        "fixed_rest_days": _fixed_rest_days(availability_payload or {}),
-        "logistics_in_phase": _dated_items_in_range(logistics_payload or {}, phase_range, field="events"),
-        "events_in_phase": _dated_items_in_range(planning_events_payload or {}, phase_range, field="events"),
-        "blocking_issues": list(resolution.blocking_issues),
-    }
+    phase_execution_context = PhaseExecutionContext(
+        target_iso_week=target_key,
+        phase_id=str(getattr(phase_info, "phase_id", "")),
+        phase_index=phase_index,
+        phase_iso_week_range=phase_range.range_key,
+        phase_length_weeks=len(weeks),
+        week_keys=week_keys,
+        week_index_within_phase=max(1, week_index(target_week) - week_index(phase_range.start) + 1),
+        phase_type=str(phase_raw.get("phase_type") or phase_raw.get("cycle") or getattr(phase_info, "phase_type", "")),
+        phase_role=str(phase_raw.get("phase_type") or phase_raw.get("cycle") or getattr(phase_info, "phase_type", "")),
+        phase_intent=str(phase_raw.get("phase_intent") or ""),
+        build_subtype=str(phase_raw.get("build_subtype")) if phase_raw.get("build_subtype") is not None else None,
+        phase_allowed_intensity_domains=phase_allowed_intensity_domains,
+        phase_forbidden_intensity_domains=phase_forbidden_intensity_domains,
+        phase_allowed_load_modalities=phase_allowed_load_modalities,
+        phase_role_week_load_bands=tuple(structured_role_week_bands),
+        phase_primary_objective=phase_primary_objective,
+        objective_mismatch_warning=objective_warning,
+        resolution=resolution,
+        selected_scenario_contract=selected_scenario_contract,
+        season_phase_slot=active_slot,
+        deload_intent=phase_raw.get("deload"),
+        deload_rationale=phase_raw.get("deload_rationale"),
+        target_week_s5_band=active_s5.get("band"),
+        target_week_s5_trace=active_s5.get("trace"),
+        phase_s5_bands=tuple(_s5_bands_for_weeks(load_capacity_context or {}, weeks)),
+        phase_week_skeleton=phase_week_skeleton,
+        fixed_rest_days=fixed_rest_days,
+        logistics_in_phase=tuple(_dated_items_in_range(logistics_payload or {}, phase_range, field="events")),
+        events_in_phase=tuple(_dated_items_in_range(planning_events_payload or {}, phase_range, field="events")),
+    )
+    return phase_execution_context.to_payload()
 
 
 def render_phase_execution_context_block(context: JsonMap) -> str:
