@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed the Feed Forward page calling agents directly: `src/rps/ui/pages/performance/feed_forward.py` no longer builds snapshots and invokes `run_agent_multi_output` inline, and now delegates to the existing shared `run_feed_forward_chain` orchestrator helper in `src/rps/orchestrator/advisory_actions.py` (the same helper Coach already uses), restoring the ADR-001 / `.clinerules` UI-agent boundary. Added `tests/test_advisory_actions.py` for direct coverage of `run_feed_forward_chain`'s success/failure branching, which previously had none.
+
 ## [0.20.27] - 2026-06-19
 
 ### Added

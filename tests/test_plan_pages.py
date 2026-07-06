@@ -3866,14 +3866,22 @@ def test_feed_forward_requires_selected_week_report():
     assert button.disabled is True
 
 
-def test_feed_forward_source_uses_selected_week_report_versions():
+def test_feed_forward_page_delegates_to_orchestrator_chain():
+    """Feed Forward page must not call agents directly (ADR-001 / .clinerules Sec.7)."""
     source = Path("src/rps/ui/pages/performance/feed_forward.py").read_text(encoding="utf-8")
+    assert "run_feed_forward_chain" in source
+    assert "run_agent_multi_output" not in source
+    assert "from rps.agents" not in source
+
+
+def test_advisory_actions_source_uses_selected_week_report_versions():
+    source = Path("src/rps/orchestrator/advisory_actions.py").read_text(encoding="utf-8")
     assert 'workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}})' in source
     assert 'store.load_latest(athlete_id, ArtifactType.DES_ANALYSIS_REPORT)' not in source
 
 
-def test_feed_forward_source_injects_resolved_selected_week_context():
-    source = Path("src/rps/ui/pages/performance/feed_forward.py").read_text(encoding="utf-8")
+def test_advisory_actions_source_injects_resolved_selected_week_context():
+    source = Path("src/rps/orchestrator/advisory_actions.py").read_text(encoding="utf-8")
     assert "build_resolved_des_evaluation_context" in source
     assert "build_resolved_season_phase_feed_forward_context" in source
     assert "save_athlete_state_snapshot" in source

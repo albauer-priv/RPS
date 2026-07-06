@@ -5,21 +5,7 @@ from datetime import date
 
 import streamlit as st
 
-from rps.agents.registry import AGENTS
-from rps.agents.runtime import run_agent_multi_output
-from rps.agents.tasks import AgentTask
-from rps.orchestrator.context_snapshots import (
-    build_athlete_state_snapshot_prompt_block,
-    build_planning_context_snapshot_prompt_block,
-    save_advisory_memory,
-    save_athlete_state_snapshot,
-    save_planning_context_snapshot,
-)
-from rps.orchestrator.plan_week import create_performance_report
-from rps.ui.feed_forward_context import (
-    build_resolved_des_evaluation_context,
-    build_resolved_season_phase_feed_forward_context,
-)
+from rps.orchestrator.advisory_actions import run_feed_forward_chain
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -37,7 +23,6 @@ from rps.ui.shared import (
 from rps.workspace.index_manager import WorkspaceIndexManager
 from rps.workspace.iso_helpers import IsoWeek, previous_iso_week
 from rps.workspace.local_store import LocalArtifactStore
-from rps.workspace.season_plan_service import resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 
 JsonMap = dict[str, object]
@@ -69,18 +54,6 @@ def _load_selected_week_artifact(
     try:
         payload = store.load_version(athlete_id, artifact_type, version_key)
     except FileNotFoundError:
-        return None
-    return _as_map(payload)
-
-
-def _load_latest_payload(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-) -> JsonMap | None:
-    try:
-        payload = store.load_latest(athlete_id, artifact_type)
-    except Exception:
         return None
     return _as_map(payload)
 
@@ -166,21 +139,6 @@ else:
 
 selected_week = IsoWeek(year=year, week=week)
 selected_week_key = f"{selected_week.year:04d}-{selected_week.week:02d}"
-season_plan_payload = _load_selected_week_artifact(
-    store,
-    athlete_id,
-    ArtifactType.SEASON_PLAN,
-    selected_week_key,
-)
-if not season_plan_payload and store.latest_exists(athlete_id, ArtifactType.SEASON_PLAN):
-    latest_season_plan = store.load_latest(athlete_id, ArtifactType.SEASON_PLAN)
-    season_plan_payload = _as_map(latest_season_plan)
-season_plan_ref = ""
-try:
-    season_plan_ref = f"season_plan_{store.get_latest_version_key(athlete_id, ArtifactType.SEASON_PLAN)}.json"
-except Exception:
-    season_plan_ref = ""
-phase_info = resolve_season_plan_phase_info(season_plan_payload or {}, selected_week)
 
 st.subheader("Feed Forward Readiness")
 report_for_selected_week = store.exists(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, selected_week_key)
@@ -215,255 +173,50 @@ elif not report_for_selected_week:
 
 run_label = f"Run Feed Forward (Report → Season → Phase → Week) · {selected_week_key}"
 if run_cols[0].button(run_label, disabled=not can_run_feed_forward):
-    report_run_id = make_ui_run_id(f"feed_forward_report_{year}_{week:02d}")
+    chain_run_id = make_ui_run_id(f"feed_forward_{year}_{week:02d}")
     set_status(
         status_state="running",
         title="Feed Forward",
-        message="Creating DES analysis report...",
-        last_action="DES Analysis Report",
-        last_run_id=report_run_id,
+        message="Running Feed Forward (Report → Season → Phase → Week)...",
+        last_action="Feed Forward Chain",
+        last_run_id=chain_run_id,
     )
-    report_result, report_output = capture_output(
-        lambda: create_performance_report(
+    chain_result, chain_output = capture_output(
+        lambda: run_feed_forward_chain(
             multi_runtime_for,
+            workspace_root=SETTINGS.workspace_root,
             athlete_id=athlete_id,
-            report_week=selected_week,
-            run_id_prefix=report_run_id,
+            target_week=selected_week,
+            run_id_prefix=chain_run_id,
             model_resolver=SETTINGS.model_for_agent,
             temperature_resolver=SETTINGS.temperature_for_agent,
         ),
         loggers=CAPTURE_LOGGERS,
     )
-    if not (isinstance(report_result, dict) and report_result.get("ok")):
-        message = report_result.get("message") if isinstance(report_result, dict) else "DES analysis report failed."
+    if chain_result.ok:
+        set_status(
+            status_state="done",
+            title="Feed Forward",
+            message="Feed Forward chain complete.",
+            last_action="Feed Forward Chain",
+            last_run_id=chain_run_id,
+        )
+    else:
+        if not chain_result.report_ok:
+            failed_action = "DES Analysis Report"
+        elif not chain_result.season_phase_ok:
+            failed_action = "Season → Phase Feed Forward"
+        else:
+            failed_action = "Phase → Week Feed Forward"
+        message = chain_result.error or "Feed Forward chain failed."
         set_status(
             status_state="error",
             title="Feed Forward",
             message=message,
-            last_action="DES Analysis Report",
-            last_run_id=report_run_id,
+            last_action=failed_action,
+            last_run_id=chain_run_id,
         )
         st.error(message)
-    else:
-        athlete_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
-        kpi_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE)
-        availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
-        planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
-        logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
-        selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-        zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
-        wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
-        selected_report_payload = _load_selected_week_artifact(
-            store,
-            athlete_id,
-            ArtifactType.DES_ANALYSIS_REPORT,
-            selected_week_key,
-        )
-        selected_report_ref = ""
-        selected_report_version = store.resolve_week_version_key(
-            athlete_id,
-            ArtifactType.DES_ANALYSIS_REPORT,
-            selected_week_key,
-        )
-        if selected_report_version:
-            selected_report_ref = f"des_analysis_report_{selected_report_version}.json"
-        athlete_state_snapshot = save_athlete_state_snapshot(
-            store,
-            athlete_id,
-            target_week=selected_week,
-            run_id=report_run_id,
-            athlete_profile_payload=athlete_profile_payload or {},
-            kpi_profile_payload=kpi_profile_payload or {},
-            selection_payload=selection_payload or {},
-            availability_payload=availability_payload or {},
-            planning_events_payload=planning_events_payload or {},
-            logistics_payload=logistics_payload or {},
-            zone_model_payload=zone_model_payload or {},
-            wellness_payload=wellness_payload or {},
-        )
-        athlete_state_snapshot_block = build_athlete_state_snapshot_prompt_block(athlete_state_snapshot)
-        planning_context_snapshot_block = ""
-        if season_plan_payload and phase_info:
-            planning_context_snapshot = save_planning_context_snapshot(
-                store,
-                athlete_id,
-                target_week=selected_week,
-                phase_info=phase_info,
-                season_plan_payload=_as_map(season_plan_payload),
-                phase_range=phase_info.phase_range,
-                run_id=report_run_id,
-                availability_payload=availability_payload or {},
-                planning_events_payload=planning_events_payload or {},
-            )
-            planning_context_snapshot_block = build_planning_context_snapshot_prompt_block(
-                planning_context_snapshot
-            )
-        save_advisory_memory(
-            store,
-            athlete_id,
-            target_week=selected_week,
-            run_id=report_run_id,
-            season_plan_payload=_as_map(season_plan_payload),
-            des_analysis_payload=selected_report_payload or {},
-        )
-        des_context_block = build_resolved_des_evaluation_context(
-            selected_week=selected_week,
-            report_payload=selected_report_payload,
-            report_ref=selected_report_ref,
-            season_plan_ref=season_plan_ref,
-            affected_phase_id=phase_info.phase_id if phase_info else "",
-            phase_range_key=phase_info.phase_range.key if phase_info else "",
-        )
-        runtime = multi_runtime_for("season_planner")
-        spec = AGENTS["season_planner"]
-        injected_block = ""
-        run_id = make_ui_run_id(f"season_phase_feed_forward_{year}_{week:02d}")
-        set_status(
-            status_state="running",
-            title="Feed Forward",
-            message="Creating Season → Phase feed forward...",
-            last_action="Season → Phase Feed Forward",
-            last_run_id=run_id,
-        )
-        result, output = capture_output(
-            lambda: run_agent_multi_output(
-                runtime,
-                agent_name=spec.name,
-                athlete_id=athlete_id,
-                tasks=[AgentTask.CREATE_SEASON_PHASE_FEED_FORWARD],
-                user_input=(
-                    f"Target ISO week: {year}-{week:02d}. "
-                    f'Use workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}}) '
-                    "for the selected week if further report detail is needed. "
-                    "to produce SEASON_PHASE_FEED_FORWARD. "
-                    f"{athlete_state_snapshot_block}\n"
-                    f"{planning_context_snapshot_block}\n"
-                    f"{des_context_block}\n\n"
-                    f"{injected_block}"
-                ),
-                run_id=run_id,
-                model_override=SETTINGS.model_for_agent(spec.name),
-                temperature_override=SETTINGS.temperature_for_agent(spec.name),
-            ),
-            loggers=CAPTURE_LOGGERS,
-        )
-        status = "done" if isinstance(result, dict) or getattr(result, "ok", False) else "error"
-        set_status(
-            status_state=status,
-            title="Feed Forward",
-            message="Season → Phase feed forward complete.",
-            last_action="Season → Phase Feed Forward",
-            last_run_id=run_id,
-        )
-        if status == "done":
-            selected_season_phase_ff_payload = _load_selected_week_artifact(
-                store,
-                athlete_id,
-                ArtifactType.SEASON_PHASE_FEED_FORWARD,
-                selected_week_key,
-            )
-            selected_season_phase_ff_ref = ""
-            selected_season_phase_ff_version = store.resolve_week_version_key(
-                athlete_id,
-                ArtifactType.SEASON_PHASE_FEED_FORWARD,
-                selected_week_key,
-            )
-            if selected_season_phase_ff_version:
-                selected_season_phase_ff_ref = (
-                    f"season_phase_feed_forward_{selected_season_phase_ff_version}.json"
-                )
-            if season_plan_payload and phase_info:
-                planning_context_snapshot = save_planning_context_snapshot(
-                    store,
-                    athlete_id,
-                    target_week=selected_week,
-                    phase_info=phase_info,
-                    season_plan_payload=_as_map(season_plan_payload),
-                    phase_range=phase_info.phase_range,
-                    run_id=run_id,
-                    availability_payload=availability_payload or {},
-                    planning_events_payload=planning_events_payload or {},
-                    season_phase_feed_forward_payload=selected_season_phase_ff_payload or {},
-                )
-                planning_context_snapshot_block = build_planning_context_snapshot_prompt_block(
-                    planning_context_snapshot
-                )
-            save_advisory_memory(
-                store,
-                athlete_id,
-                target_week=selected_week,
-                run_id=run_id,
-                season_plan_payload=_as_map(season_plan_payload),
-                des_analysis_payload=selected_report_payload or {},
-                season_phase_feed_forward_payload=selected_season_phase_ff_payload or {},
-            )
-            season_phase_context_block = build_resolved_season_phase_feed_forward_context(
-                selected_week=selected_week,
-                feed_forward_payload=selected_season_phase_ff_payload,
-                feed_forward_ref=selected_season_phase_ff_ref,
-            )
-            runtime = multi_runtime_for("phase_architect")
-            spec = AGENTS["phase_architect"]
-            injected_block = ""
-            run_id = make_ui_run_id(f"phase_feed_forward_{year}_{week:02d}")
-            set_status(
-                status_state="running",
-                title="Feed Forward",
-                message="Creating Phase → Week feed forward...",
-                last_action="Phase → Week Feed Forward",
-                last_run_id=run_id,
-            )
-            result, output = capture_output(
-                lambda: run_agent_multi_output(
-                    runtime,
-                    agent_name=spec.name,
-                    athlete_id=athlete_id,
-                    tasks=[AgentTask.CREATE_PHASE_FEED_FORWARD],
-                    user_input=(
-                        f"Target ISO week: {year}-{week:02d}. "
-                        f'Use workspace_get_version({{"artifact_type":"DES_ANALYSIS_REPORT","version_key":"{selected_week_key}"}}) '
-                        "and "
-                        f'workspace_get_version({{"artifact_type":"SEASON_PHASE_FEED_FORWARD","version_key":"{selected_week_key}"}}) '
-                        "for the selected week if further detail is needed. "
-                        "Use the selected-week DES analysis report and the selected-week "
-                        "SEASON_PHASE_FEED_FORWARD context to produce PHASE_FEED_FORWARD. "
-                        f"{athlete_state_snapshot_block}\n"
-                        f"{planning_context_snapshot_block}\n"
-                        f"{des_context_block}\n\n"
-                        f"{season_phase_context_block}\n\n"
-                        f"{injected_block}"
-                    ),
-                    run_id=run_id,
-                    model_override=SETTINGS.model_for_agent(spec.name),
-                    temperature_override=SETTINGS.temperature_for_agent(spec.name),
-                ),
-                loggers=CAPTURE_LOGGERS,
-            )
-            status = "done" if isinstance(result, dict) or getattr(result, "ok", False) else "error"
-            set_status(
-                status_state=status,
-                title="Feed Forward",
-                message="Phase → Week feed forward complete.",
-                last_action="Phase → Week Feed Forward",
-                last_run_id=run_id,
-            )
-            if status == "done":
-                selected_phase_ff_payload = _load_selected_week_artifact(
-                    store,
-                    athlete_id,
-                    ArtifactType.PHASE_FEED_FORWARD,
-                    selected_week_key,
-                )
-                save_advisory_memory(
-                    store,
-                    athlete_id,
-                    target_week=selected_week,
-                    run_id=run_id,
-                    season_plan_payload=_as_map(season_plan_payload),
-                    des_analysis_payload=selected_report_payload or {},
-                    season_phase_feed_forward_payload=selected_season_phase_ff_payload or {},
-                    phase_feed_forward_payload=selected_phase_ff_payload or {},
-                )
 
 report_payload = _load_selected_week_artifact(
     store,
