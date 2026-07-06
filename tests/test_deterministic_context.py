@@ -4,6 +4,7 @@ from rps.planning.deterministic_context import (
     LoadCapacityContext,
     PhaseExecutionContext,
     PhaseExecutionResolution,
+    ReportEvidenceContext,
     SeasonPhaseSlotContext,
     SelectedScenarioContractContext,
     SelectedScenarioStructureContext,
@@ -12,6 +13,7 @@ from rps.planning.deterministic_context import (
     _resolve_phase_execution_roles,
     build_load_capacity_block,
     build_phase_execution_context,
+    build_report_evidence_context,
     build_season_phase_slot_block,
     build_selected_scenario_contract_block,
     build_selected_scenario_structure_block,
@@ -491,3 +493,35 @@ def test_season_phase_slot_block_remains_payload_compatible() -> None:
     assert isinstance(block.payload, dict)
     assert "phase_slots" in block.payload
     assert block.payload["phase_slots"]
+
+
+def test_report_evidence_context_to_payload_detaches_nested_payload() -> None:
+    original = {
+        "report_iso_week": "2026-21",
+        "activity_versions": {"ACTIVITIES_ACTUAL": "2026-21"},
+        "missing_required": ["WELLNESS"],
+        "diagnostic_only": True,
+    }
+
+    payload = ReportEvidenceContext(payload=original).to_payload()
+
+    assert payload == original
+    assert payload is not original
+    assert payload["activity_versions"] is not original["activity_versions"]
+    assert payload["missing_required"] is not original["missing_required"]
+
+
+def test_build_report_evidence_context_remains_payload_compatible() -> None:
+    context = build_report_evidence_context(
+        report_week=IsoWeek(2026, 21),
+        resolved_week_versions={"ACTIVITIES_ACTUAL": "2026-21__20260706_100000"},
+        missing_required=["WELLNESS"],
+        missing_context_inputs=["planning_events"],
+    )
+
+    assert isinstance(context, dict)
+    assert context["report_iso_week"] == "2026-21"
+    assert context["activity_versions"] == {"ACTIVITIES_ACTUAL": "2026-21__20260706_100000"}
+    assert context["missing_required"] == ["WELLNESS"]
+    assert context["missing_context_inputs"] == ["planning_events"]
+    assert context["diagnostic_only"] is True

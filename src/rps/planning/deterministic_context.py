@@ -336,6 +336,18 @@ class SeasonPhaseSlotContext:
         return deepcopy(self.payload)
 
 
+@dataclass(frozen=True)
+class ReportEvidenceContext:
+    """Typed report-evidence wrapper with explicit payload projection."""
+
+    payload: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed wrapper back to a detached dict-compatible payload."""
+
+        return deepcopy(self.payload)
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -981,14 +993,16 @@ def build_report_evidence_context(
 ) -> JsonMap:
     """Return deterministic evidence and boundary context for DES reports."""
 
-    return {
-        "report_iso_week": _week_key(report_week),
-        "activity_versions": {str(getattr(key, "value", key)): value for key, value in resolved_week_versions.items()},
-        "missing_required": [str(getattr(item, "value", item)) for item in missing_required or []],
-        "missing_context_inputs": list(missing_context_inputs or []),
-        "diagnostic_only": True,
-        "forbidden_actions": ["direct_phase_change", "weekly_intervention", "artifact_persistence"],
-    }
+    return ReportEvidenceContext(
+        payload={
+            "report_iso_week": _week_key(report_week),
+            "activity_versions": {str(getattr(key, "value", key)): value for key, value in resolved_week_versions.items()},
+            "missing_required": [str(getattr(item, "value", item)) for item in missing_required or []],
+            "missing_context_inputs": list(missing_context_inputs or []),
+            "diagnostic_only": True,
+            "forbidden_actions": ["direct_phase_change", "weekly_intervention", "artifact_persistence"],
+        }
+    ).to_payload()
 
 
 def render_report_evidence_context_block(context: JsonMap) -> str:
