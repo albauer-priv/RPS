@@ -6,6 +6,7 @@ from rps.planning.deterministic_context import (
     PhaseExecutionContext,
     PhaseExecutionResolution,
     ReportEvidenceContext,
+    SeasonPhaseLoadContext,
     SeasonPhaseSlotContext,
     SelectedScenarioContractContext,
     SelectedScenarioStructureContext,
@@ -16,6 +17,7 @@ from rps.planning.deterministic_context import (
     build_load_capacity_block,
     build_phase_execution_context,
     build_report_evidence_context,
+    build_season_phase_load_block,
     build_season_phase_slot_block,
     build_selected_scenario_contract_block,
     build_selected_scenario_structure_block,
@@ -560,3 +562,53 @@ def test_build_coach_operation_context_remains_payload_compatible() -> None:
     assert context["pending_operation_status"] == "present"
     assert context["preview_first"] is True
     assert context["persistence_requires_confirmation"] is True
+
+
+def test_season_phase_load_context_to_payload_detaches_nested_payload() -> None:
+    original = {
+        "season_allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+        "phases": [{"phase_id": "P01", "recommended_phase_corridor": {"min": 1000, "max": 2000}}],
+        "warnings": ["baseline inferred"],
+    }
+
+    payload = SeasonPhaseLoadContext(payload=original).to_payload()
+
+    assert payload == original
+    assert payload is not original
+    assert payload["season_allowed_intensity_domains"] is not original["season_allowed_intensity_domains"]
+    assert payload["phases"] is not original["phases"]
+
+
+def test_build_season_phase_load_block_remains_payload_compatible() -> None:
+    block = build_season_phase_load_block(
+        phase_slot_context={
+            "selected_scenario_id": "B",
+            "phase_slots": [
+                {
+                    "phase_id": "P01",
+                    "iso_week_range": "2026-21--2026-23",
+                    "scenario_cadence": "2:1",
+                    "phase_type": "BASE",
+                    "phase_intent": "general_base",
+                    "cadence_week_roles": ["LOAD_1", "LOAD_2", "DELOAD"],
+                }
+            ],
+        },
+        target_week=IsoWeek(2026, 21),
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
+        availability_payload={"data": {"weekly_hours": {"min": 6, "typical": 8, "max": 10}}},
+        zone_model_payload={"data": {"model_metadata": {"ftp_watts": 300}, "zones": [{"zone_id": "Z2", "typical_if": 0.66}]}},
+        selected_structure_context={
+            "selected_scenario_id": "B",
+            "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+            "forbidden_intensity_domains": ["VO2MAX"],
+        },
+        selected_scenario_contract={"selected_scenario_id": "B", "load_posture": "balanced_progressive"},
+        previous_load_kj=7000,
+    )
+
+    assert block.name == "season_phase_load"
+    assert block.title == "Deterministic Season Phase Load Context"
+    assert isinstance(block.payload, dict)
+    assert block.payload["season_allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
+    assert block.payload["phases"][0]["phase_id"] == "P01"

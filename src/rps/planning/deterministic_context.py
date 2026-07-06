@@ -360,6 +360,18 @@ class CoachOperationContext:
         return deepcopy(self.payload)
 
 
+@dataclass(frozen=True)
+class SeasonPhaseLoadContext:
+    """Typed season-phase-load wrapper with explicit payload projection."""
+
+    payload: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed wrapper back to a detached dict-compatible payload."""
+
+        return deepcopy(self.payload)
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -518,7 +530,7 @@ def build_load_capacity_block(
 def build_season_phase_load_block(**kwargs: Any) -> DeterministicContextBlock:
     """Build deterministic season phase load context."""
 
-    payload = build_season_phase_load_context(**kwargs)
+    payload = SeasonPhaseLoadContext(build_season_phase_load_context(**kwargs)).to_payload()
     return DeterministicContextBlock(
         name="season_phase_load",
         title="Deterministic Season Phase Load Context",
