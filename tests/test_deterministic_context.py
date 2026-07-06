@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 from rps.planning.deterministic_context import (
+    CoachOperationContext,
     LoadCapacityContext,
     PhaseExecutionContext,
     PhaseExecutionResolution,
@@ -11,6 +12,7 @@ from rps.planning.deterministic_context import (
     WeekCalendarContext,
     WeekDayContext,
     _resolve_phase_execution_roles,
+    build_coach_operation_context,
     build_load_capacity_block,
     build_phase_execution_context,
     build_report_evidence_context,
@@ -525,3 +527,36 @@ def test_build_report_evidence_context_remains_payload_compatible() -> None:
     assert context["missing_required"] == ["WELLNESS"]
     assert context["missing_context_inputs"] == ["planning_events"]
     assert context["diagnostic_only"] is True
+
+
+def test_coach_operation_context_to_payload_detaches_nested_payload() -> None:
+    original = {
+        "athlete_id": "athlete-a",
+        "target_iso_week": "2026-21",
+        "allowed_operations": ["read_context", "preview_week_plan"],
+        "preview_first": True,
+    }
+
+    payload = CoachOperationContext(payload=original).to_payload()
+
+    assert payload == original
+    assert payload is not original
+    assert payload["allowed_operations"] is not original["allowed_operations"]
+
+
+def test_build_coach_operation_context_remains_payload_compatible() -> None:
+    context = build_coach_operation_context(
+        athlete_id="athlete-a",
+        target_week=IsoWeek(2026, 21),
+        pending_operation={"type": "preview_week_plan", "status": "present"},
+        allowed_operations=["read_context", "preview_week_plan"],
+    )
+
+    assert isinstance(context, dict)
+    assert context["athlete_id"] == "athlete-a"
+    assert context["target_iso_week"] == "2026-21"
+    assert context["allowed_operations"] == ["read_context", "preview_week_plan"]
+    assert context["pending_operation_type"] == "preview_week_plan"
+    assert context["pending_operation_status"] == "present"
+    assert context["preview_first"] is True
+    assert context["persistence_requires_confirmation"] is True

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed `src/rps/planning/deterministic_context.py` so `build_load_capacity_block(...)` now routes through a typed `LoadCapacityContext` wrapper with explicit `to_payload()` projection, preserving the existing dict-compatible load-capacity payload contract while introducing an internal typed seam for the next migration slices.
 - Changed `src/rps/planning/deterministic_context.py` so the selected-scenario structure, selected-scenario contract, and season phase-slot block builders now route through typed wrapper projections (`SelectedScenarioStructureContext`, `SelectedScenarioContractContext`, `SeasonPhaseSlotContext`) while preserving the existing dict-compatible payload contracts for prompts, guardrails, and snapshots.
 - Changed `src/rps/planning/deterministic_context.py` so `build_report_evidence_context(...)` now routes through a typed `ReportEvidenceContext` wrapper with explicit `to_payload()` projection, preserving the existing dict-compatible report-evidence payload contract for prompts, report runtime context, and page-level consumers.
+- Changed `src/rps/planning/deterministic_context.py` so `build_coach_operation_context(...)` now routes through a typed `CoachOperationContext` wrapper with explicit `to_payload()` projection, preserving the existing dict-compatible coach-operation payload contract for prompts and coach runtime consumers.
 
 ### Fixed
 

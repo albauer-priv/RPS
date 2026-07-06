@@ -348,6 +348,18 @@ class ReportEvidenceContext:
         return deepcopy(self.payload)
 
 
+@dataclass(frozen=True)
+class CoachOperationContext:
+    """Typed coach-operation wrapper with explicit payload projection."""
+
+    payload: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed wrapper back to a detached dict-compatible payload."""
+
+        return deepcopy(self.payload)
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -1038,23 +1050,25 @@ def build_coach_operation_context(
     """Return deterministic Coach operation boundaries for the selected week."""
 
     pending = pending_operation or {}
-    return {
-        "athlete_id": athlete_id,
-        "target_iso_week": _week_key(target_week),
-        "allowed_operations": allowed_operations
-        or [
-            "read_context",
-            "preview_week_plan",
-            "preview_scoped_week_replan",
-            "preview_report",
-            "preview_feed_forward",
-            "apply_confirmed_pending_operation",
-        ],
-        "pending_operation_type": pending.get("type") or pending.get("operation_type"),
-        "pending_operation_status": pending.get("status") or ("present" if pending else "none"),
-        "preview_first": True,
-        "persistence_requires_confirmation": True,
-    }
+    return CoachOperationContext(
+        payload={
+            "athlete_id": athlete_id,
+            "target_iso_week": _week_key(target_week),
+            "allowed_operations": allowed_operations
+            or [
+                "read_context",
+                "preview_week_plan",
+                "preview_scoped_week_replan",
+                "preview_report",
+                "preview_feed_forward",
+                "apply_confirmed_pending_operation",
+            ],
+            "pending_operation_type": pending.get("type") or pending.get("operation_type"),
+            "pending_operation_status": pending.get("status") or ("present" if pending else "none"),
+            "preview_first": True,
+            "persistence_requires_confirmation": True,
+        }
+    ).to_payload()
 
 
 def render_coach_operation_context_block(context: JsonMap) -> str:
