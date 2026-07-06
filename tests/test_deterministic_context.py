@@ -1,11 +1,13 @@
 from types import SimpleNamespace
 
 from rps.planning.deterministic_context import (
+    LoadCapacityContext,
     PhaseExecutionContext,
     PhaseExecutionResolution,
     WeekCalendarContext,
     WeekDayContext,
     _resolve_phase_execution_roles,
+    build_load_capacity_block,
     build_phase_execution_context,
     build_week_calendar_context,
 )
@@ -323,3 +325,34 @@ def test_build_week_calendar_context_remains_dict_compatible() -> None:
     assert context["quality_day_cap"] == 1
     assert context["fixed_rest_days"] == ["Mon", "Fri"]
     assert context["day_matrix"][0]["day"] == "Mon"
+
+
+def test_load_capacity_context_to_payload_detaches_nested_payload() -> None:
+    original = {
+        "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+        "s5_bands": [{"week": "2026-20", "band": {"min": 1000, "max": 2000}}],
+        "warnings": ["none"],
+    }
+
+    payload = LoadCapacityContext(payload=original).to_payload()
+
+    assert payload == original
+    assert payload is not original
+    assert payload["allowed_intensity_domains"] is not original["allowed_intensity_domains"]
+    assert payload["s5_bands"] is not original["s5_bands"]
+
+
+def test_build_load_capacity_block_remains_payload_compatible() -> None:
+    block = build_load_capacity_block(
+        target_week=IsoWeek(2026, 20),
+        athlete_profile_payload={"data": {"profile": {"endurance_anchor_w": 204, "body_mass_kg": 75}}},
+        availability_payload={"data": {"weekly_hours": {"min": 6, "typical": 8, "max": 10}}},
+        zone_model_payload={"data": {"model_metadata": {"ftp_watts": 300}, "zones": [{"zone_id": "Z2", "typical_if": 0.66}]}},
+        season_allowed_intensity_domains=["ENDURANCE", "TEMPO"],
+    )
+
+    assert block.name == "load_capacity"
+    assert block.title == "Deterministic Load Capacity Context"
+    assert isinstance(block.payload, dict)
+    assert block.payload["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO"]
+    assert block.payload["availability_load_capacity_kj"]["max"] > block.payload["availability_load_capacity_kj"]["min"]

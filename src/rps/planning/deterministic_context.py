@@ -8,6 +8,7 @@ operation boundaries are computed in code and rendered as prompt context.
 from __future__ import annotations
 
 import re
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
@@ -287,6 +288,18 @@ class WeekCalendarContext:
         }
 
 
+@dataclass(frozen=True)
+class LoadCapacityContext:
+    """Typed load-capacity wrapper with explicit payload projection."""
+
+    payload: JsonMap
+
+    def to_payload(self) -> JsonMap:
+        """Project the typed wrapper back to a detached dict-compatible payload."""
+
+        return deepcopy(self.payload)
+
+
 def render_context_blocks(blocks: list[DeterministicContextBlock]) -> str:
     """Concatenate non-empty deterministic context markdown blocks."""
 
@@ -407,25 +420,27 @@ def build_load_capacity_block(
 ) -> DeterministicContextBlock:
     """Build deterministic load capacity and S5 context."""
 
-    payload = build_load_capacity_context(
-        target_week=target_week,
-        phase_range=phase_range,
-        athlete_profile_payload=athlete_profile_payload,
-        availability_payload=availability_payload,
-        logistics_payload=logistics_payload,
-        zone_model_payload=zone_model_payload,
-        season_plan_payload=season_plan_payload,
-        phase_guardrails_payload=phase_guardrails_payload,
-        season_allowed_intensity_domains=season_allowed_intensity_domains,
-        wellness_payload=wellness_payload,
-        kpi_profile_payload=kpi_profile_payload,
-        kpi_rate_band=kpi_rate_band,
-        previous_load_kj=previous_load_kj,
-        baseline_load_kj=baseline_load_kj,
-        week_role_by_week=week_role_by_week,
-        phase_role_by_week=phase_role_by_week,
-        scenario_cadence=scenario_cadence,
-    )
+    payload = LoadCapacityContext(
+        build_load_capacity_context(
+            target_week=target_week,
+            phase_range=phase_range,
+            athlete_profile_payload=athlete_profile_payload,
+            availability_payload=availability_payload,
+            logistics_payload=logistics_payload,
+            zone_model_payload=zone_model_payload,
+            season_plan_payload=season_plan_payload,
+            phase_guardrails_payload=phase_guardrails_payload,
+            season_allowed_intensity_domains=season_allowed_intensity_domains,
+            wellness_payload=wellness_payload,
+            kpi_profile_payload=kpi_profile_payload,
+            kpi_rate_band=kpi_rate_band,
+            previous_load_kj=previous_load_kj,
+            baseline_load_kj=baseline_load_kj,
+            week_role_by_week=week_role_by_week,
+            phase_role_by_week=phase_role_by_week,
+            scenario_cadence=scenario_cadence,
+        )
+    ).to_payload()
     return DeterministicContextBlock(
         name="load_capacity",
         title="Deterministic Load Capacity Context",
