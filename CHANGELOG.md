@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed `src/rps/planning/deterministic_context.py` so `build_report_evidence_context(...)` now routes through a typed `ReportEvidenceContext` wrapper with explicit `to_payload()` projection, preserving the existing dict-compatible report-evidence payload contract for prompts, report runtime context, and page-level consumers.
 - Changed `src/rps/planning/deterministic_context.py` so `build_coach_operation_context(...)` now routes through a typed `CoachOperationContext` wrapper with explicit `to_payload()` projection, preserving the existing dict-compatible coach-operation payload contract for prompts and coach runtime consumers.
 - Changed `src/rps/planning/deterministic_context.py` so `build_season_phase_load_block(...)` now routes through a typed `SeasonPhaseLoadContext` wrapper with explicit `to_payload()` projection, preserving the existing dict-compatible season-phase-load payload contract for prompts, guardrails, and current consumers.
+- Changed `src/rps/agents/crewai_backend.py` (Phase 1 of the staged module split, see ADR-059): moved the 10 structured-output extraction/parsing functions into a new `src/rps/agents/crewai_output_extraction.py` module, with `crewai_backend.py` importing back the ones its execution orchestration still calls. No behavior change; `tests/test_crewai_runtime.py`'s import block was split to match.
 
 ### Fixed
 

@@ -18,15 +18,11 @@ from rps.agents.crewai_backend import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
     _build_crewai_task,
     _build_internal_task_description,
-    _classify_season_audit_item,
-    _coerce_artifact_envelope,
     _compact_internal_user_input,
     _contract_context_blocks_for_task,
     _emit_crew_task_prepared_events,
     _execute_crewai_multiagent_crew,
     _extract_authoritative_runtime_blocks,
-    _extract_structured_output,
-    _freeze_season_bundle_audit_slots,
     _normalize_final_season_plan_semantics,
     _normalize_publication_link,
     _phase_bundle_finalize_authority_freeze_block,
@@ -35,10 +31,16 @@ from rps.agents.crewai_backend import (
     _run_multicrew_cycle,
     _run_phase_bundle_document,
     _task_tools_for_blueprint,
-    coerce_season_plan_draft_bundle_slots,
     normalize_phase_draft_bundle,
     normalize_season_plan_draft_bundle,
     run_agent_multi_output_crewai,
+)
+from rps.agents.crewai_output_extraction import (
+    _classify_season_audit_item,
+    _coerce_artifact_envelope,
+    _extract_structured_output,
+    _freeze_season_bundle_audit_slots,
+    coerce_season_plan_draft_bundle_slots,
 )
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
