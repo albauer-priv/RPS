@@ -6,15 +6,15 @@ from rps.agents.crewai_bundle_normalization import (
     normalize_phase_draft_bundle,
     normalize_season_plan_draft_bundle,
 )
-from rps.crewai_runtime.guardrails import (
-    season_bundle_integrity,
-    season_bundle_matches_contract,
-    season_phase_load_feasibility,
-)
 from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.guardrails_phase import (
     phase_bundle_matches_context,
     phase_week_role_load_coherence,
+)
+from rps.crewai_runtime.guardrails_season import (
+    season_bundle_integrity,
+    season_bundle_matches_contract,
+    season_phase_load_feasibility,
 )
 
 

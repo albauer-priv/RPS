@@ -20,9 +20,9 @@ from rps.crewai_runtime.bindings import (
 )
 from rps.crewai_runtime.guardrails import (
     resolve_task_policy,
-    season_bundle_audit_slot_integrity,
 )
 from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_season import season_bundle_audit_slot_integrity
 from rps.crewai_runtime.models import (
     ConstraintAuditModel,
     LoadGovernanceAuditModel,

@@ -43,7 +43,7 @@ Owner: Agent Runtime
 * [x] Phase 3: extract the rest of the cross-domain utilities (diagnostics, telemetry wrapper, context accessors) into `src/rps/crewai_runtime/guardrails_utilities.py` (payload coercion already moved there in Phase 2, to avoid a circular import).
 * [x] Phase 4: extract phase validators (7 functions + ISO-week helpers) into `src/rps/crewai_runtime/guardrails_phase.py`.
 * [x] Phase 5: extract week validators (14 functions + workout-domain-analysis helpers) into `src/rps/crewai_runtime/guardrails_week.py`.
-* [ ] Phase 6 (largest, highest risk): extract season validators (12 functions, including the 440-line `season_scenarios_profile_quality`) into `src/rps/crewai_runtime/guardrails_season.py`.
+* [x] Phase 6 (largest, highest risk): extract season validators (12 functions, including the 440-line `season_scenarios_profile_quality`) into `src/rps/crewai_runtime/guardrails_season.py`.
 * [ ] Phase 7 (final): extract the registry (`REGISTRY`, `resolve_guardrail`, `resolve_task_policy`, `build_task_guardrail_kwargs`, `TaskExecutionPolicy`) into `src/rps/crewai_runtime/guardrails_registry.py`, importing every domain module's callables. Confirm every guardrail name in `config/crewai/task_policies.yaml` still resolves.
 
 **Non-Goals**
@@ -203,6 +203,13 @@ Owner: Agent Runtime
 * [x] `guardrails.py` imports the 15 REGISTRY-referenced week validators back (`week_bundle_domain_legality_messages` and the private helpers are not REGISTRY entries and are not called by the residual).
 * [x] Updated the 2 of 8 original production consumers affected (`src/rps/agents/crewai_task_execution.py` for `week_bundle_domain_legality_messages`, `src/rps/agents/crewai_validation.py` for `week_bundle_review_readiness`) and 5 test files whose imports referenced moved names (`tests/test_crewai_week_planning_guardrails.py`, `tests/test_crewai_review_readiness_and_load_context.py`, `tests/test_crewai_multi_output_execution.py`, `tests/test_workout_generator.py`, `tests/test_crewai_runtime_config_and_status.py`).
 * [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623).
+
+## 7f) Acceptance Criteria (Definition of Done, Phase 6)
+
+* [x] `src/rps/crewai_runtime/guardrails_season.py` exists with the 12 season-artifact validators, the 11 marker-tuple constants (`_SUPPORTED_SCENARIO_CADENCES`, `_CADENCE_TOKENS`, `_SHARED_CADENCE_MARKERS`, `_DIFFERENTIATION_MARKERS`, `_SCENARIO_SELECTION_POSITIVE_MARKERS`, `_SCENARIO_SELECTION_NEGATIVE_MARKERS`, `_DOMAIN_ELIGIBILITY_MARKERS`, `_DOMAIN_AUTHORIZATION_MARKERS`, `_OBJECTIVE_RESOLUTION_MARKERS`, `_VO2_RATIONALE_MARKER_GROUPS`, `_ARCHETYPE_REQUIRED_MARKER_GROUPS`), and the 2 helpers left behind from Phases 4-5 (`_next_iso_week`, `_repair_season_plan_for_contract_validation`), moved verbatim via the same AST-based extraction as Phases 3-5.
+* [x] `guardrails.py`'s residual reduced to purely `TaskExecutionPolicy`, `REGISTRY`, and the 3 resolution functions (`resolve_guardrail`, `resolve_task_policy`, `build_task_guardrail_kwargs`) — 176 lines, from 2346 originally. No cross-cluster dependency found pointing further downstream (Phase 6 was the last domain group).
+* [x] Updated the 1 of 8 original production consumers affected (`src/rps/agents/crewai_validation.py`) and 6 test files whose imports referenced moved names (`tests/test_crewai_season_phase_bundle_normalization.py`, `tests/test_crewai_output_extraction_and_audit.py`, `tests/test_crewai_review_readiness_and_load_context.py`, `tests/test_crewai_phase_writer_guardrails.py`, `tests/test_crewai_scenario_profile_quality.py`).
+* [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623) — confirms `season_scenarios_profile_quality`'s 440-line behavior is unchanged.
 
 ---
 
