@@ -93,20 +93,6 @@ def run_agent_multi_output(
         workspace_root=workspace_root,
     )
 
-
-def _load_latest_payload(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-) -> JsonMap | None:
-    """Return the latest payload for an artefact when it exists and is dict-shaped."""
-    try:
-        loaded = store.load_latest(athlete_id, artifact_type)
-    except Exception:
-        return None
-    return loaded if isinstance(loaded, dict) else None
-
-
 def _payload_version(payload: JsonMap | None) -> str | None:
     meta = payload.get("meta") if isinstance(payload, dict) else None
     if not isinstance(meta, dict):
@@ -223,15 +209,15 @@ def create_season_scenarios(
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         target_week = IsoWeek(year=year, week=week)
-        athlete_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
-        kpi_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE)
-        availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
-        planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
-        logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
-        selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-        zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
-        wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
-        historical_baseline_payload = _load_latest_payload(store, athlete_id, ArtifactType.HISTORICAL_BASELINE)
+        athlete_profile_payload = store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_PROFILE)
+        kpi_profile_payload = store.load_latest_payload(athlete_id, ArtifactType.KPI_PROFILE)
+        availability_payload = store.load_latest_payload(athlete_id, ArtifactType.AVAILABILITY)
+        planning_events_payload = store.load_latest_payload(athlete_id, ArtifactType.PLANNING_EVENTS)
+        logistics_payload = store.load_latest_payload(athlete_id, ArtifactType.LOGISTICS)
+        selection_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        zone_model_payload = store.load_latest_payload(athlete_id, ArtifactType.ZONE_MODEL)
+        wellness_payload = store.load_latest_payload(athlete_id, ArtifactType.WELLNESS)
+        historical_baseline_payload = store.load_latest_payload(athlete_id, ArtifactType.HISTORICAL_BASELINE)
         evidence_resolution = resolve_previous_week_activity_versions(store, athlete_id, target_week)
         if not historical_baseline_payload:
             return {"ok": False, "error": "Season planning evidence missing: HISTORICAL_BASELINE not found."}
@@ -479,16 +465,16 @@ def create_season_plan(
     try:
         store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
         target_week = IsoWeek(year=year, week=week)
-        athlete_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
-        kpi_profile_payload = _load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE)
-        availability_payload = _load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY)
-        planning_events_payload = _load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS)
-        logistics_payload = _load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS)
-        season_scenarios_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIOS)
-        selection_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
-        zone_model_payload = _load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL)
-        wellness_payload = _load_latest_payload(store, athlete_id, ArtifactType.WELLNESS)
-        historical_baseline_payload = _load_latest_payload(store, athlete_id, ArtifactType.HISTORICAL_BASELINE)
+        athlete_profile_payload = store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_PROFILE)
+        kpi_profile_payload = store.load_latest_payload(athlete_id, ArtifactType.KPI_PROFILE)
+        availability_payload = store.load_latest_payload(athlete_id, ArtifactType.AVAILABILITY)
+        planning_events_payload = store.load_latest_payload(athlete_id, ArtifactType.PLANNING_EVENTS)
+        logistics_payload = store.load_latest_payload(athlete_id, ArtifactType.LOGISTICS)
+        season_scenarios_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIOS)
+        selection_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+        zone_model_payload = store.load_latest_payload(athlete_id, ArtifactType.ZONE_MODEL)
+        wellness_payload = store.load_latest_payload(athlete_id, ArtifactType.WELLNESS)
+        historical_baseline_payload = store.load_latest_payload(athlete_id, ArtifactType.HISTORICAL_BASELINE)
         athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
@@ -707,7 +693,7 @@ def create_season_plan(
     try:
         if result.get("ok") and result.get("produced"):
             store = LocalArtifactStore(root=runtime_for(spec.name).workspace_root)
-            season_plan_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_PLAN)
+            season_plan_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_PLAN)
             save_advisory_memory(
                 store,
                 athlete_id,

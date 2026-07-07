@@ -308,13 +308,6 @@ def _action_season_plan(selected: str) -> str:
     return output or _format_agent_result(result, f"Season plan created: {run_id}")
 
 
-def _load_latest_payload(store: LocalArtifactStore, artifact_type: ArtifactType) -> dict | None:
-    if not store.latest_exists(athlete_id, artifact_type):
-        return None
-    payload = store.load_latest(athlete_id, artifact_type)
-    return payload if isinstance(payload, dict) else None
-
-
 def _render_scenario_recommendation(context: dict | None) -> None:
     if not isinstance(context, dict) or not context.get("recommended_scenario_id"):
         return
@@ -353,16 +346,23 @@ def _render_scenario_recommendation(context: dict | None) -> None:
                     st.markdown("Cautions: " + "; ".join(str(warning) for warning in warnings))
 
 
+def _as_map(value: object) -> dict[str, object]:
+    return value if isinstance(value, dict) else {}
+
+
 def _render_selected_scenario_markdown(store: LocalArtifactStore, athlete_id: str) -> str | None:
-    selection = _load_latest_payload(store, ArtifactType.SEASON_SCENARIO_SELECTION)
+    selection = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
     if not selection:
         return None
-    selected_id = (selection.get("data") or {}).get("selected_scenario_id")
-    scenarios_payload = _load_latest_payload(store, ArtifactType.SEASON_SCENARIOS)
+    selection_data = _as_map(selection.get("data"))
+    selected_id = selection_data.get("selected_scenario_id")
+    scenarios_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIOS)
     if not scenarios_payload or not selected_id:
         return None
+    scenarios_field = _as_map(scenarios_payload.get("data")).get("scenarios")
+    scenarios_list = scenarios_field if isinstance(scenarios_field, list) else []
     scenario = next(
-        (s for s in (scenarios_payload.get("data") or {}).get("scenarios", []) if s.get("scenario_id") == selected_id),
+        (s for s in scenarios_list if isinstance(s, dict) and s.get("scenario_id") == selected_id),
         None,
     )
     if not scenario:
@@ -374,8 +374,8 @@ def _render_selected_scenario_markdown(store: LocalArtifactStore, athlete_id: st
         scenario=scenario,
         guidance=guidance,
         selection={
-            "selection_rationale": (selection.get("data") or {}).get("selection_rationale"),
-            "selection_iso_week_range": (selection.get("meta") or {}).get("iso_week_range"),
+            "selection_rationale": selection_data.get("selection_rationale"),
+            "selection_iso_week_range": _as_map(selection.get("meta")).get("iso_week_range"),
         },
     )
 
@@ -422,13 +422,13 @@ recommendation_context = None
 if scenarios_payload:
     recommendation_context = build_scenario_recommendation_context(
         season_scenarios_payload=scenarios_payload,
-        athlete_profile_payload=_load_latest_payload(store, ArtifactType.ATHLETE_PROFILE),
-        kpi_profile_payload=_load_latest_payload(store, ArtifactType.KPI_PROFILE),
-        availability_payload=_load_latest_payload(store, ArtifactType.AVAILABILITY),
-        planning_events_payload=_load_latest_payload(store, ArtifactType.PLANNING_EVENTS),
-        historical_baseline_payload=_load_latest_payload(store, ArtifactType.HISTORICAL_BASELINE),
-        activities_trend_payload=_load_latest_payload(store, ArtifactType.ACTIVITIES_TREND),
-        wellness_payload=_load_latest_payload(store, ArtifactType.WELLNESS),
+        athlete_profile_payload=store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_PROFILE),
+        kpi_profile_payload=store.load_latest_payload(athlete_id, ArtifactType.KPI_PROFILE),
+        availability_payload=store.load_latest_payload(athlete_id, ArtifactType.AVAILABILITY),
+        planning_events_payload=store.load_latest_payload(athlete_id, ArtifactType.PLANNING_EVENTS),
+        historical_baseline_payload=store.load_latest_payload(athlete_id, ArtifactType.HISTORICAL_BASELINE),
+        activities_trend_payload=store.load_latest_payload(athlete_id, ArtifactType.ACTIVITIES_TREND),
+        wellness_payload=store.load_latest_payload(athlete_id, ArtifactType.WELLNESS),
     )
 recommended_scenario_id = (
     recommendation_context.get("recommended_scenario_id") if isinstance(recommendation_context, dict) else None

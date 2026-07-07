@@ -713,20 +713,6 @@ def _required_phase_artefacts_for_forced_steps(forced_steps: set[str]) -> list[A
     return []
 
 
-def _load_latest_payload(
-    store: LocalArtifactStore,
-    athlete_id: str,
-    artifact_type: ArtifactType,
-) -> JsonMap | None:
-    """Load one latest payload and coerce non-dict / load failures to None."""
-
-    try:
-        loaded = store.load_latest(athlete_id, artifact_type)
-        return loaded if isinstance(loaded, dict) else None
-    except Exception:
-        return None
-
-
 def _load_common_latest_payloads(
     store: LocalArtifactStore,
     athlete_id: str,
@@ -734,14 +720,14 @@ def _load_common_latest_payloads(
     """Load the common latest payload set shared by phase and week branches."""
 
     return LatestPlanningPayloads(
-        availability_payload=_load_latest_payload(store, athlete_id, ArtifactType.AVAILABILITY),
-        planning_events_payload=_load_latest_payload(store, athlete_id, ArtifactType.PLANNING_EVENTS),
-        athlete_profile_payload=_load_latest_payload(store, athlete_id, ArtifactType.ATHLETE_PROFILE),
-        kpi_profile_payload=_load_latest_payload(store, athlete_id, ArtifactType.KPI_PROFILE),
-        logistics_payload=_load_latest_payload(store, athlete_id, ArtifactType.LOGISTICS),
-        zone_model_payload=_load_latest_payload(store, athlete_id, ArtifactType.ZONE_MODEL),
-        wellness_payload=_load_latest_payload(store, athlete_id, ArtifactType.WELLNESS),
-        selection_payload=_load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION),
+        availability_payload=store.load_latest_payload(athlete_id, ArtifactType.AVAILABILITY),
+        planning_events_payload=store.load_latest_payload(athlete_id, ArtifactType.PLANNING_EVENTS),
+        athlete_profile_payload=store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_PROFILE),
+        kpi_profile_payload=store.load_latest_payload(athlete_id, ArtifactType.KPI_PROFILE),
+        logistics_payload=store.load_latest_payload(athlete_id, ArtifactType.LOGISTICS),
+        zone_model_payload=store.load_latest_payload(athlete_id, ArtifactType.ZONE_MODEL),
+        wellness_payload=store.load_latest_payload(athlete_id, ArtifactType.WELLNESS),
+        selection_payload=store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION),
     )
 
 
@@ -1183,7 +1169,7 @@ def plan_week(
         zone_model_payload = latest_payloads.zone_model_payload
         wellness_payload = latest_payloads.wellness_payload
         selection_payload = latest_payloads.selection_payload
-        season_scenarios_payload = _load_latest_payload(store, athlete_id, ArtifactType.SEASON_SCENARIOS)
+        season_scenarios_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIOS)
         season_phase_feed_forward_payload = _load_week_version_payload(
             store,
             athlete_id,

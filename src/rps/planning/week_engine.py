@@ -101,14 +101,14 @@ def execute_week_engine(
     phase_guardrails = _load_version_required(store, athlete_id, ArtifactType.PHASE_GUARDRAILS, phase_range.range_key)
     phase_structure = _load_version_required(store, athlete_id, ArtifactType.PHASE_STRUCTURE, phase_range.range_key)
     phase_preview = _load_version_required(store, athlete_id, ArtifactType.PHASE_PREVIEW, phase_range.range_key)
-    availability = _load_latest_optional(store, athlete_id, ArtifactType.AVAILABILITY)
-    logistics = _load_latest_optional(store, athlete_id, ArtifactType.LOGISTICS)
-    planning_events = _load_latest_optional(store, athlete_id, ArtifactType.PLANNING_EVENTS)
-    athlete_profile = _load_latest_optional(store, athlete_id, ArtifactType.ATHLETE_PROFILE)
-    wellness = _load_latest_optional(store, athlete_id, ArtifactType.WELLNESS)
-    zone_model = _load_latest_optional(store, athlete_id, ArtifactType.ZONE_MODEL)
-    kpi_profile = _load_latest_optional(store, athlete_id, ArtifactType.KPI_PROFILE)
-    scenario_selection = _load_latest_optional(store, athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
+    availability = store.load_latest_payload(athlete_id, ArtifactType.AVAILABILITY)
+    logistics = store.load_latest_payload(athlete_id, ArtifactType.LOGISTICS)
+    planning_events = store.load_latest_payload(athlete_id, ArtifactType.PLANNING_EVENTS)
+    athlete_profile = store.load_latest_payload(athlete_id, ArtifactType.ATHLETE_PROFILE)
+    wellness = store.load_latest_payload(athlete_id, ArtifactType.WELLNESS)
+    zone_model = store.load_latest_payload(athlete_id, ArtifactType.ZONE_MODEL)
+    kpi_profile = store.load_latest_payload(athlete_id, ArtifactType.KPI_PROFILE)
+    scenario_selection = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIO_SELECTION)
     evidence_resolution = resolve_previous_week_activity_versions(store, athlete_id, target)
     if not evidence_resolution.activities_actual_version or not evidence_resolution.activities_trend_version:
         evidence_label = f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d}"
@@ -1027,14 +1027,6 @@ def _load_latest_required(store: LocalArtifactStore, athlete_id: str, artifact_t
     if not isinstance(payload, dict):
         raise ValueError(f"Missing or invalid latest {artifact_type.value}.")
     return payload
-
-
-def _load_latest_optional(store: LocalArtifactStore, athlete_id: str, artifact_type: ArtifactType) -> JsonMap | None:
-    try:
-        payload = store.load_latest(athlete_id, artifact_type)
-    except Exception:
-        return None
-    return payload if isinstance(payload, dict) else None
 
 
 def _load_version_required(store: LocalArtifactStore, athlete_id: str, artifact_type: ArtifactType, version_key: str) -> JsonMap:
