@@ -31,6 +31,15 @@ Create or update an ADR when changing:
 - orchestration or authority flow
 - state / memory lifecycle rules
 
+## Module and file size / responsibility
+
+Standard SWE heuristics apply here and are binding: Single Responsibility Principle, Common Closure Principle, the God Object/God Class anti-pattern, and Fowler's Divergent Change / Large Class smells.
+
+- Treat a module or test file that crosses roughly 1500 lines or ~30-40 top-level functions/tests, or that is the most-changed file in the repo for unrelated reasons (Divergent Change), as a signal to evaluate a split. The line/function count is only a trigger for review — the actual criterion is Common Closure Principle: group code that changes for the same reason, split code that changes for different reasons.
+- A pure internal split/move (identical behavior, only import paths change) does not need an ADR. A split that touches architecture boundaries, orchestration/authority flow, or telemetry contracts falls under "ADR triggers" above and needs one first, staged incrementally (see ADR-059 for the precedent).
+- Trivial helpers used on both sides of a split may be duplicated per module rather than re-imported across the boundary, to avoid circular imports.
+- For test files specifically: duplicate small autouse fixtures per split file rather than introducing a shared `conftest.py`, which would silently make them autouse for the entire suite, not just the split files.
+
 ## Plan audit before implementation
 
 Before coding, check:
