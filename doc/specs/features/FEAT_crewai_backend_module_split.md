@@ -1,16 +1,16 @@
 ---
-Version: 1.0
-Status: Draft
+Version: 1.1
+Status: Implemented
 Last-Updated: 2026-07-07
 Owner: Agent Runtime
 ---
 # FEAT: CrewAI Backend Module Split
 
 * **ID:** FEAT_crewai_backend_module_split
-* **Status:** Draft
+* **Status:** Implemented
 * **Owner/Area:** Agent Runtime
 * **Last-Updated:** 2026-07-07
-* **Related:** `doc/adr/ADR-059-crewai-backend-module-split.md`, `src/rps/agents/crewai_backend.py`, `src/rps/agents/crewai_output_extraction.py`, `src/rps/agents/crewai_validation.py`, `src/rps/agents/crewai_builders.py`, `tests/test_crewai_runtime.py`
+* **Related:** `doc/adr/ADR-059-crewai-backend-module-split.md`, `src/rps/agents/crewai_backend.py`, `src/rps/agents/crewai_output_extraction.py`, `src/rps/agents/crewai_validation.py`, `src/rps/agents/crewai_builders.py`, `src/rps/agents/crewai_bundle_normalization.py`, `tests/test_crewai_runtime.py`
 
 ---
 
@@ -42,7 +42,7 @@ Owner: Agent Runtime
 * [x] Phase 1: extract structured-output extraction/parsing (Group C, ~231 lines / 10 functions) into `src/rps/agents/crewai_output_extraction.py`.
 * [x] Phase 2: extract the bundle/artifact validation group (~77 lines / 7 functions) into `src/rps/agents/crewai_validation.py`.
 * [x] Phase 3: extract CrewAI agent/crew/LLM construction (Group B, 14 functions — a fresh audit found 14, not the originally estimated 11) into `src/rps/agents/crewai_builders.py`.
-* [ ] Phase 4: extract season/phase bundle normalization (Group A, ~1341 lines / 25 functions) into `src/rps/agents/crewai_bundle_normalization.py`.
+* [x] Phase 4: extract season/phase bundle normalization (Group A, 25 functions plus `_as_int`/`_as_list` and 4 exclusive constants) into `src/rps/agents/crewai_bundle_normalization.py`. This was the final phase — all Goals in this spec are now done.
 
 **Non-Goals**
 
@@ -198,18 +198,18 @@ Owner: Agent Runtime
 
 ## 11a) Post-Implementation Audit
 
-* [ ] Spec implemented fully (Phases 1-3 done; Phase 4 remains open).
-* [x] Acceptance criteria verified (Phases 1-3).
+* [x] Spec implemented fully (Phases 1-4 done — all Goals complete).
+* [x] Acceptance criteria verified (Phases 1-4).
 * [x] Verification commands/tests recorded.
 * [x] Residual gaps/deferred items recorded.
 * [x] Recommended next step recorded.
 
 **Implementation report**
 
-* Implemented scope: Phase 1 (Group C extraction), Phase 2 (Validation group extraction), Phase 3 (Group B extraction).
-* Verification performed: see Acceptance Criteria. Phase 2 additionally confirmed the two pre-existing string-based monkeypatches in `tests/test_crewai_runtime.py` (`_validate_normalized_season_bundle`, `_validate_normalized_phase_bundle`) kept working unmodified, since `crewai_backend.py` re-imports those names by value. Phase 3's own dependency audit corrected two errors in an earlier automated pass (`resolve_agent_memory_profile` and `CrewAIConfigBundle` turned out to be Group-B-exclusive, not shared with Group E), confirmed by direct grep before trimming imports.
-* Remaining gaps/risks: Phase 4 not started; Groups D/E excluded by design (ADR-059 Exceptions).
-* Recommended next step: Phase 4 (bundle normalization, Group A) when picked up again.
+* Implemented scope: Phase 1 (Group C extraction), Phase 2 (Validation group extraction), Phase 3 (Group B extraction), Phase 4 (Group A extraction). All four active phases of this spec are complete.
+* Verification performed: see Acceptance Criteria. Phase 2 additionally confirmed the two pre-existing string-based monkeypatches in `tests/test_crewai_runtime.py` (`_validate_normalized_season_bundle`, `_validate_normalized_phase_bundle`) kept working unmodified, since `crewai_backend.py` re-imports those names by value. Phase 3's own dependency audit corrected two errors in an earlier automated pass (`resolve_agent_memory_profile` and `CrewAIConfigBundle` turned out to be Group-B-exclusive, not shared with Group E), confirmed by direct grep before trimming imports. Phase 4's audit corrected three further discrepancies the same way, plus identified that `_as_int` (defined physically outside Group A's line range, in Group D's territory) was nonetheless Group-A-exclusive and needed to move with it to avoid a circular import; `_as_map` was the opposite case (57 of 72 uses in Group A, but 15 remain in Group D) and was duplicated rather than moved, per the established convention.
+* Remaining gaps/risks: none active. Groups D/E (context-block building, task execution orchestration) are excluded indefinitely per ADR-059's Exceptions — no further phases are planned under this spec.
+* Recommended next step: none for this spec. Unrelated backlog items remain: splitting the two oversized test files, and the separately-tracked `test_evidence_library.py` test-hygiene fix.
 
 ---
 
