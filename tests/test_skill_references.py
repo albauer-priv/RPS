@@ -3,9 +3,9 @@ from pathlib import Path
 
 SKILLS_ROOT = Path("skills")
 LOCAL_RESOURCE_PREFIXES = ("references/", "scripts/", "assets/")
+CROSS_SKILL_PREFIX = "skills/"
 FORBIDDEN_SKILL_PATH_PREFIXES = (
     "../",
-    "skills/",
     "specs/knowledge/",
     "doc/",
     "config/",
@@ -24,7 +24,8 @@ def _candidate_path_tokens(text: str) -> list[str]:
     tokens: list[str] = []
     tokens.extend(match.group(1).strip() for match in re.finditer(r"`([^`]+)`", text))
     tokens.extend(match.group(1).strip() for match in re.finditer(r"\[[^\]]+\]\(([^)]+)\)", text))
-    return [token for token in tokens if any(marker in token for marker in (*LOCAL_RESOURCE_PREFIXES, *FORBIDDEN_SKILL_PATH_PREFIXES))]
+    markers = (*LOCAL_RESOURCE_PREFIXES, *FORBIDDEN_SKILL_PATH_PREFIXES, CROSS_SKILL_PREFIX)
+    return [token for token in tokens if "..." not in token and any(marker in token for marker in markers)]
 
 
 def test_skill_names_match_directory_names() -> None:
@@ -39,6 +40,10 @@ def test_skill_references_are_local_to_skill_directory() -> None:
         for token in _candidate_path_tokens(skill_md.read_text(encoding="utf-8")):
             if token.startswith(FORBIDDEN_SKILL_PATH_PREFIXES):
                 failures.append(f"{skill_md}: cross-skill or repo path is not allowed: {token}")
+                continue
+            if token.startswith(CROSS_SKILL_PREFIX):
+                if not Path(token).exists():
+                    failures.append(f"{skill_md}: cross-skill reference does not exist: {token}")
                 continue
             if token.startswith(LOCAL_RESOURCE_PREFIXES):
                 target = skill_dir / token

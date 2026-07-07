@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
+import rps.evidence.library as evidence_library
 from rps.crewai_runtime.models import (
     EvidenceBriefSectionsModel,
     EvidenceCurationModel,
@@ -31,6 +35,39 @@ from rps.evidence.trusted_sources import (
 )
 
 
+@pytest.fixture
+def isolated_evidence_library(monkeypatch, tmp_path):
+    """Redirect all evidence-library file I/O to tmp_path.
+
+    Only requested by tests that mutate library state (save_core_studies/save_applied_sources/
+    save_discovery_state), so they never write to the real tracked skills/shared/... files.
+    discovery_state.json is deliberately left unseeded so evidence_refresh_due() reports "due".
+    """
+    tmp_core = tmp_path / "core_studies.yaml"
+    tmp_applied = tmp_path / "applied_sources.yaml"
+    tmp_core.write_text(evidence_library.CORE_LIBRARY_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+    tmp_applied.write_text(evidence_library.APPLIED_LIBRARY_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+
+    monkeypatch.setattr(evidence_library, "CORE_LIBRARY_PATH", tmp_core)
+    monkeypatch.setattr(evidence_library, "APPLIED_LIBRARY_PATH", tmp_applied)
+    monkeypatch.setattr(evidence_library, "DISCOVERY_STATE_PATH", tmp_path / "discovery_state.json")
+    monkeypatch.setattr(evidence_library, "CORE_TABLE_PATH", tmp_path / "durability_reference_table_core.md")
+    monkeypatch.setattr(evidence_library, "APPLIED_TABLE_PATH", tmp_path / "durability_reference_table_applied.md")
+    monkeypatch.setattr(evidence_library, "LIBRARY_MANIFEST_PATH", tmp_path / "evidence_library_manifest.md")
+    monkeypatch.setattr(evidence_library, "STUDIES_DIR", tmp_path / "studies")
+    monkeypatch.setattr(evidence_library, "ASSETS_DIR", tmp_path / "assets")
+    monkeypatch.setattr(evidence_library, "DECOMMISSIONED_SHARED_BIBLIOGRAPHY", tmp_path / "durability_bibliography.md")
+    monkeypatch.setattr(
+        evidence_library, "DECOMMISSIONED_CONVERSATION_BIBLIOGRAPHY", tmp_path / "conversation_durability_bibliography.md"
+    )
+    monkeypatch.setattr(evidence_library, "DECOMMISSIONED_SPEC_BIBLIOGRAPHY", tmp_path / "spec_durability_bibliography.md")
+    monkeypatch.setattr(evidence_library, "DECOMMISSIONED_SPEC_MANIFEST", tmp_path / "spec_evidence_manifest.md")
+
+    # This module imports DISCOVERY_STATE_PATH by value; that binding is a separate namespace
+    # entry from rps.evidence.library's, so it needs patching too.
+    monkeypatch.setattr(sys.modules[__name__], "DISCOVERY_STATE_PATH", evidence_library.DISCOVERY_STATE_PATH)
+
+
 def test_canonical_evidence_library_contains_verified_core_sources() -> None:
     entries = load_core_studies()
 
@@ -42,7 +79,7 @@ def test_canonical_evidence_library_contains_verified_core_sources() -> None:
 
 
 def test_sync_reference_library_outputs_updates_generated_views() -> None:
-    sync_reference_library_outputs()
+    sync_reference_library_outputs(rewrite_yaml=False)
 
     assert LIBRARY_MANIFEST_PATH.exists()
     assert DECOMMISSIONED_SHARED_BIBLIOGRAPHY.exists()
@@ -62,7 +99,7 @@ def test_sync_reference_library_outputs_updates_generated_views() -> None:
     assert "Curation schema version" in detail_text
 
 
-def test_refresh_evidence_library_activates_verified_primary_source_candidates(monkeypatch) -> None:
+def test_refresh_evidence_library_activates_verified_primary_source_candidates(monkeypatch, isolated_evidence_library) -> None:
     original_entries = load_core_studies()
     original_applied = load_applied_sources()
     original_state = DISCOVERY_STATE_PATH.read_text(encoding="utf-8") if DISCOVERY_STATE_PATH.exists() else None
@@ -404,7 +441,7 @@ def test_abstract_only_quality_gate_rejects_background_only_mix_and_imperative_l
     assert any("direct imperative coaching language" in reason for reason in result.reasons)
 
 
-def test_refresh_evidence_library_skips_already_curated_verified_entries(monkeypatch) -> None:
+def test_refresh_evidence_library_skips_already_curated_verified_entries(monkeypatch, isolated_evidence_library) -> None:
     original_entries = load_core_studies()
     original_applied = load_applied_sources()
     try:
@@ -441,7 +478,7 @@ def test_refresh_evidence_library_skips_already_curated_verified_entries(monkeyp
         sync_reference_library_outputs()
 
 
-def test_refresh_evidence_library_processes_pending_legacy_verified_seeds(monkeypatch) -> None:
+def test_refresh_evidence_library_processes_pending_legacy_verified_seeds(monkeypatch, isolated_evidence_library) -> None:
     original_entries = load_core_studies()
     original_applied = load_applied_sources()
     try:
@@ -487,7 +524,7 @@ def test_refresh_evidence_library_processes_pending_legacy_verified_seeds(monkey
         sync_reference_library_outputs()
 
 
-def test_refresh_evidence_library_resolves_doi_only_pending_seed_to_pubmed(monkeypatch) -> None:
+def test_refresh_evidence_library_resolves_doi_only_pending_seed_to_pubmed(monkeypatch, isolated_evidence_library) -> None:
     original_entries = load_core_studies()
     original_applied = load_applied_sources()
     try:
@@ -530,7 +567,7 @@ def test_refresh_evidence_library_resolves_doi_only_pending_seed_to_pubmed(monke
         sync_reference_library_outputs()
 
 
-def test_refresh_evidence_library_skips_processing_when_abstract_fetch_is_rate_limited(monkeypatch) -> None:
+def test_refresh_evidence_library_skips_processing_when_abstract_fetch_is_rate_limited(monkeypatch, isolated_evidence_library) -> None:
     original_entries = load_core_studies()
     original_applied = load_applied_sources()
     try:
@@ -573,7 +610,7 @@ def test_refresh_evidence_library_skips_processing_when_abstract_fetch_is_rate_l
         sync_reference_library_outputs()
 
 
-def test_refresh_evidence_library_caps_processed_entries_per_run(monkeypatch) -> None:
+def test_refresh_evidence_library_caps_processed_entries_per_run(monkeypatch, isolated_evidence_library) -> None:
     original_entries = load_core_studies()
     original_applied = load_applied_sources()
     try:

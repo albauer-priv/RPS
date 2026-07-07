@@ -35,6 +35,27 @@ def _sample_week_plan() -> dict[str, object]:
             "notes": "Seed week plan.",
         },
         "data": {
+            "inherited_planning_posture": {
+                "selected_scenario_id": "B",
+                "load_posture": "balanced_progressive",
+                "recovery_margin": "medium",
+                "fatigue_exposure": "moderate",
+                "specificity_density": "moderate",
+                "season_archetype": "endurance_build",
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+                "risk_flags": [],
+                "phase_intent": "durability_build",
+                "phase_week_role": "LOAD_1",
+            },
+            "effective_week_constraints": {
+                "phase_intent": "durability_build",
+                "phase_week_role": "LOAD_1",
+                "allowed_intensity_domains": ["ENDURANCE", "TEMPO"],
+                "forbidden_intensity_domains": ["VO2MAX"],
+                "allowed_load_modalities": ["NONE"],
+                "weekly_kj_band": {"min": 1, "max": 2000, "notes": "test band"},
+            },
             "week_summary": {
                 "week_objective": "Test objective.",
                 "weekly_load_corridor_kj": {"min": 1000, "max": 2000, "notes": "Test band."},
