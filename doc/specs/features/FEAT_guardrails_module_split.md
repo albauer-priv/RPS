@@ -39,8 +39,8 @@ Owner: Agent Runtime
 **Goals**
 
 * [x] Phase 1: extract the context core (`_GUARDRAIL_CONTEXT`, `guardrail_runtime_context`, `current_guardrail_runtime_context`, shared type aliases) into `src/rps/crewai_runtime/guardrails_context.py`.
-* [ ] Phase 2: extract generic output validators (6 functions) into `src/rps/crewai_runtime/guardrails_generic.py`, and schema/envelope validators (3 functions) into `src/rps/crewai_runtime/guardrails_schema.py`.
-* [ ] Phase 3: extract cross-domain utilities (payload coercion, diagnostics, telemetry wrapper, context accessors) into `src/rps/crewai_runtime/guardrails_utilities.py`.
+* [x] Phase 2: extract generic output validators (6 functions) into `src/rps/crewai_runtime/guardrails_generic.py`, and schema/envelope validators (3 functions) into `src/rps/crewai_runtime/guardrails_schema.py`. (Also pulled the payload-coercion helpers forward into `guardrails_utilities.py` early — see Phase 3.)
+* [ ] Phase 3: extract the rest of the cross-domain utilities (diagnostics, telemetry wrapper, context accessors) into `src/rps/crewai_runtime/guardrails_utilities.py` (payload coercion already moved there in Phase 2, to avoid a circular import).
 * [ ] Phase 4: extract phase validators (7 functions + ISO-week helpers) into `src/rps/crewai_runtime/guardrails_phase.py`.
 * [ ] Phase 5: extract week validators (14 functions + workout-domain-analysis helpers) into `src/rps/crewai_runtime/guardrails_week.py`.
 * [ ] Phase 6 (largest, highest risk): extract season validators (12 functions, including the 440-line `season_scenarios_profile_quality`) into `src/rps/crewai_runtime/guardrails_season.py`.
@@ -169,6 +169,14 @@ Owner: Agent Runtime
 * [x] `guardrails.py` imports back `_GUARDRAIL_CONTEXT`, `GuardrailFn`, `GuardrailResult`, `JsonMap`, and `current_guardrail_runtime_context` for its own internal use — a follow-up `ruff` pass caught 8 direct `_GUARDRAIL_CONTEXT.get(...)` call sites (in addition to the two accessor functions) that an initial import list missed.
 * [x] 7 production files (`src/rps/tools/workspace_read_tools.py`, `src/rps/tools/workspace_tools.py`, `src/rps/agents/crewai_context_blocks.py`, `src/rps/agents/crewai_bundle_normalization.py`, `src/rps/orchestrator/plan_week.py`, `src/rps/orchestrator/season_flow.py`, `src/rps/agents/crewai_task_execution.py`) updated to import `guardrail_runtime_context`/`current_guardrail_runtime_context` from `guardrails_context` directly — no re-export shim left in `guardrails.py`.
 * [x] 11 test files updated the same way (`test_crewai_review_readiness_and_load_context.py`, `test_crewai_scenario_profile_quality.py`, `test_crewai_season_semantics_normalization.py`, `test_crewai_output_extraction_and_audit.py`, `test_workout_generator.py`, `test_crewai_phase_week_review_guardrails.py`, `test_crewai_week_planning_guardrails.py`, `test_crewai_config_and_builders.py`, `test_crewai_phase_writer_guardrails.py`, `test_crewai_season_phase_bundle_normalization.py`, `test_workspace.py`).
+* [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623).
+
+## 7b) Acceptance Criteria (Definition of Done, Phase 2)
+
+* [x] `src/rps/crewai_runtime/guardrails_generic.py` exists with the 6 generic output-shape validators, moved verbatim.
+* [x] `src/rps/crewai_runtime/guardrails_schema.py` exists with `artifact_envelope_basic`, `artifact_meta_data_present`, `artifact_schema_valid`, and the `_schema_registry()` cache helper (with its own `ROOT`/`SCHEMA_DIR` constants), moved verbatim.
+* [x] `src/rps/crewai_runtime/guardrails_utilities.py` created early (not originally scheduled until Phase 3) with `_coerce_payload`/`_coerce_mapping`, once the audit found both new Phase 2 modules needed them and importing from `guardrails.py` would create a cycle with `REGISTRY` importing the moved validators back — same resolution pattern as `intervals_schema_utils.py` in the `intervals_data.py` split.
+* [x] `guardrails.py` imports the 9 moved validator functions back (for `REGISTRY`, not yet extracted) and `_coerce_payload`/`_coerce_mapping` back (used by ~50 call sites in validators not yet moved). Dead `ROOT`/`SCHEMA_DIR` constants (only consumer was `_schema_registry()`, which moved) deleted from the residual rather than kept as an unused duplicate.
 * [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623).
 
 ---

@@ -6,8 +6,6 @@ import json
 import re
 from dataclasses import dataclass
 from datetime import date, timedelta
-from functools import lru_cache
-from pathlib import Path
 from typing import Any, cast
 
 from rps.agents.output_normalization import (
@@ -23,7 +21,20 @@ from rps.crewai_runtime.guardrails_context import (
     JsonMap,
     current_guardrail_runtime_context,
 )
-from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
+from rps.crewai_runtime.guardrails_generic import (
+    adjustment_intent_has_preview_message,
+    audit_lists_are_lists,
+    coach_preview_summary_complete,
+    coaching_recommendation_text_present,
+    pending_resolution_summary_present,
+    typed_output_present,
+)
+from rps.crewai_runtime.guardrails_schema import (
+    artifact_envelope_basic,
+    artifact_meta_data_present,
+    artifact_schema_valid,
+)
+from rps.crewai_runtime.guardrails_utilities import _coerce_mapping, _coerce_payload
 from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.planning.contracts import (
     blocking_messages,
@@ -40,12 +51,7 @@ from rps.planning.contracts import (
 from rps.planning.phase_authority import format_role_week_load_bands, normalize_role_week_load_bands
 from rps.workspace.intensity_domains import normalize_intensity_domain_list
 from rps.workspace.iso_helpers import IsoWeek, parse_iso_week, parse_iso_week_range
-from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
-from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
 from rps.workspace.types import ArtifactType
-
-ROOT = Path(__file__).resolve().parents[3]
-SCHEMA_DIR = ROOT / "specs" / "schemas"
 
 
 @dataclass(frozen=True)
@@ -55,38 +61,6 @@ class TaskExecutionPolicy:
     output_mode: str
     guardrails: tuple[str, ...]
     guardrail_max_retries: int
-
-
-def _coerce_payload(result: Any) -> Any:
-    """Extract the richest payload view from a CrewAI TaskOutput-like object."""
-
-    if result is None:
-        return None
-    pydantic_payload = getattr(result, "pydantic", None)
-    if pydantic_payload is not None:
-        return pydantic_payload
-    json_payload = getattr(result, "json_dict", None)
-    if json_payload is not None:
-        return json_payload
-    raw_payload = getattr(result, "raw", None)
-    if raw_payload is not None:
-        return raw_payload
-    return result
-
-
-def _coerce_mapping(result: Any) -> JsonMap | None:
-    payload = _coerce_payload(result)
-    if hasattr(payload, "model_dump"):
-        payload = payload.model_dump()
-    if isinstance(payload, dict):
-        return payload
-    if isinstance(payload, str):
-        try:
-            decoded = json.loads(payload)
-        except json.JSONDecodeError:
-            return None
-        return decoded if isinstance(decoded, dict) else None
-    return None
 
 
 def _as_float(value: Any) -> float | None:
@@ -213,68 +187,6 @@ def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
 
 def _future_event_runtime_context() -> JsonMap:
     return _as_map(current_guardrail_runtime_context().get("season_scenario_event_context"))
-
-
-def typed_output_present(result: Any) -> GuardrailResult:
-    payload = _coerce_payload(result)
-    if payload is None:
-        return (False, "Task produced no structured output payload.")
-    return (True, payload)
-
-
-def coaching_recommendation_text_present(result: Any) -> GuardrailResult:
-    payload = _coerce_payload(result)
-    recommendation = getattr(payload, "recommendation", None)
-    if isinstance(payload, dict):
-        recommendation = payload.get("recommendation")
-    if isinstance(recommendation, str) and recommendation.strip():
-        return (True, payload)
-    return (False, "Coaching recommendation must contain non-empty recommendation text.")
-
-
-def adjustment_intent_has_preview_message(result: Any) -> GuardrailResult:
-    payload = _coerce_payload(result)
-    preview_message = getattr(payload, "message_for_preview", None)
-    if isinstance(payload, dict):
-        preview_message = payload.get("message_for_preview")
-    if isinstance(preview_message, str) and preview_message.strip():
-        return (True, payload)
-    return (False, "Adjustment intent must include a non-empty message_for_preview field.")
-
-
-def coach_preview_summary_complete(result: Any) -> GuardrailResult:
-    payload = _coerce_payload(result)
-    ok_value = getattr(payload, "ok", None)
-    summary = getattr(payload, "summary", None)
-    if isinstance(payload, dict):
-        ok_value = payload.get("ok")
-        summary = payload.get("summary")
-    if isinstance(ok_value, bool) and isinstance(summary, str) and summary.strip():
-        return (True, payload)
-    return (False, "Coach preview summary must include boolean ok and non-empty summary.")
-
-
-def pending_resolution_summary_present(result: Any) -> GuardrailResult:
-    payload = _coerce_payload(result)
-    action = getattr(payload, "action", None)
-    summary = getattr(payload, "summary", None)
-    if isinstance(payload, dict):
-        action = payload.get("action")
-        summary = payload.get("summary")
-    if isinstance(action, str) and action.strip() and isinstance(summary, str) and summary.strip():
-        return (True, payload)
-    return (False, "Pending-resolution result must include non-empty action and summary.")
-
-
-def audit_lists_are_lists(result: Any) -> GuardrailResult:
-    payload = _coerce_payload(result)
-    mapping = payload.model_dump() if hasattr(payload, "model_dump") else payload
-    if not isinstance(mapping, dict):
-        return (False, "Audit output must decode to an object.")
-    for field in ("blocking_issues", "warnings", "recommended_adjustments"):
-        if field in mapping and not isinstance(mapping[field], list):
-            return (False, f"Audit field '{field}' must be a list.")
-    return (True, payload)
 
 
 def phase_bundle_integrity(result: Any) -> GuardrailResult:
@@ -816,72 +728,6 @@ def review_decision_integrity(result: Any) -> GuardrailResult:
             return (False, "Approved review decision must include non-empty writer_ready_summary.")
     if status == "replan_required" and not replan_instructions:
         return (False, "replan_required review decision must include replan_instructions.")
-    return (True, mapping)
-
-
-def artifact_envelope_basic(result: Any) -> GuardrailResult:
-    mapping = _coerce_mapping(result)
-    if not isinstance(mapping, dict):
-        return (False, "Artifact output must decode to a JSON object.")
-    meta = mapping.get("meta")
-    data = mapping.get("data")
-    if not isinstance(meta, dict) or not isinstance(data, dict):
-        return (False, "Artifact output must include top-level 'meta' and 'data' objects.")
-    return (True, mapping)
-
-
-def artifact_meta_data_present(result: Any) -> GuardrailResult:
-    mapping = _coerce_mapping(result)
-    if not isinstance(mapping, dict):
-        return (False, "Artifact output must decode to a JSON object.")
-    meta = mapping.get("meta")
-    if not isinstance(meta, dict):
-        return (False, "Artifact output missing meta object.")
-    required = ("artifact_type", "schema_id")
-    missing = [field for field in required if not meta.get(field)]
-    if missing:
-        return (False, f"Artifact meta missing required fields: {', '.join(missing)}")
-    if not isinstance(mapping.get("data"), dict):
-        return (False, "Artifact output missing data object.")
-    return (True, mapping)
-
-
-@lru_cache(maxsize=1)
-def _schema_registry() -> SchemaRegistry:
-    return SchemaRegistry(SCHEMA_DIR)
-
-
-def artifact_schema_valid(result: Any) -> GuardrailResult:
-    """Validate a persisted artifact output against its canonical JSON Schema."""
-
-    mapping = _coerce_mapping(result)
-    if not isinstance(mapping, dict):
-        return (False, "Artifact output must decode to a JSON object.")
-    meta = mapping.get("meta")
-    if not isinstance(meta, dict):
-        return (False, "Artifact output missing meta object.")
-    artifact_type_raw = str(meta.get("artifact_type") or "").strip().upper()
-    if not artifact_type_raw:
-        return (False, "Artifact meta missing artifact_type.")
-    try:
-        artifact_type = ArtifactType(artifact_type_raw)
-    except ValueError:
-        return (False, f"Unknown artifact_type for schema validation: {artifact_type_raw}.")
-    schema_file = ARTIFACT_SCHEMA_FILE.get(artifact_type)
-    if not schema_file:
-        return (False, f"No JSON schema mapping registered for artifact_type {artifact_type_raw}.")
-    try:
-        schema = _schema_registry().get_schema(schema_file)
-        mapping = _normalize_schema_backed_metadata(mapping, schema)
-        validator = _schema_registry().validator_for(schema_file)
-        validate_or_raise(validator, mapping)
-    except SchemaValidationError as exc:
-        details = "; ".join(exc.errors[:8])
-        if len(exc.errors) > 8:
-            details += f"; ... and {len(exc.errors) - 8} more"
-        return (False, f"Artifact schema validation failed for {schema_file}: {details}")
-    except Exception as exc:
-        return (False, f"Artifact schema validation failed for {schema_file}: {exc}")
     return (True, mapping)
 
 
