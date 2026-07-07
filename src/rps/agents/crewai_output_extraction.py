@@ -9,7 +9,7 @@ from rps.crewai_runtime.generated_artifact_models import (
     artifact_model_for_schema_file,
     artifact_model_for_task_name,
 )
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_utilities import (
     canonicalize_season_bundle_shape_aliases,
     decode_json_object_from_text,
 )

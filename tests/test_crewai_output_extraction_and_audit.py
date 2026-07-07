@@ -12,7 +12,7 @@ from rps.agents.crewai_output_extraction import (
     _freeze_season_bundle_audit_slots,
     coerce_season_plan_draft_bundle_slots,
 )
-from rps.crewai_runtime import guardrails as crewai_guardrails
+from rps.crewai_runtime import guardrails_utilities as crewai_guardrails_utilities
 from rps.crewai_runtime import load_crewai_config_bundle
 from rps.crewai_runtime.bindings import (
     build_task_blueprints,
@@ -301,7 +301,7 @@ def test_season_plan_finalize_pre_guardrail_normalization_projects_singular_audi
     }
 
     with guardrail_runtime_context(task_name="season_plan_finalize"):
-        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+        normalized = crewai_guardrails_utilities.normalize_artifact_candidate_for_task_guardrails(candidate)
 
     assert "constraint_audit" not in normalized
     assert "load_governance_audit" not in normalized
@@ -324,7 +324,7 @@ def test_season_plan_finalize_pre_guardrail_normalization_decodes_raw_json_objec
     )
 
     with guardrail_runtime_context(task_name="season_plan_finalize"):
-        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+        normalized = crewai_guardrails_utilities.normalize_artifact_candidate_for_task_guardrails(candidate)
 
     assert isinstance(normalized, dict)
     assert normalized["phase_blueprints"] == []
@@ -339,7 +339,7 @@ def test_season_plan_finalize_pre_guardrail_normalization_decodes_fenced_json_ob
 """
 
     with guardrail_runtime_context(task_name="season_plan_finalize"):
-        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+        normalized = crewai_guardrails_utilities.normalize_artifact_candidate_for_task_guardrails(candidate)
 
     assert isinstance(normalized, dict)
     assert normalized["phase_blueprints"] == []
@@ -366,7 +366,7 @@ def test_season_plan_finalize_pre_guardrail_normalization_appends_singular_alias
     }
 
     with guardrail_runtime_context(task_name="season_plan_finalize"):
-        normalized = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+        normalized = crewai_guardrails_utilities.normalize_artifact_candidate_for_task_guardrails(candidate)
 
     assert [item["applied_sources"] for item in normalized["constraints"]] == [["existing"], ["alias"]]
 

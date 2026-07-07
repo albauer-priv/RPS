@@ -12,6 +12,7 @@ from rps.agents.crewai_context_blocks import (
 )
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime import guardrails as crewai_guardrails
+from rps.crewai_runtime import guardrails_utilities as crewai_guardrails_utilities
 from rps.crewai_runtime.guardrails import (
     season_writer_bundle_match,
 )
@@ -333,13 +334,13 @@ def test_phase_structure_guardrail_mismatch_emits_contract_diagnostics(monkeypat
         crewai_guardrails.phase_execution_context_match,
     )
     monkeypatch.setattr(
-        crewai_guardrails,
+        crewai_guardrails_utilities,
         "normalize_artifact_candidate_for_task_guardrails",
         lambda result: result,
     )
     emitted: list[dict[str, object]] = []
     monkeypatch.setattr(
-        crewai_guardrails,
+        crewai_guardrails_utilities,
         "emit_runtime_event",
         lambda **kwargs: emitted.append(kwargs),
     )
@@ -534,7 +535,7 @@ def test_phase_guardrails_writer_guardrails_pre_normalize_exact_phase_authority(
             ],
         },
     ):
-        repaired = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+        repaired = crewai_guardrails_utilities.normalize_artifact_candidate_for_task_guardrails(candidate)
 
     assert repaired["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"]["max"] == 10148
     assert repaired["data"]["load_guardrails"]["weekly_kj_bands"][0]["band"]["notes"] == (
@@ -627,7 +628,7 @@ def test_phase_preview_writer_guardrails_pre_normalize_shared_skeleton_semantics
             }
         },
     ):
-        repaired = crewai_guardrails.normalize_artifact_candidate_for_task_guardrails(candidate)
+        repaired = crewai_guardrails_utilities.normalize_artifact_candidate_for_task_guardrails(candidate)
 
     assert repaired["data"]["phase_intent_summary"]["primary_objective"] == (
         "Rebuild load tolerance with controlled sweet spot support."

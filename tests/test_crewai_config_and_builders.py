@@ -21,7 +21,7 @@ from rps.agents.crewai_task_execution import (
 )
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
-from rps.crewai_runtime import guardrails as crewai_guardrails
+from rps.crewai_runtime import guardrails_utilities as crewai_guardrails_utilities
 from rps.crewai_runtime import load_crewai_config_bundle
 from rps.crewai_runtime import telemetry as crewai_telemetry
 from rps.crewai_runtime.bindings import (
@@ -283,7 +283,7 @@ def test_guardrail_failure_emits_runtime_event(monkeypatch) -> None:
     def _emit(**kwargs):
         emitted.append(kwargs)
 
-    monkeypatch.setattr(crewai_guardrails, "emit_runtime_event", _emit)
+    monkeypatch.setattr(crewai_guardrails_utilities, "emit_runtime_event", _emit)
     kwargs = build_task_guardrail_kwargs(tasks["season_scenario_selection"], bundle.task_policies)
     invalid = {
         "meta": {"artifact_type": "SEASON_SCENARIO_SELECTION", "schema_id": "SeasonScenarioSelectionInterface"},
