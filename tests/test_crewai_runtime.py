@@ -19,13 +19,9 @@ from rps.agents.crewai_backend import (
     _build_crewai_task,
     _build_internal_task_description,
     _compact_internal_user_input,
-    _contract_context_blocks_for_task,
     _execute_crewai_multiagent_crew,
     _extract_authoritative_runtime_blocks,
     _normalize_final_season_plan_semantics,
-    _phase_bundle_finalize_authority_freeze_block,
-    _phase_bundle_finalize_has_bound_contracts,
-    _phase_writer_authority_context_block,
     _run_multicrew_cycle,
     _run_phase_bundle_document,
     normalize_phase_draft_bundle,
@@ -34,6 +30,12 @@ from rps.agents.crewai_backend import (
 )
 from rps.agents.crewai_builders import _emit_crew_task_prepared_events, _task_tools_for_blueprint
 from rps.agents.crewai_bundle_normalization import _normalize_publication_link
+from rps.agents.crewai_context_blocks import (
+    _contract_context_blocks_for_task,
+    _phase_bundle_finalize_authority_freeze_block,
+    _phase_bundle_finalize_has_bound_contracts,
+    _phase_writer_authority_context_block,
+)
 from rps.agents.crewai_output_extraction import (
     _classify_season_audit_item,
     _coerce_artifact_envelope,

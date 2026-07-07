@@ -1,16 +1,16 @@
 ---
-Version: 1.1
-Status: Implemented
+Version: 1.2
+Status: In Progress
 Last-Updated: 2026-07-07
 Owner: Agent Runtime
 ---
 # FEAT: CrewAI Backend Module Split
 
 * **ID:** FEAT_crewai_backend_module_split
-* **Status:** Implemented
+* **Status:** In Progress (Phases 1-4 Implemented; Phases 5-6 in progress under ADR-060)
 * **Owner/Area:** Agent Runtime
 * **Last-Updated:** 2026-07-07
-* **Related:** `doc/adr/ADR-059-crewai-backend-module-split.md`, `src/rps/agents/crewai_backend.py`, `src/rps/agents/crewai_output_extraction.py`, `src/rps/agents/crewai_validation.py`, `src/rps/agents/crewai_builders.py`, `src/rps/agents/crewai_bundle_normalization.py`, `tests/test_crewai_runtime.py`
+* **Related:** `doc/adr/ADR-059-crewai-backend-module-split.md`, `doc/adr/ADR-060-crewai-backend-context-and-execution-split.md`, `src/rps/agents/crewai_backend.py`, `src/rps/agents/crewai_output_extraction.py`, `src/rps/agents/crewai_validation.py`, `src/rps/agents/crewai_builders.py`, `src/rps/agents/crewai_bundle_normalization.py`, `src/rps/agents/crewai_context_blocks.py`, `src/rps/agents/crewai_task_execution.py`, `tests/test_crewai_runtime.py`, `src/rps/evidence/curation.py`, `src/rps/crewai_runtime/flows.py`, `src/rps/agents/runtime.py`
 
 ---
 
@@ -42,14 +42,16 @@ Owner: Agent Runtime
 * [x] Phase 1: extract structured-output extraction/parsing (Group C, ~231 lines / 10 functions) into `src/rps/agents/crewai_output_extraction.py`.
 * [x] Phase 2: extract the bundle/artifact validation group (~77 lines / 7 functions) into `src/rps/agents/crewai_validation.py`.
 * [x] Phase 3: extract CrewAI agent/crew/LLM construction (Group B, 14 functions — a fresh audit found 14, not the originally estimated 11) into `src/rps/agents/crewai_builders.py`.
-* [x] Phase 4: extract season/phase bundle normalization (Group A, 25 functions plus `_as_int`/`_as_list` and 4 exclusive constants) into `src/rps/agents/crewai_bundle_normalization.py`. This was the final phase — all Goals in this spec are now done.
+* [x] Phase 4: extract season/phase bundle normalization (Group A, 25 functions plus `_as_int`/`_as_list` and 4 exclusive constants) into `src/rps/agents/crewai_bundle_normalization.py`.
+* [ ] Phase 5 (ADR-060): extract context-block building (Group D, 5 functions plus `_as_map`, which turned out to be Group-D-exclusive) into `src/rps/agents/crewai_context_blocks.py`.
+* [ ] Phase 6 (ADR-060): extract task execution orchestration (Group E, 23 functions — larger than originally estimated; includes all 4 remaining public entry points — plus 13 exclusive constants) into `src/rps/agents/crewai_task_execution.py`. Update the 3 external production consumers (`src/rps/evidence/curation.py`, `src/rps/crewai_runtime/flows.py`, `src/rps/agents/runtime.py`) plus `tests/test_crewai_runtime.py`.
 
 **Non-Goals**
 
-* [ ] Extracting contract/context-block building (Group D) — tightly coupled to mutable guardrail runtime context; needs separate design work.
-* [ ] Extracting task execution orchestration (Group E) — the closure-based planning/review/writer callback core; the riskiest, least mechanical piece. Not attempted by this spec.
+* [ ] Redesigning the `ContextVar`-based guardrail-runtime-context mechanism or the closure-based planning/review/writer callback structure — ADR-060 found the existing mechanisms already cross module boundaries correctly, so Phases 5-6 relocate code without changing either mechanism. A genuine redesign (explicit context objects, a state-machine execution core) remains unaddressed and out of scope.
 * [ ] Any change to Season/Phase/Week/Report authority boundaries, persisted artifact schemas, or orchestration/Flow wiring.
-* [ ] Splitting `tests/test_crewai_runtime.py` itself (tracked separately in `doc/overview/feature_backlog.md`).
+* [ ] Splitting `tests/test_crewai_runtime.py` itself — tracked as a follow-on item in `doc/overview/feature_backlog.md`, to be done after Phases 5-6 so it only needs the final import paths once.
+* [ ] Removing `_phase_document_from_bundle` (pre-existing dead code discovered during Phase 5/6's audit, zero call sites repo-wide) or retiring `crewai_backend.py` itself once it's nearly empty — separate, trivial future cleanup.
 
 ---
 
@@ -161,6 +163,22 @@ Owner: Agent Runtime
 * [ ] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), `tests/test_crewai_runtime.py`, full `pytest tests/`.
 * [ ] No regressions in: CrewAI task execution, structured-output parsing, Season audit-slot coercion.
 
+## 7a) Acceptance Criteria (Definition of Done, Phase 5)
+
+* [ ] `src/rps/agents/crewai_context_blocks.py` exists with `_loaded_input_version_key`, `_phase_writer_authority_context_block`, `_contract_context_blocks_for_task`, `_phase_bundle_finalize_authority_freeze_block`, `_phase_bundle_finalize_has_bound_contracts`, plus `_as_map` (moved entirely, not duplicated — verified zero remaining uses outside this group) and a local `_render_json_block` duplicate (verified shared with Group E).
+* [ ] `crewai_backend.py` imports back `_contract_context_blocks_for_task` and `_phase_bundle_finalize_has_bound_contracts` (Group E's call sites into Group D).
+* [ ] `tests/test_crewai_runtime.py`'s import block updated if it references any moved names directly.
+* [ ] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/`.
+
+## 7b) Acceptance Criteria (Definition of Done, Phase 6)
+
+* [ ] `src/rps/agents/crewai_task_execution.py` exists with all 23 Group E functions, the 13 exclusive constants, and a local `ROOT` plus `_render_json_block` duplicate.
+* [ ] `src/rps/evidence/curation.py`, `src/rps/crewai_runtime/flows.py`, and `src/rps/agents/runtime.py` import their respective public entry points from the new module path.
+* [ ] `tests/test_crewai_runtime.py`'s import block and the 9 hardcoded `"rps.agents.crewai_backend.<name>"` monkeypatch strings referencing moved names are updated to the new module path.
+* [ ] `tests/test_crewai_runtime.py` passes standalone before the full suite is run (highest concentration of affected tests).
+* [ ] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/`.
+* [ ] `crewai_backend.py` retains only `logger`, `JsonMap`/`ToolMap`, and the pre-existing dead `_phase_document_from_bundle` — confirmed via `grep` that nothing else remains.
+
 ---
 
 ## 8) Migration / Rollout
@@ -215,7 +233,7 @@ Owner: Agent Runtime
 
 ## 12) Link Map
 
-* ADR: [doc/adr/ADR-059-crewai-backend-module-split.md](/doc/adr/ADR-059-crewai-backend-module-split.md)
+* ADR: [doc/adr/ADR-059-crewai-backend-module-split.md](/doc/adr/ADR-059-crewai-backend-module-split.md), [doc/adr/ADR-060-crewai-backend-context-and-execution-split.md](/doc/adr/ADR-060-crewai-backend-context-and-execution-split.md)
 * Architecture: [doc/architecture/agents.md](/doc/architecture/agents.md)
 * Backlog: [doc/overview/feature_backlog.md](/doc/overview/feature_backlog.md)
 
@@ -224,4 +242,6 @@ Owner: Agent Runtime
 ## Out of Scope / Deferred
 
 * Phases 2-4 (Validation group, Group B, Group A) — tracked in Goals above, not implemented in this pass.
-* Groups D and E — excluded indefinitely per ADR-059 Exceptions.
+* Groups D and E were excluded indefinitely per ADR-059 Exceptions; ADR-060 supersedes that exception and Phases 5-6 (tracked in Goals above) now implement them.
+* Redesigning `ContextVar`-based guardrail context or the closure-based execution loop — ADR-060 found this unnecessary for the file split; a genuine redesign remains unaddressed.
+* Splitting `tests/test_crewai_runtime.py` itself and removing `_phase_document_from_bundle`/retiring `crewai_backend.py` — tracked separately, to happen after Phases 5-6.

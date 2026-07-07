@@ -68,6 +68,7 @@ This folder contains the ADR log for RPS.
 - ADR-057: Evidence Curation Pipeline
 - ADR-058: Phase Authority Chain and Shared Week Skeleton
 - ADR-059: CrewAI Backend Module Split
+- ADR-060: CrewAI Backend Context-Block and Task-Execution Split
 
 ## Process (Short)
 

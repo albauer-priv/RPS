@@ -54,3 +54,4 @@ Each phase must:
 ## Exceptions
 
 - Group D (contract/context-block building) and Group E (task execution orchestration) are explicitly excluded from this ADR's scope. Splitting them requires first resolving the guardrail-runtime-context coupling (Group D) and the closure-based planning/review/writer callback structure (Group E) — a design decision, not a mechanical extraction. A future ADR should address this separately if and when that design work happens.
+- **Superseded by [ADR-060](/doc/adr/ADR-060-crewai-backend-context-and-execution-split.md)**: a full line-by-line trace found the coupling does not block a same-behavior file split (both the `ContextVar` mechanism and the closures already cross module boundaries correctly in this codebase). ADR-060 completes the split (Phases 5-6) without redesigning either mechanism.
