@@ -16,11 +16,11 @@ from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
     build_task_blueprints,
 )
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_schema import (
     artifact_envelope_basic,
     artifact_schema_valid,
 )
-from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.models import (
     PhaseDraftBundleModel,
     PhaseWeekDraftBlueprintModel,

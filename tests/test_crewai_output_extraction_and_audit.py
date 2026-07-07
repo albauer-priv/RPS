@@ -18,10 +18,10 @@ from rps.crewai_runtime.bindings import (
     build_task_blueprints,
     should_bind_crewai_output_model,
 )
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_registry import (
     resolve_task_policy,
 )
-from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.guardrails_season import season_bundle_audit_slot_integrity
 from rps.crewai_runtime.models import (
     ConstraintAuditModel,

@@ -64,12 +64,12 @@ from rps.crewai_runtime.bindings import (
     should_bind_crewai_output_model,
 )
 from rps.crewai_runtime.config import load_crewai_config_bundle
-from rps.crewai_runtime.guardrails import (
-    build_task_guardrail_kwargs,
-)
 from rps.crewai_runtime.guardrails_context import (
     current_guardrail_runtime_context,
     guardrail_runtime_context,
+)
+from rps.crewai_runtime.guardrails_registry import (
+    build_task_guardrail_kwargs,
 )
 from rps.crewai_runtime.guardrails_week import week_bundle_domain_legality_messages
 from rps.crewai_runtime.memory import (

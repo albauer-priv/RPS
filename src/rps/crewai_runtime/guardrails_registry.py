@@ -1,4 +1,4 @@
-"""Guardrail registry and helpers for CrewAI task construction."""
+"""Guardrail registry and task-policy resolution for CrewAI task construction."""
 
 from __future__ import annotations
 
@@ -172,5 +172,3 @@ def build_task_guardrail_kwargs(task_blueprint: Any, task_policies: JsonMap) -> 
             kwargs["guardrails"] = guardrail_fns
     kwargs["_resolved_output_mode"] = policy.output_mode
     return kwargs
-
-

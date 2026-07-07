@@ -32,11 +32,11 @@ from rps.crewai_runtime.bindings import (
     output_model_for_kind,
     output_model_for_task,
 )
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_registry import (
     build_task_guardrail_kwargs,
     resolve_task_policy,
 )
-from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.knowledge import (
     _compact_knowledge_query,
     build_crewai_knowledge_kwargs,

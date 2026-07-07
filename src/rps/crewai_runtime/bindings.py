@@ -10,7 +10,7 @@ from typing import Any
 
 from .config import CrewAIConfigBundle, load_crewai_config_bundle
 from .generated_artifact_models import artifact_model_for_task_name
-from .guardrails import build_task_guardrail_kwargs, resolve_task_policy
+from .guardrails_registry import build_task_guardrail_kwargs, resolve_task_policy
 from .knowledge import build_crewai_knowledge_kwargs, resolve_agent_knowledge_profile
 from .memory import build_agent_memory_value, build_crew_memory_kwargs, resolve_agent_memory_profile
 from .models import (

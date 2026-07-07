@@ -1,13 +1,13 @@
 ---
-Version: 1.1
-Status: In Progress
+Version: 1.2
+Status: Implemented
 Last-Updated: 2026-07-07
 Owner: Agent Runtime
 ---
 # FEAT: CrewAI Guardrails Module Split
 
 * **ID:** FEAT_guardrails_module_split
-* **Status:** In Progress (Phase 1 done)
+* **Status:** Implemented (all 7 phases done — `guardrails.py` retired)
 * **Owner/Area:** Agent Runtime
 * **Last-Updated:** 2026-07-07
 * **Related:** `doc/adr/ADR-061-crewai-guardrails-module-split.md`, `src/rps/crewai_runtime/guardrails.py`, `config/crewai/task_policies.yaml`, `src/rps/agents/crewai_bundle_normalization.py`, `src/rps/agents/crewai_context_blocks.py`, `src/rps/agents/crewai_output_extraction.py`, `src/rps/agents/crewai_task_execution.py`, `src/rps/agents/crewai_validation.py`, `src/rps/orchestrator/plan_week.py`, `src/rps/orchestrator/season_flow.py`, `src/rps/tools/workspace_read_tools.py`, `src/rps/tools/workspace_tools.py`
@@ -44,7 +44,7 @@ Owner: Agent Runtime
 * [x] Phase 4: extract phase validators (7 functions + ISO-week helpers) into `src/rps/crewai_runtime/guardrails_phase.py`.
 * [x] Phase 5: extract week validators (14 functions + workout-domain-analysis helpers) into `src/rps/crewai_runtime/guardrails_week.py`.
 * [x] Phase 6 (largest, highest risk): extract season validators (12 functions, including the 440-line `season_scenarios_profile_quality`) into `src/rps/crewai_runtime/guardrails_season.py`.
-* [ ] Phase 7 (final): extract the registry (`REGISTRY`, `resolve_guardrail`, `resolve_task_policy`, `build_task_guardrail_kwargs`, `TaskExecutionPolicy`) into `src/rps/crewai_runtime/guardrails_registry.py`, importing every domain module's callables. Confirm every guardrail name in `config/crewai/task_policies.yaml` still resolves.
+* [x] Phase 7 (final): extract the registry (`REGISTRY`, `resolve_guardrail`, `resolve_task_policy`, `build_task_guardrail_kwargs`, `TaskExecutionPolicy`) into `src/rps/crewai_runtime/guardrails_registry.py`, importing every domain module's callables. Confirm every guardrail name in `config/crewai/task_policies.yaml` still resolves.
 
 **Non-Goals**
 
@@ -211,6 +211,15 @@ Owner: Agent Runtime
 * [x] Updated the 1 of 8 original production consumers affected (`src/rps/agents/crewai_validation.py`) and 6 test files whose imports referenced moved names (`tests/test_crewai_season_phase_bundle_normalization.py`, `tests/test_crewai_output_extraction_and_audit.py`, `tests/test_crewai_review_readiness_and_load_context.py`, `tests/test_crewai_phase_writer_guardrails.py`, `tests/test_crewai_scenario_profile_quality.py`).
 * [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623) — confirms `season_scenarios_profile_quality`'s 440-line behavior is unchanged.
 
+## 7g) Acceptance Criteria (Definition of Done, Phase 7, final)
+
+* [x] `src/rps/crewai_runtime/guardrails_registry.py` exists with `TaskExecutionPolicy`, `REGISTRY`, `resolve_guardrail`, `resolve_task_policy`, `build_task_guardrail_kwargs`, moved verbatim, importing every domain module's callables to populate `REGISTRY`.
+* [x] `src/rps/crewai_runtime/guardrails.py` deleted entirely — confirmed via `grep` that no remaining content justified keeping a shell file, matching `crewai_backend.py`'s outcome after ADR-059/060.
+* [x] Found and fixed 1 relative-import consumer an absolute-path grep missed: `src/rps/crewai_runtime/bindings.py`'s `from .guardrails import build_task_guardrail_kwargs, resolve_task_policy` — repointed to `.guardrails_registry`. Caught immediately by a runtime import check, not by lint (relative imports aren't matched by absolute-path `grep` patterns used in every prior phase's consumer audit).
+* [x] Updated 5 test files whose imports referenced moved registry names (`tests/test_crewai_config_and_builders.py`, `tests/test_crewai_output_extraction_and_audit.py`, `tests/test_crewai_scenario_profile_quality.py`) and 2 files needing unrelated repointing surfaced during this pass (`tests/test_crewai_phase_writer_guardrails.py`'s `crewai_guardrails` module-alias usages of `_with_guardrail_telemetry`/`phase_execution_context_match`/`phase_weeks_match_range`/`phase_week_role_load_coherence`, which would have broken once the `guardrails` module stopped existing; `tests/test_crewai_season_semantics_normalization.py`'s `artifact_envelope_basic`/`artifact_schema_valid` import, which belonged to `guardrails_schema` from Phase 2, not the registry).
+* [x] Verified every one of the 41 guardrail names configured across `config/crewai/task_policies.yaml`'s `defaults` and `tasks` sections resolves via `resolve_guardrail()` against the new 43-entry `REGISTRY`, via a standalone script — confirming the string-based config-resolution contract is unchanged.
+* [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623).
+
 ---
 
 ## 8) Migration / Rollout
@@ -247,22 +256,28 @@ Owner: Agent Runtime
 
 * [x] `doc/adr/ADR-061-crewai-guardrails-module-split.md` — created.
 * [x] `doc/adr/README.md` — index entry added.
-* [ ] `doc/overview/feature_backlog.md` — updated to reference this spec and record each phase's status as phases land.
-* [ ] `doc/architecture/agents.md` — update any guardrail-module references once phases land, if that doc names `guardrails.py` specifically.
+* [x] `doc/overview/feature_backlog.md` — updated to reference this spec and record each phase's status; final entry marks the item complete.
+* [x] `doc/architecture/agents.md` — checked, contains no `guardrails.py`-specific references needing an update.
 
 ---
 
 ## 11a) Post-Implementation Audit
 
-* [ ] Spec implemented fully (all 7 phases).
-* [ ] Acceptance criteria verified.
-* [ ] Verification commands/tests recorded.
-* [ ] Residual gaps/deferred items recorded.
-* [ ] Recommended next step recorded.
+* [x] Spec implemented fully (all 7 phases done — all Goals complete).
+* [x] Acceptance criteria verified (Phases 1-7).
+* [x] Verification commands/tests recorded.
+* [x] Residual gaps/deferred items recorded.
+* [x] Recommended next step recorded.
 
 **Implementation report**
 
-* Not yet implemented — this section is filled in as each phase lands, following the same running-log pattern used in `FEAT_crewai_backend_module_split.md`.
+* Implemented scope: all 7 phases under ADR-061. Phase 1 (context core), Phase 2 (generic + schema validators, with payload-coercion helpers pulled forward), Phase 3 (remaining cross-domain utilities, AST-extracted due to interleaving), Phase 4 (phase validators), Phase 5 (week validators), Phase 6 (season validators, the largest and highest-risk phase — 440-line `season_scenarios_profile_quality`), Phase 7 (registry, final — `guardrails.py` deleted entirely). `src/rps/crewai_runtime/guardrails.py`'s original 2346 lines now live across 8 focused modules: `guardrails_context.py` (32 lines), `guardrails_generic.py` (70), `guardrails_schema.py` (82), `guardrails_utilities.py` (461), `guardrails_phase.py` (320), `guardrails_week.py` (576), `guardrails_season.py` (812), `guardrails_registry.py` (174).
+* Verification performed: see Acceptance Criteria per phase. Every phase ran `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), and the full `pytest tests/` suite (623/623 throughout, no regressions at any phase). Phase 7 additionally verified all 41 guardrail names in `config/crewai/task_policies.yaml` resolve against the final `REGISTRY` (43 entries) via a standalone script.
+* Cross-cluster dependencies found and resolved across phases (a recurring pattern, not a one-off): Phase 2 required pulling `_coerce_payload`/`_coerce_mapping` forward into a new `guardrails_utilities.py` ahead of schedule to avoid a circular import with `REGISTRY`. Phase 4 found `_next_iso_week` was season-exclusive despite being physically adjacent to phase-group ISO-week helpers — left behind for Phase 6. Phase 5 found the same pattern with `_repair_season_plan_for_contract_validation`. Phase 3 and Phase 6 both used an AST-based extraction script (`ast.parse` locating exact `lineno`/`end_lineno` per name) rather than manual line-range `sed`, since their target names were physically interleaved rather than contiguous — this proved more reliable than the manual-boundary approach used in earlier phases of the `intervals_data.py` split.
+* A subtler bug class was found and fixed in Phase 3 and confirmed clean through Phase 7: test files that monkeypatched an attribute on the `guardrails` module (e.g. `crewai_guardrails.emit_runtime_event`) to intercept calls made by a function that had since moved to a different module (`guardrails_utilities.py`) silently stopped working, because the moved function's bare-name calls resolve in its *own* module's namespace, not the caller's import site. This is invisible to `grep`-based import audits since the import statement itself doesn't change — only full test suite runs caught it. Phase 7 found and fixed the last two instances of this pattern (`tests/test_crewai_phase_writer_guardrails.py`'s `crewai_guardrails.phase_execution_context_match` etc.) before deleting `guardrails.py`.
+* Phase 7 also found one relative-import consumer (`src/rps/crewai_runtime/bindings.py`'s `from .guardrails import ...`) that every prior phase's absolute-path `grep` pattern had missed, caught immediately by a runtime import failure once `guardrails.py` was deleted.
+* Remaining gaps/risks: none active. Redesigning the `ContextVar` mechanism or the `REGISTRY` string-resolution pattern was explicitly out of scope per ADR-061 and remains unaddressed, matching ADR-060's equivalent decision for `crewai_backend.py`'s closure-based execution flow.
+* Recommended next step: none for this spec — it is fully implemented.
 
 ---
 

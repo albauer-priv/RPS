@@ -11,9 +11,13 @@ from rps.agents.crewai_context_blocks import (
     _phase_writer_authority_context_block,
 )
 from rps.agents.tasks import AgentTask
-from rps.crewai_runtime import guardrails as crewai_guardrails
 from rps.crewai_runtime import guardrails_utilities as crewai_guardrails_utilities
 from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_phase import (
+    phase_execution_context_match,
+    phase_week_role_load_coherence,
+    phase_weeks_match_range,
+)
 from rps.crewai_runtime.guardrails_season import (
     season_writer_bundle_match,
 )
@@ -74,20 +78,20 @@ def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority()
             }
         },
     }
-    wrapped_context_match = crewai_guardrails._with_guardrail_telemetry(
+    wrapped_context_match = crewai_guardrails_utilities._with_guardrail_telemetry(
         "phase_structure",
         "phase_execution_context_match",
-        crewai_guardrails.phase_execution_context_match,
+        phase_execution_context_match,
     )
-    wrapped_weeks_match = crewai_guardrails._with_guardrail_telemetry(
+    wrapped_weeks_match = crewai_guardrails_utilities._with_guardrail_telemetry(
         "phase_structure",
         "phase_weeks_match_range",
-        crewai_guardrails.phase_weeks_match_range,
+        phase_weeks_match_range,
     )
-    wrapped_load_coherence = crewai_guardrails._with_guardrail_telemetry(
+    wrapped_load_coherence = crewai_guardrails_utilities._with_guardrail_telemetry(
         "phase_structure",
         "phase_week_role_load_coherence",
-        crewai_guardrails.phase_week_role_load_coherence,
+        phase_week_role_load_coherence,
     )
 
     with guardrail_runtime_context(
@@ -159,10 +163,10 @@ def test_phase_structure_writer_guardrails_fail_cleanly_without_execution_contex
             },
         },
     }
-    wrapped = crewai_guardrails._with_guardrail_telemetry(
+    wrapped = crewai_guardrails_utilities._with_guardrail_telemetry(
         "phase_structure",
         "phase_execution_context_match",
-        crewai_guardrails.phase_execution_context_match,
+        phase_execution_context_match,
     )
 
     with guardrail_runtime_context(
@@ -208,10 +212,10 @@ def test_phase_structure_writer_guardrails_fail_cleanly_without_phase_guardrails
             },
         },
     }
-    wrapped = crewai_guardrails._with_guardrail_telemetry(
+    wrapped = crewai_guardrails_utilities._with_guardrail_telemetry(
         "phase_structure",
         "phase_execution_context_match",
-        crewai_guardrails.phase_execution_context_match,
+        phase_execution_context_match,
     )
 
     with guardrail_runtime_context(
@@ -252,10 +256,10 @@ def test_phase_structure_writer_guardrails_fail_cleanly_without_inherited_scenar
             },
         },
     }
-    wrapped = crewai_guardrails._with_guardrail_telemetry(
+    wrapped = crewai_guardrails_utilities._with_guardrail_telemetry(
         "phase_structure",
         "phase_execution_context_match",
-        crewai_guardrails.phase_execution_context_match,
+        phase_execution_context_match,
     )
 
     with guardrail_runtime_context(
@@ -328,10 +332,10 @@ def test_phase_structure_guardrail_mismatch_emits_contract_diagnostics(monkeypat
             },
         },
     }
-    wrapped = crewai_guardrails._with_guardrail_telemetry(
+    wrapped = crewai_guardrails_utilities._with_guardrail_telemetry(
         "phase_structure",
         "phase_execution_context_match",
-        crewai_guardrails.phase_execution_context_match,
+        phase_execution_context_match,
     )
     monkeypatch.setattr(
         crewai_guardrails_utilities,

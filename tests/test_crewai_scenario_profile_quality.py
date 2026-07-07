@@ -9,10 +9,10 @@ from rps.crewai_runtime import load_crewai_config_bundle
 from rps.crewai_runtime.bindings import (
     build_task_blueprints,
 )
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_registry import (
     resolve_task_policy,
 )
-from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.guardrails_season import (
     season_scenarios_profile_quality,
     season_scenarios_selection_contract_complete,
