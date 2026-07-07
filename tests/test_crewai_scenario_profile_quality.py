@@ -10,11 +10,11 @@ from rps.crewai_runtime.bindings import (
     build_task_blueprints,
 )
 from rps.crewai_runtime.guardrails import (
-    guardrail_runtime_context,
     resolve_task_policy,
     season_scenarios_profile_quality,
     season_scenarios_selection_contract_complete,
 )
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 
 
 def _season_scenario_item(

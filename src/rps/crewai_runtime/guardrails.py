@@ -4,9 +4,6 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Callable
-from contextlib import contextmanager
-from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import date, timedelta
 from functools import lru_cache
@@ -18,6 +15,13 @@ from rps.agents.output_normalization import (
     normalize_phase_guardrails_document_from_execution_context,
     normalize_phase_preview_document,
     normalize_phase_structure_document_from_execution_context,
+)
+from rps.crewai_runtime.guardrails_context import (
+    _GUARDRAIL_CONTEXT,
+    GuardrailFn,
+    GuardrailResult,
+    JsonMap,
+    current_guardrail_runtime_context,
 )
 from rps.crewai_runtime.schema_backed_models import _normalize_schema_backed_metadata
 from rps.crewai_runtime.telemetry import emit_runtime_event
@@ -40,10 +44,6 @@ from rps.workspace.schema_map import ARTIFACT_SCHEMA_FILE
 from rps.workspace.schema_registry import SchemaRegistry, SchemaValidationError, validate_or_raise
 from rps.workspace.types import ArtifactType
 
-JsonMap = dict[str, Any]
-GuardrailResult = tuple[bool, Any]
-GuardrailFn = Callable[[Any], GuardrailResult]
-_GUARDRAIL_CONTEXT: ContextVar[JsonMap] = ContextVar("rps_guardrail_context", default={})
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMA_DIR = ROOT / "specs" / "schemas"
 
@@ -55,25 +55,6 @@ class TaskExecutionPolicy:
     output_mode: str
     guardrails: tuple[str, ...]
     guardrail_max_retries: int
-
-
-@contextmanager
-def guardrail_runtime_context(**context: Any):
-    """Bind runtime-only guardrail context for the current CrewAI task run."""
-
-    current = dict(_GUARDRAIL_CONTEXT.get({}))
-    current.update({key: value for key, value in context.items() if value is not None})
-    token = _GUARDRAIL_CONTEXT.set(current)
-    try:
-        yield
-    finally:
-        _GUARDRAIL_CONTEXT.reset(token)
-
-
-def current_guardrail_runtime_context() -> JsonMap:
-    """Return the currently bound runtime guardrail context."""
-
-    return dict(_GUARDRAIL_CONTEXT.get({}))
 
 
 def _coerce_payload(result: Any) -> Any:

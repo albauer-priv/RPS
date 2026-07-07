@@ -19,9 +19,7 @@ from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
     build_task_blueprints,
 )
-from rps.crewai_runtime.guardrails import (
-    guardrail_runtime_context,
-)
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.models import (
     PhaseWeekBlueprintModel,
 )

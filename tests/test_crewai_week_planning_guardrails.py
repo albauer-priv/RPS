@@ -5,7 +5,6 @@ from types import SimpleNamespace
 
 from rps.crewai_runtime import load_crewai_config_bundle
 from rps.crewai_runtime.guardrails import (
-    guardrail_runtime_context,
     phase_s5_band_match,
     phase_weeks_match_range,
     week_active_corridor_match,
@@ -17,6 +16,7 @@ from rps.crewai_runtime.guardrails import (
     week_recovery_day_load_check,
     week_workout_structure_policy_check,
 )
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.orchestrator.resolved_context import build_resolved_load_governance_context_block
 from rps.planning.deterministic_context import (
     build_week_calendar_context,

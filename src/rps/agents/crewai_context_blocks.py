@@ -7,7 +7,7 @@ from typing import Any
 
 from rps.agents.output_normalization import extract_loaded_document
 from rps.agents.tasks import AgentTask
-from rps.crewai_runtime.guardrails import current_guardrail_runtime_context
+from rps.crewai_runtime.guardrails_context import current_guardrail_runtime_context
 
 JsonMap = dict[str, Any]
 

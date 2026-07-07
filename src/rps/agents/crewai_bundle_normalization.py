@@ -11,7 +11,7 @@ from rps.agents.output_normalization import (
     extract_loaded_document,
     normalize_phase_structure_upstream_constraints,
 )
-from rps.crewai_runtime.guardrails import current_guardrail_runtime_context
+from rps.crewai_runtime.guardrails_context import current_guardrail_runtime_context
 from rps.evidence.library import canonical_reference_locator
 from rps.planning.contracts import derive_expected_average_weekly_kj_range
 from rps.planning.phase_authority import (

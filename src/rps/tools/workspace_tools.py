@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from rps.crewai_runtime.guardrails import current_guardrail_runtime_context
+from rps.crewai_runtime.guardrails_context import current_guardrail_runtime_context
 from rps.rendering.auto_render import render_sidecar
 from rps.workspace.api import Workspace
 from rps.workspace.index_exact import IndexExactQuery

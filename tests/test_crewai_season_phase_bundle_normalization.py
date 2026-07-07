@@ -7,13 +7,13 @@ from rps.agents.crewai_bundle_normalization import (
     normalize_season_plan_draft_bundle,
 )
 from rps.crewai_runtime.guardrails import (
-    guardrail_runtime_context,
     phase_bundle_matches_context,
     phase_week_role_load_coherence,
     season_bundle_integrity,
     season_bundle_matches_contract,
     season_phase_load_feasibility,
 )
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 
 
 def test_season_bundle_integrity_requires_phase_blueprints() -> None:

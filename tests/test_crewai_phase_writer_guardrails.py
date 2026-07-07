@@ -13,9 +13,9 @@ from rps.agents.crewai_context_blocks import (
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime import guardrails as crewai_guardrails
 from rps.crewai_runtime.guardrails import (
-    guardrail_runtime_context,
     season_writer_bundle_match,
 )
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 
 
 def test_phase_structure_writer_guardrails_pre_normalize_exact_phase_authority() -> None:

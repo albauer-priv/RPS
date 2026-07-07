@@ -19,8 +19,8 @@ from rps.crewai_runtime.bindings import (
 from rps.crewai_runtime.guardrails import (
     artifact_envelope_basic,
     artifact_schema_valid,
-    guardrail_runtime_context,
 )
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.models import (
     PhaseDraftBundleModel,
     PhaseWeekDraftBlueprintModel,

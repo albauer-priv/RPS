@@ -1,13 +1,13 @@
 ---
-Version: 1.0
-Status: Proposed
+Version: 1.1
+Status: In Progress
 Last-Updated: 2026-07-07
 Owner: Agent Runtime
 ---
 # FEAT: CrewAI Guardrails Module Split
 
 * **ID:** FEAT_guardrails_module_split
-* **Status:** Proposed (Phase 1 not yet started)
+* **Status:** In Progress (Phase 1 done)
 * **Owner/Area:** Agent Runtime
 * **Last-Updated:** 2026-07-07
 * **Related:** `doc/adr/ADR-061-crewai-guardrails-module-split.md`, `src/rps/crewai_runtime/guardrails.py`, `config/crewai/task_policies.yaml`, `src/rps/agents/crewai_bundle_normalization.py`, `src/rps/agents/crewai_context_blocks.py`, `src/rps/agents/crewai_output_extraction.py`, `src/rps/agents/crewai_task_execution.py`, `src/rps/agents/crewai_validation.py`, `src/rps/orchestrator/plan_week.py`, `src/rps/orchestrator/season_flow.py`, `src/rps/tools/workspace_read_tools.py`, `src/rps/tools/workspace_tools.py`
@@ -38,7 +38,7 @@ Owner: Agent Runtime
 
 **Goals**
 
-* [ ] Phase 1: extract the context core (`_GUARDRAIL_CONTEXT`, `guardrail_runtime_context`, `current_guardrail_runtime_context`, shared type aliases) into `src/rps/crewai_runtime/guardrails_context.py`.
+* [x] Phase 1: extract the context core (`_GUARDRAIL_CONTEXT`, `guardrail_runtime_context`, `current_guardrail_runtime_context`, shared type aliases) into `src/rps/crewai_runtime/guardrails_context.py`.
 * [ ] Phase 2: extract generic output validators (6 functions) into `src/rps/crewai_runtime/guardrails_generic.py`, and schema/envelope validators (3 functions) into `src/rps/crewai_runtime/guardrails_schema.py`.
 * [ ] Phase 3: extract cross-domain utilities (payload coercion, diagnostics, telemetry wrapper, context accessors) into `src/rps/crewai_runtime/guardrails_utilities.py`.
 * [ ] Phase 4: extract phase validators (7 functions + ISO-week helpers) into `src/rps/crewai_runtime/guardrails_phase.py`.
@@ -162,6 +162,14 @@ Owner: Agent Runtime
 * [ ] `config/crewai/task_policies.yaml`'s guardrail name strings all resolve unchanged after Phase 7 (verified via a script iterating the YAML's guardrail lists against `REGISTRY.keys()`).
 * [ ] Validation passes every phase: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/`.
 * [ ] No regressions in: Season/Phase/Week guardrail enforcement, CrewAI task guardrail wiring, artifact schema validation.
+
+## 7a) Acceptance Criteria (Definition of Done, Phase 1)
+
+* [x] `src/rps/crewai_runtime/guardrails_context.py` exists with `_GUARDRAIL_CONTEXT`, `guardrail_runtime_context`, `current_guardrail_runtime_context`, and the `JsonMap`/`GuardrailResult`/`GuardrailFn` type aliases, moved verbatim.
+* [x] `guardrails.py` imports back `_GUARDRAIL_CONTEXT`, `GuardrailFn`, `GuardrailResult`, `JsonMap`, and `current_guardrail_runtime_context` for its own internal use — a follow-up `ruff` pass caught 8 direct `_GUARDRAIL_CONTEXT.get(...)` call sites (in addition to the two accessor functions) that an initial import list missed.
+* [x] 7 production files (`src/rps/tools/workspace_read_tools.py`, `src/rps/tools/workspace_tools.py`, `src/rps/agents/crewai_context_blocks.py`, `src/rps/agents/crewai_bundle_normalization.py`, `src/rps/orchestrator/plan_week.py`, `src/rps/orchestrator/season_flow.py`, `src/rps/agents/crewai_task_execution.py`) updated to import `guardrail_runtime_context`/`current_guardrail_runtime_context` from `guardrails_context` directly — no re-export shim left in `guardrails.py`.
+* [x] 11 test files updated the same way (`test_crewai_review_readiness_and_load_context.py`, `test_crewai_scenario_profile_quality.py`, `test_crewai_season_semantics_normalization.py`, `test_crewai_output_extraction_and_audit.py`, `test_workout_generator.py`, `test_crewai_phase_week_review_guardrails.py`, `test_crewai_week_planning_guardrails.py`, `test_crewai_config_and_builders.py`, `test_crewai_phase_writer_guardrails.py`, `test_crewai_season_phase_bundle_normalization.py`, `test_workspace.py`).
+* [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623).
 
 ---
 

@@ -16,7 +16,7 @@ if str(SRC) not in sys.path:
 
 from rps.agents.task_router import AgentTaskRouter, RouterContext  # noqa: E402
 from rps.agents.tasks import AgentTask  # noqa: E402
-from rps.crewai_runtime.guardrails import guardrail_runtime_context  # noqa: E402
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context  # noqa: E402
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers  # noqa: E402
 from rps.tools.workspace_tools import ToolContext, get_tool_handlers  # noqa: E402
 from rps.workspace.api import Workspace  # noqa: E402

@@ -34,9 +34,9 @@ from rps.crewai_runtime.bindings import (
 )
 from rps.crewai_runtime.guardrails import (
     build_task_guardrail_kwargs,
-    guardrail_runtime_context,
     resolve_task_policy,
 )
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.knowledge import (
     _compact_knowledge_query,
     build_crewai_knowledge_kwargs,
