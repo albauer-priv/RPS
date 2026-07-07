@@ -6,7 +6,9 @@ import json
 import os
 from datetime import UTC, date, datetime, timedelta
 
-from rps.data_pipeline.intervals_data import fetch_current_week_activities_actual_payload
+from rps.data_pipeline.intervals_activities_actual import (
+    fetch_current_week_activities_actual_payload,
+)
 from rps.orchestrator.resolved_context import (
     build_resolved_activity_context_block,
     build_resolved_athlete_context_block,
