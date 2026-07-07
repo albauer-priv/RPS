@@ -13,23 +13,13 @@ from typing import Any, cast
 import pytest
 
 from rps.agents import runtime as agent_runtime
-from rps.agents.crewai_backend import (
-    _SEASON_PLANNING_TASKS,
-    _TASK_BLUEPRINT_BY_AGENT_TASK,
-    _build_crewai_task,
-    _build_internal_task_description,
-    _compact_internal_user_input,
-    _execute_crewai_multiagent_crew,
-    _extract_authoritative_runtime_blocks,
+from rps.agents.crewai_builders import _emit_crew_task_prepared_events, _task_tools_for_blueprint
+from rps.agents.crewai_bundle_normalization import (
     _normalize_final_season_plan_semantics,
-    _run_multicrew_cycle,
-    _run_phase_bundle_document,
+    _normalize_publication_link,
     normalize_phase_draft_bundle,
     normalize_season_plan_draft_bundle,
-    run_agent_multi_output_crewai,
 )
-from rps.agents.crewai_builders import _emit_crew_task_prepared_events, _task_tools_for_blueprint
-from rps.agents.crewai_bundle_normalization import _normalize_publication_link
 from rps.agents.crewai_context_blocks import (
     _contract_context_blocks_for_task,
     _phase_bundle_finalize_authority_freeze_block,
@@ -42,6 +32,18 @@ from rps.agents.crewai_output_extraction import (
     _extract_structured_output,
     _freeze_season_bundle_audit_slots,
     coerce_season_plan_draft_bundle_slots,
+)
+from rps.agents.crewai_task_execution import (
+    _SEASON_PLANNING_TASKS,
+    _TASK_BLUEPRINT_BY_AGENT_TASK,
+    _build_crewai_task,
+    _build_internal_task_description,
+    _compact_internal_user_input,
+    _execute_crewai_multiagent_crew,
+    _extract_authoritative_runtime_blocks,
+    _run_multicrew_cycle,
+    _run_phase_bundle_document,
+    run_agent_multi_output_crewai,
 )
 from rps.agents.runtime import AgentRuntime
 from rps.agents.tasks import AgentTask
@@ -2473,7 +2475,7 @@ def test_run_phase_bundle_document_narrows_only_finalizer_tools_with_bound_contr
         captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
         return {"guardrails": {}, "structure": {}, "preview": {}}
 
-    monkeypatch.setattr("rps.agents.crewai_backend._execute_crewai_multiagent_crew", _fake_execute)
+    monkeypatch.setattr("rps.agents.crewai_task_execution._execute_crewai_multiagent_crew", _fake_execute)
     tool_map = {
         name: SimpleNamespace(name=name)
         for name in [
@@ -2529,7 +2531,7 @@ def test_run_phase_bundle_document_keeps_finalizer_tools_without_bound_contracts
         captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
         return {"guardrails": {}, "structure": {}, "preview": {}}
 
-    monkeypatch.setattr("rps.agents.crewai_backend._execute_crewai_multiagent_crew", _fake_execute)
+    monkeypatch.setattr("rps.agents.crewai_task_execution._execute_crewai_multiagent_crew", _fake_execute)
 
     with guardrail_runtime_context(
         phase_execution_context={"phase_id": "P01"},
@@ -6896,9 +6898,9 @@ def test_runtime_gateway_dispatches_to_crewai_backend(monkeypatch) -> None:
         return {"ok": True, "produced": {}}
 
     monkeypatch.setattr(agent_runtime, "resolve_agent_runtime_selection", _fake_selection)
-    module = types.ModuleType("rps.agents.crewai_backend")
+    module = types.ModuleType("rps.agents.crewai_task_execution")
     _set_module_attrs(module, run_agent_multi_output_crewai=_fake_backend)
-    monkeypatch.setitem(sys.modules, "rps.agents.crewai_backend", module)
+    monkeypatch.setitem(sys.modules, "rps.agents.crewai_task_execution", module)
 
     result = agent_runtime.run_agent_multi_output()
     assert result["ok"] is True
@@ -7091,11 +7093,11 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         return saved
 
     monkeypatch.setattr(
-        "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
+        "rps.agents.crewai_task_execution.GuardedValidatedStore.guard_put_validated",
         _fake_guard_put_validated,
     )
     monkeypatch.setattr(
-        "rps.agents.crewai_backend.normalize_season_plan_draft_bundle",
+        "rps.agents.crewai_task_execution.normalize_season_plan_draft_bundle",
         lambda _bundle: {
             "event_priority": {"primary_a_events": ["A Event"]},
             "macrocycle": {"deload_cadence": "2:1"},
@@ -7124,7 +7126,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         },
     )
     monkeypatch.setattr(
-        "rps.agents.crewai_backend._validate_normalized_season_bundle",
+        "rps.agents.crewai_task_execution._validate_normalized_season_bundle",
         lambda planning_bundle, **kwargs: planning_bundle,
     )
 
@@ -7304,15 +7306,15 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
         return {"ok": True, "path": "/tmp/phase.json", "version_key": "2026-17__x", "run_id": "run-phase"}
 
     monkeypatch.setattr(
-        "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
+        "rps.agents.crewai_task_execution.GuardedValidatedStore.guard_put_validated",
         _fake_guard_put_validated,
     )
     monkeypatch.setattr(
-        "rps.agents.crewai_backend.normalize_phase_draft_bundle",
+        "rps.agents.crewai_task_execution.normalize_phase_draft_bundle",
         lambda payload: payload,
     )
     monkeypatch.setattr(
-        "rps.agents.crewai_backend._validate_normalized_phase_bundle",
+        "rps.agents.crewai_task_execution._validate_normalized_phase_bundle",
         lambda payload, **_: payload,
     )
 
@@ -7711,7 +7713,7 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
         return {"ok": True, "path": "/tmp/out.json", "version_key": "2026-19__x", "run_id": "run-ff"}
 
     monkeypatch.setattr(
-        "rps.agents.crewai_backend.GuardedValidatedStore.guard_put_validated",
+        "rps.agents.crewai_task_execution.GuardedValidatedStore.guard_put_validated",
         _fake_guard_put_validated,
     )
 

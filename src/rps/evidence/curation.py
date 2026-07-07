@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from rps.agents.crewai_backend import execute_structured_internal_task_crewai
+from rps.agents.crewai_task_execution import execute_structured_internal_task_crewai
 from rps.agents.runtime import AgentRuntime
 from rps.core.config import load_app_settings, load_env_file
 from rps.crewai_runtime.models import EvidenceCurationModel

@@ -69,7 +69,7 @@ def run_agent_multi_output(*args: Any, **kwargs: Any) -> JsonMap:
     selection = resolve_agent_runtime_selection()
     if not selection.can_execute:
         raise RuntimeError(selection.reason)
-    from rps.agents.crewai_backend import run_agent_multi_output_crewai
+    from rps.agents.crewai_task_execution import run_agent_multi_output_crewai
 
     return run_agent_multi_output_crewai(*args, **kwargs)
 
@@ -80,6 +80,6 @@ def run_agent_multi_output_preview(*args: Any, **kwargs: Any) -> JsonMap:
     selection = resolve_agent_runtime_selection()
     if not selection.can_execute:
         raise RuntimeError(selection.reason)
-    from rps.agents.crewai_backend import run_agent_multi_output_preview_crewai
+    from rps.agents.crewai_task_execution import run_agent_multi_output_preview_crewai
 
     return run_agent_multi_output_preview_crewai(*args, **kwargs)

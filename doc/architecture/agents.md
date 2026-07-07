@@ -210,7 +210,7 @@ These mappings explain what is reused across crews beyond each agent's primary m
 | Topic | Current design note |
 | --- | --- |
 | Evidence curation | Weekly literature refresh now separates bibliographic verification from content readiness: verified sources pass through a dedicated CrewAI evidence-curation task, then deterministic quality-gate and activation logic before they appear in operative evidence surfaces. |
-| Crew definition source | The canonical crew stage groupings are defined in `src/rps/agents/crewai_backend.py` via task tuples such as `_SEASON_PLANNING_TASKS`, `_PHASE_REVIEW_TASKS`, and `_WEEK_PLANNING_TASKS`. |
+| Crew definition source | The canonical crew stage groupings are defined in `src/rps/agents/crewai_task_execution.py` via task tuples such as `_SEASON_PLANNING_TASKS`, `_PHASE_REVIEW_TASKS`, and `_WEEK_PLANNING_TASKS` (moved from `crewai_backend.py` in ADR-060 Phase 6). |
 | Outer orchestration | Season, Phase, Week, Report, Feed-Forward, and Coach are wrapped by outer flows in `src/rps/crewai_runtime/flows.py`. |
 | Skill attachment model | One primary method skill is attached per agent; crew-level skills are operational and cross-cutting, not domain-method replacements. |
 | Writer discipline | Writer agents do not re-plan. They serialize the approved result into the final artifact envelope only. |

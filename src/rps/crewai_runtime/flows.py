@@ -10,7 +10,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, Field
 
-from rps.agents.crewai_backend import run_phase_bundle_crewai
+from rps.agents.crewai_task_execution import run_phase_bundle_crewai
 from rps.agents.runtime import AgentRuntime, run_agent_multi_output
 from rps.agents.tasks import AgentTask
 from rps.crewai_runtime.telemetry import (
