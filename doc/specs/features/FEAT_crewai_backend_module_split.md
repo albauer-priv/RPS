@@ -10,7 +10,7 @@ Owner: Agent Runtime
 * **Status:** Draft
 * **Owner/Area:** Agent Runtime
 * **Last-Updated:** 2026-07-07
-* **Related:** `doc/adr/ADR-059-crewai-backend-module-split.md`, `src/rps/agents/crewai_backend.py`, `tests/test_crewai_runtime.py`
+* **Related:** `doc/adr/ADR-059-crewai-backend-module-split.md`, `src/rps/agents/crewai_backend.py`, `src/rps/agents/crewai_output_extraction.py`, `src/rps/agents/crewai_validation.py`, `tests/test_crewai_runtime.py`
 
 ---
 
@@ -40,7 +40,7 @@ Owner: Agent Runtime
 **Goals**
 
 * [x] Phase 1: extract structured-output extraction/parsing (Group C, ~231 lines / 10 functions) into `src/rps/agents/crewai_output_extraction.py`.
-* [ ] Phase 2: extract the bundle/artifact validation group (~77 lines / 7 functions) into `src/rps/agents/crewai_validation.py`.
+* [x] Phase 2: extract the bundle/artifact validation group (~77 lines / 7 functions) into `src/rps/agents/crewai_validation.py`.
 * [ ] Phase 3: extract CrewAI agent/crew/LLM construction (Group B, ~1856 lines / 11 functions) into `src/rps/agents/crewai_builders.py`.
 * [ ] Phase 4: extract season/phase bundle normalization (Group A, ~1341 lines / 25 functions) into `src/rps/agents/crewai_bundle_normalization.py`.
 
@@ -198,18 +198,18 @@ Owner: Agent Runtime
 
 ## 11a) Post-Implementation Audit
 
-* [ ] Spec implemented fully (Phase 1 only; Phases 2-4 remain open).
-* [ ] Acceptance criteria verified.
-* [ ] Verification commands/tests recorded.
-* [ ] Residual gaps/deferred items recorded.
-* [ ] Recommended next step recorded.
+* [ ] Spec implemented fully (Phases 1-2 done; Phases 3-4 remain open).
+* [x] Acceptance criteria verified (Phases 1-2).
+* [x] Verification commands/tests recorded.
+* [x] Residual gaps/deferred items recorded.
+* [x] Recommended next step recorded.
 
 **Implementation report**
 
-* Implemented scope: Phase 1 (Group C extraction) only.
-* Verification performed: see Acceptance Criteria.
-* Remaining gaps/risks: Phases 2-4 not started; Groups D/E excluded by design (ADR-059 Exceptions).
-* Recommended next step: Phase 2 (Validation group extraction) when picked up again.
+* Implemented scope: Phase 1 (Group C extraction) and Phase 2 (Validation group extraction).
+* Verification performed: see Acceptance Criteria. Phase 2 additionally confirmed the two pre-existing string-based monkeypatches in `tests/test_crewai_runtime.py` (`_validate_normalized_season_bundle`, `_validate_normalized_phase_bundle`) kept working unmodified, since `crewai_backend.py` re-imports those names by value.
+* Remaining gaps/risks: Phases 3-4 not started; Groups D/E excluded by design (ADR-059 Exceptions).
+* Recommended next step: Phase 3 (CrewAI builders, Group B) when picked up again.
 
 ---
 
