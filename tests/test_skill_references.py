@@ -55,7 +55,6 @@ def test_skill_references_are_local_to_skill_directory() -> None:
 def test_runtime_does_not_manually_render_skill_bodies() -> None:
     forbidden = "render_" + "skill_prompt_block"
     runtime_files = [
-        Path("src/rps/agents/crewai_backend.py"),
         Path("src/rps/agents/crewai_task_execution.py"),
         Path("src/rps/crewai_runtime/coach_chat.py"),
         Path("src/rps/crewai_runtime/bindings.py"),

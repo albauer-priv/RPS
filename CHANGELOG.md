@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added shared `plan_week` regression helpers and focused tests for orchestration/testability hardening: `tests/planning_context_helpers.py`, `tests/test_plan_week_helpers.py`, and `tests/test_deterministic_context.py` now cover shared latest/exact-range loading, snapshot preflight/report-gate helpers, and typed deterministic phase-execution fallback resolution.
 - Added a "Module and file size / responsibility" section to `.clinerules.d/10-docs-specs-adr.md`, codifying the module-split governance discipline established across this review (ADR-059 and the `tests/test_plan_pages.py` split): a soft size/function-count trigger for evaluating a split, the Common Closure Principle as the actual splitting criterion, the rule for when a split needs an ADR versus when it's a pure internal reorg, and the convention of duplicating trivial per-file test fixtures instead of introducing a blanket-autouse `conftest.py`.
 
+### Removed
+
+- Removed `src/rps/agents/crewai_backend.py`. After ADR-059/ADR-060's staged module split, the file retained only a pre-existing, unrelated dead function (`_phase_document_from_bundle`, zero call sites repo-wide) — deleted rather than kept as a near-empty shell. Removed the corresponding entry from `tests/test_skill_references.py::test_runtime_does_not_manually_render_skill_bodies`'s checked-file list.
+
 ### Changed
 
 - Changed `src/rps/orchestrator/plan_week.py` to use staged internal helper extraction and typed request/report-gate/preflight boundaries while preserving existing planning/report/export behavior and external artifact contracts.
