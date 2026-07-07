@@ -20,7 +20,7 @@ from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
     build_task_blueprints,
 )
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_week import (
     review_decision_integrity,
 )
 from rps.crewai_runtime.models import (

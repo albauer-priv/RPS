@@ -4,10 +4,10 @@ from rps.crewai_runtime.guardrails import (
     season_bundle_review_readiness,
     season_phase_load_context_match,
     season_scenario_selection_shape,
-    week_bundle_review_readiness,
 )
 from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.guardrails_phase import phase_bundle_review_readiness
+from rps.crewai_runtime.guardrails_week import week_bundle_review_readiness
 
 
 def test_season_phase_load_context_match_repairs_missing_role_week_notes_before_validation() -> None:

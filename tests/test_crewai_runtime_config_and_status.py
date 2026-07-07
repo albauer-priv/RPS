@@ -10,7 +10,7 @@ from rps.crewai_runtime.bindings import (
     output_model_for_kind,
 )
 from rps.crewai_runtime.compat import crewai_runtime_status as compat_crewai_runtime_status
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_week import (
     des_diagnostic_only,
 )
 from rps.crewai_runtime.models import (

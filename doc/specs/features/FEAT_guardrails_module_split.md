@@ -42,7 +42,7 @@ Owner: Agent Runtime
 * [x] Phase 2: extract generic output validators (6 functions) into `src/rps/crewai_runtime/guardrails_generic.py`, and schema/envelope validators (3 functions) into `src/rps/crewai_runtime/guardrails_schema.py`. (Also pulled the payload-coercion helpers forward into `guardrails_utilities.py` early — see Phase 3.)
 * [x] Phase 3: extract the rest of the cross-domain utilities (diagnostics, telemetry wrapper, context accessors) into `src/rps/crewai_runtime/guardrails_utilities.py` (payload coercion already moved there in Phase 2, to avoid a circular import).
 * [x] Phase 4: extract phase validators (7 functions + ISO-week helpers) into `src/rps/crewai_runtime/guardrails_phase.py`.
-* [ ] Phase 5: extract week validators (14 functions + workout-domain-analysis helpers) into `src/rps/crewai_runtime/guardrails_week.py`.
+* [x] Phase 5: extract week validators (14 functions + workout-domain-analysis helpers) into `src/rps/crewai_runtime/guardrails_week.py`.
 * [ ] Phase 6 (largest, highest risk): extract season validators (12 functions, including the 440-line `season_scenarios_profile_quality`) into `src/rps/crewai_runtime/guardrails_season.py`.
 * [ ] Phase 7 (final): extract the registry (`REGISTRY`, `resolve_guardrail`, `resolve_task_policy`, `build_task_guardrail_kwargs`, `TaskExecutionPolicy`) into `src/rps/crewai_runtime/guardrails_registry.py`, importing every domain module's callables. Confirm every guardrail name in `config/crewai/task_policies.yaml` still resolves.
 
@@ -194,6 +194,14 @@ Owner: Agent Runtime
 * [x] Found a cross-cluster dependency: `_next_iso_week`, physically adjacent to the other ISO-week helpers, is called exclusively by `season_phase_coverage_and_cadence` (a season-group function not scheduled to move until Phase 6) — not by any phase-group function. Left in `guardrails.py`'s residual rather than moved, avoiding both a false grouping and a premature season-group touch.
 * [x] `guardrails.py` imports the 7 phase validators back (for `REGISTRY`, not yet extracted).
 * [x] Updated the 1 of 8 original production consumers affected (`src/rps/agents/crewai_validation.py`, which imports a mix of phase-group and season/week-group names — split into two import statements) and 3 test files whose import blocks mixed moving and staying names (`tests/test_crewai_season_phase_bundle_normalization.py`, `tests/test_crewai_review_readiness_and_load_context.py`, `tests/test_crewai_week_planning_guardrails.py`).
+* [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623).
+
+## 7e) Acceptance Criteria (Definition of Done, Phase 5)
+
+* [x] `src/rps/crewai_runtime/guardrails_week.py` exists with the 14 week-artifact validators, `week_bundle_domain_legality_messages`, `_normalized_domain_token`, the workout-domain-analysis helpers (`_workout_domain_hits`, `_workout_domain_sources`, `_derived_workout_domains`, `_percent_bounds`), `_target_week_from_context_or_meta`, and `des_diagnostic_only`, moved verbatim via the same AST-based extraction as Phases 3-4.
+* [x] Found another cross-cluster dependency, same pattern as Phase 4's `_next_iso_week`: `_repair_season_plan_for_contract_validation`, physically located within this cluster's line range, is called exclusively by `season_phase_load_context_match` (a season-group function not scheduled to move until Phase 6) — left in `guardrails.py`'s residual.
+* [x] `guardrails.py` imports the 15 REGISTRY-referenced week validators back (`week_bundle_domain_legality_messages` and the private helpers are not REGISTRY entries and are not called by the residual).
+* [x] Updated the 2 of 8 original production consumers affected (`src/rps/agents/crewai_task_execution.py` for `week_bundle_domain_legality_messages`, `src/rps/agents/crewai_validation.py` for `week_bundle_review_readiness`) and 5 test files whose imports referenced moved names (`tests/test_crewai_week_planning_guardrails.py`, `tests/test_crewai_review_readiness_and_load_context.py`, `tests/test_crewai_multi_output_execution.py`, `tests/test_workout_generator.py`, `tests/test_crewai_runtime_config_and_status.py`).
 * [x] Validation passes: `py_compile`, `run_lint.sh`, `run_typecheck.sh` (curated + `--full`), full `pytest tests/` (623/623).
 
 ---

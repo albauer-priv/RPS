@@ -12,13 +12,13 @@ from rps.agents.runtime import AgentRuntime
 from rps.crewai_runtime.guardrails import (
     season_bundle_matches_contract,
     season_bundle_review_readiness,
-    week_bundle_review_readiness,
 )
 from rps.crewai_runtime.guardrails_phase import (
     phase_bundle_matches_context,
     phase_bundle_review_readiness,
     phase_week_role_load_coherence,
 )
+from rps.crewai_runtime.guardrails_week import week_bundle_review_readiness
 from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.workspace.artifact_metadata import CANONICAL_OWNER_BY_ARTIFACT
 from rps.workspace.types import ArtifactType

@@ -4,7 +4,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from rps.crewai_runtime import load_crewai_config_bundle
-from rps.crewai_runtime.guardrails import (
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_phase import phase_s5_band_match, phase_weeks_match_range
+from rps.crewai_runtime.guardrails_week import (
     week_active_corridor_match,
     week_agenda_shape_and_calendar_check,
     week_bundle_domain_legality_check,
@@ -14,8 +16,6 @@ from rps.crewai_runtime.guardrails import (
     week_recovery_day_load_check,
     week_workout_structure_policy_check,
 )
-from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
-from rps.crewai_runtime.guardrails_phase import phase_s5_band_match, phase_weeks_match_range
 from rps.orchestrator.resolved_context import build_resolved_load_governance_context_block
 from rps.planning.deterministic_context import (
     build_week_calendar_context,

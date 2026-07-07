@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from rps.crewai_runtime.guardrails import week_phase_role_alignment_check
 from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
+from rps.crewai_runtime.guardrails_week import week_phase_role_alignment_check
 from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.progression_history import extract_progression_signatures_from_week_plan
 from rps.workouts.structured import canonicalize_workout_text
