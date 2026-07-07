@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 
-from rps.data_pipeline.intervals_data import _power_zone_share_percent
+from rps.data_pipeline.intervals_activities_trend import _power_zone_share_percent
 
 
 def test_power_zone_share_percent_uses_pure_z2_when_requested():
