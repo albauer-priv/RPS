@@ -38,6 +38,7 @@ Out of scope:
 - Structure must stay within phase guardrails.
 - Do not invent season authority changes.
 - No workout prescriptions.
+- freeze `inherited_scenario_contract` exactly from injected deterministic authority; do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields such as `constraint_summary` or `risk_flags`.
 
 ## Output discipline
 

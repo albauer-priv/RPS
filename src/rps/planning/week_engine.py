@@ -13,6 +13,7 @@ from rps.crewai_runtime.models import (
     WeekContextAssessmentModel,
     WeekDayBlueprintModel,
     WeekPlanBundleModel,
+    WeekPlanningNoteModel,
     WeekReviewDecisionModel,
     WeekWorkoutBlueprintModel,
 )
@@ -458,11 +459,21 @@ def _build_week_plan_bundle(
         day_blueprints=day_blueprints,
         workout_blueprints=workout_blueprints,
         constraint_summary=[
-            f"Week role: {week_calendar_context.get('phase_week_role')}",
-            f"Allowed domains: {', '.join(str(item) for item in week_calendar_context.get('allowed_intensity_domains') or [])}",
+            WeekPlanningNoteModel(text=f"Week role: {week_calendar_context.get('phase_week_role')}"),
+            WeekPlanningNoteModel(
+                text=f"Allowed domains: {', '.join(str(item) for item in week_calendar_context.get('allowed_intensity_domains') or [])}"
+            ),
         ],
-        load_target_summary=[f"Deterministic weekly load target set to {target_load} kJ within the binding active band."],
-        revision_summary=([f"Applied bounded adjustment intent: {adjustment.message}"] if adjustment.message else []),
+        load_target_summary=[
+            WeekPlanningNoteModel(
+                text=f"Deterministic weekly load target set to {target_load} kJ within the binding active band."
+            )
+        ],
+        revision_summary=(
+            [WeekPlanningNoteModel(text=f"Applied bounded adjustment intent: {adjustment.message}")]
+            if adjustment.message
+            else []
+        ),
         workout_authoring_summary=["Workout protocols chosen from configurable registry and rendered deterministically."],
         candidate_document_summary=["Week bundle generated without Week CrewAI planning/review/writer stages."],
         warnings=[*initial_warnings, *allocation_warnings, *selection_warnings, *shaping_warnings, *preview_warnings],

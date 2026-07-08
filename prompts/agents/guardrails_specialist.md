@@ -45,6 +45,7 @@ Out of scope:
 - Do not widen allowed intensity domains or load modalities beyond injected phase authority.
 - Keep phase intent coherent with legal intensity domains; do not author threshold-shaped guardrails when `THRESHOLD` is suppressed upstream.
 - Guardrails must be enforceable and phase-range specific.
+- freeze `inherited_scenario_contract` exactly from injected deterministic authority; do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields such as `constraint_summary` or `risk_flags`.
 
 ## Output discipline
 

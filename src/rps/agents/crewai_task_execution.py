@@ -33,15 +33,15 @@ from rps.agents.crewai_context_blocks import (
     _phase_writer_authority_context_block,
 )
 from rps.agents.crewai_output_extraction import (
+    _assemble_phase_draft_bundle,
+    _assemble_season_plan_draft_bundle,
     _coerce_artifact_envelope,
     _extract_json_output,
     _extract_raw_output_text,
     _extract_structured_output,
     _extract_typed_output,
-    _freeze_season_bundle_audit_slots,
     _output_model_for_task,
     _parse_json_document,
-    coerce_season_plan_draft_bundle_slots,
 )
 from rps.agents.crewai_validation import (
     _normalize_artifact_meta,
@@ -68,15 +68,24 @@ from rps.crewai_runtime.guardrails_context import (
     current_guardrail_runtime_context,
     guardrail_runtime_context,
 )
+from rps.crewai_runtime.guardrails_phase import (
+    phase_bundle_integrity,
+    phase_bundle_review_readiness,
+)
 from rps.crewai_runtime.guardrails_registry import (
     build_task_guardrail_kwargs,
+)
+from rps.crewai_runtime.guardrails_season import (
+    season_bundle_audit_slot_integrity,
+    season_bundle_integrity,
+    season_bundle_review_readiness,
+    season_phase_load_feasibility,
 )
 from rps.crewai_runtime.guardrails_week import week_bundle_domain_legality_messages
 from rps.crewai_runtime.memory import (
     build_crew_memory_kwargs,
     resolve_crew_memory_profile,
 )
-from rps.crewai_runtime.models import SeasonPlanDraftBundleModel
 from rps.crewai_runtime.telemetry import (
     emit_runtime_event,
     emit_runtime_exception_event,
@@ -818,11 +827,17 @@ def _execute_crewai_multiagent_crew(
         output_mode=output_mode,
     )
     if final_task_name == "season_plan_finalize":
-        structured_output = _freeze_season_bundle_audit_slots(
+        structured_output = _assemble_season_plan_draft_bundle(
             structured_output,
             result=result,
             tasks_by_name=tasks_by_name,
             task_blueprints=task_blueprints,
+        )
+    elif final_task_name == "phase_bundle_finalize":
+        structured_output = _assemble_phase_draft_bundle(
+            structured_output,
+            result=result,
+            tasks_by_name=tasks_by_name,
         )
     return structured_output
 
@@ -928,8 +943,15 @@ def _run_season_plan_document(
     if not isinstance(document, dict):
         raise RuntimeError("Season manager output did not decode to an artifact envelope object.")
     try:
-        coerced = coerce_season_plan_draft_bundle_slots(document)
-        return SeasonPlanDraftBundleModel.model_validate(coerced).model_dump()
+        for guardrail in (
+            season_bundle_integrity,
+            season_bundle_audit_slot_integrity,
+            season_phase_load_feasibility,
+            season_bundle_review_readiness,
+        ):
+            passed, detail = guardrail(document)
+            if not passed:
+                raise RuntimeError(str(detail))
     except Exception as exc:
         emit_runtime_event(
             root=runtime.workspace_root,
@@ -942,6 +964,7 @@ def _run_season_plan_document(
             reason=str(exc),
         )
         raise RuntimeError(f"season_plan_finalize raw bundle failure: {exc}") from exc
+    return document
 
 
 def _run_phase_bundle_document(
@@ -996,6 +1019,23 @@ def _run_phase_bundle_document(
     )
     if not isinstance(bundle_document, dict):
         raise RuntimeError("Phase bundle output did not decode to an object.")
+    try:
+        for guardrail in (phase_bundle_integrity, phase_bundle_review_readiness):
+            passed, detail = guardrail(bundle_document)
+            if not passed:
+                raise RuntimeError(str(detail))
+    except Exception as exc:
+        emit_runtime_event(
+            root=runtime.workspace_root,
+            athlete_id=athlete_id,
+            run_id=run_id,
+            event_type="PHASE_BUNDLE_RAW_VALIDATION_FAILED",
+            crew="phase_planning",
+            task=final_task_name,
+            component=f"crew:{final_task_name}",
+            reason=str(exc),
+        )
+        raise RuntimeError(f"{final_task_name} raw bundle failure: {exc}") from exc
     return bundle_document
 
 

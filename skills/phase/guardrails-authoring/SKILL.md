@@ -131,6 +131,7 @@ Hard rules:
 - `weekly_kj_bands` must match injected deterministic S5 bands
 - Treat inherited scenario contract as season posture ceiling only; do not narrow it to phase-local legality
 - phase legality fields must stay separate from the scenario ceiling
+- freeze `inherited_scenario_contract` exactly from injected deterministic authority; do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields such as `constraint_summary` or `risk_flags`
 - for `BASE / shortened_re_entry`, canonical `quality_intent` is `Stabilization`
 - keep recovery days and fixed-rest days protected from load compression
 - emit `body_metadata.phase_type`, `body_metadata.phase_intent`, and `body_metadata.phase_taxonomy_version` explicitly and keep them identical to upstream authority

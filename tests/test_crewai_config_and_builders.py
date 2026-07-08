@@ -156,7 +156,7 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     assert tasks["classify_turn"].output_kind == "turn_mode"
     assert tasks["form_adjustment_intent"].output_kind == "adjustment_intent"
     assert tasks["week_plan"].output_kind == "artifact_envelope"
-    assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle_draft"
+    assert tasks["phase_bundle_finalize"].output_kind == "phase_bundle_manager_synthesis"
     assert tasks["phase_bundle_finalize"].context_names == (
         "phase_context_read",
         "phase_evidence_alignment",
@@ -170,11 +170,9 @@ def test_crewai_blueprints_build_from_yaml() -> None:
     )
     assert tasks["phase_bundle_finalize"].execution_policy["guardrails"] == (
         "typed_output_present",
-        "phase_bundle_integrity",
         "phase_week_role_load_coherence",
-        "phase_bundle_review_readiness",
     )
-    assert tasks["season_plan_finalize"].output_kind == "season_plan_draft_bundle"
+    assert tasks["season_plan_finalize"].output_kind == "season_plan_manager_synthesis"
 
 def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
@@ -187,7 +185,7 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     assert preview_policy.output_mode == "pydantic"
     assert "coach_preview_summary_complete" in preview_policy.guardrails
     assert artifact_policy.output_mode == "json"
-    assert season_finalize_policy.output_mode == "json"
+    assert season_finalize_policy.output_mode == "pydantic"
     assert "artifact_schema_valid" in artifact_policy.guardrails
     assert "week_corridor_and_capacity_check" in artifact_policy.guardrails
     assert "week_active_corridor_match" in artifact_policy.guardrails
@@ -205,12 +203,9 @@ def test_task_policy_resolution_and_guardrail_kwargs() -> None:
     ).guardrails
     assert "phase_s5_band_match" in resolve_task_policy(tasks["phase_guardrails"], bundle.task_policies).guardrails
     assert "phase_weeks_match_range" in resolve_task_policy(tasks["phase_structure"], bundle.task_policies).guardrails
-    assert "season_bundle_audit_slot_integrity" in resolve_task_policy(
-        tasks["season_plan_finalize"], bundle.task_policies
-    ).guardrails
-    assert "season_phase_load_feasibility" in resolve_task_policy(
-        tasks["season_plan_finalize"], bundle.task_policies
-    ).guardrails
+    assert resolve_task_policy(tasks["season_plan_finalize"], bundle.task_policies).guardrails == (
+        "typed_output_present",
+    )
     assert "phase_week_role_load_coherence" in resolve_task_policy(
         tasks["phase_structure"], bundle.task_policies
     ).guardrails
@@ -244,6 +239,7 @@ def test_crewai_output_models_are_openai_strict_compatible() -> None:
         "season_phase_blueprint_draft",
         "season_plan_audit",
         "season_plan_draft_bundle",
+        "season_plan_manager_synthesis",
         "season_plan_bundle",
         "season_review_decision",
         "phase_guardrails_payload",
@@ -252,6 +248,7 @@ def test_crewai_output_models_are_openai_strict_compatible() -> None:
         "constraint_audit",
         "load_governance_audit",
         "phase_bundle_draft",
+        "phase_bundle_manager_synthesis",
         "phase_bundle",
         "phase_review_decision",
         "week_plan_bundle",

@@ -20,18 +20,15 @@ Authority / injected sources:
 - `weekly_kj_bands` come from approved phase guardrails
 - inherited scenario posture comes from `inherited_scenario_contract`; operationalize it rather than reopening scenario choice
 - this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
-- nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only, never prose or narrative summaries
-- `inherited_scenario_contract` is an exact deterministic contract object; freeze it verbatim and do not paraphrase nested fields such as `constraint_summary` or `risk_flags`
-- `structure.upstream_intent.constraints` is planning-facts only: inherited availability/logistics constraints, risk/recovery constraints, event-window anchors, and genuine external planning constraints
-- keep runtime/process/governance rules out of `structure.upstream_intent.constraints`
+- `guardrails`, `structure`, and `preview` payloads are not part of this task's output; they are owned by `phase_guardrail_band_draft`, `phase_structure_draft`, and `phase_preview_draft` respectively, which complete earlier in the same crew, and are assembled deterministically from those tasks' own typed outputs after this synthesis is produced. Do not reproduce, paraphrase, or reference their shapes here.
 - when injected season/global wording exists, keep that wording instead of paraphrasing it
 - if deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`
 - use tools only as fallback for genuinely missing authority fields
 - use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them
 
 Method:
-1. Pass 1 - structural draft: keep guardrails authoritative over structure.
-2. Pass 2 - semantic finalization: apply cadence/recovery as a constraint on structure, not as a separate plan.
+1. Pass 1 - structural draft: emit a structurally coherent exact-range week-blueprint draft only.
+2. Pass 2 - semantic finalization: apply cadence/recovery as a constraint on the week blueprints, not as a separate plan.
 3. Preserve event integration only where it does not violate season authority.
 4. Use deterministic contract tools directly when exact phase-slot or phase-execution values are needed:
    - `workspace_get_phase_execution_context`
@@ -42,7 +39,7 @@ Method:
 8. Pass 3 - planner self-audit: before handoff, explicitly self-check:
    - week roles complete and coherent
    - S5/load-band logic coherent
-   - guardrails / structure / preview agree
+   - constraint_audit and load_governance_audit internally consistent with the week blueprints
    - phase semantics and domain shaping contain no unresolved contradictions
    - inherited overload policy is visible in exact-range structure
    - deload / mini-reset / reload / re-entry semantics are explicit where required
@@ -51,25 +48,18 @@ Method:
    - no assumption that the writer will repair bundle semantics
    - if exact-range structure, week-role skeleton, or phase-slot alignment is wrong, return to Pass 1
    - if structure is valid but reload/re-entry semantics, legality framing, preview meaning, or writer-ready summary is incomplete, return to Pass 2
-9. Mandatory Pass-2 authority freeze:
-   - freeze exact inherited scenario contract
-   - freeze exact allowed intensity domains
-   - freeze exact forbidden intensity domains
-   - freeze exact allowed load modalities
-   - freeze exact role-week load bands
-   - freeze exact phase-local objective
-   - keep operational `NONE` out of structural legality; it belongs only to preview/non-training-day semantics
+9. Mandatory Pass-2 authority consistency: keep the week blueprints consistent with the exact injected inherited scenario contract, exact allowed/forbidden intensity domains, exact allowed load modalities, exact role-week load bands, and exact phase-local objective. These values are not this task's output — they stay injected input context that constrains week-blueprint content.
 
-Compact authority-freeze example:
+Compact week-blueprint example:
 
 ```json
 {
   "phase_id": "P01",
   "phase_range": "2026-24--2026-25",
-  "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
-  "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
-  "phase_allowed_load_modalities": ["NONE"],
-  "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"}
+  "week_blueprints": [
+    {"week": "2026-24", "phase_role": "LOAD_1", "week_role": "LOAD_1"},
+    {"week": "2026-25", "phase_role": "RELOAD", "week_role": "RELOAD"}
+  ]
 }
 ```
 

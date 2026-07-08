@@ -25,16 +25,23 @@ from rps.crewai_runtime.guardrails_week import (
 )
 from rps.crewai_runtime.models import (
     ArtifactEnvelopeModel,
+    ConstraintAuditModel,
     DESAnalysisBundleModel,
-    PhaseDraftBundleModel,
+    LoadGovernanceAuditModel,
+    PhaseBundleDecisionModel,
+    PhaseBundleManagerSynthesisModel,
+    PhaseGuardrailsPayloadModel,
+    PhasePreviewPayloadModel,
     PhaseReviewDecisionModel,
+    PhaseStructurePayloadModel,
     PhaseWeekDraftBlueprintModel,
     PlanningDraftModel,
     ReportReviewDecisionModel,
     SeasonEventAnchorModel,
     SeasonMacrocycleDraftModel,
+    SeasonPhaseBlueprintDraftOutputModel,
     SeasonPhaseDraftBlueprintModel,
-    SeasonPlanDraftBundleModel,
+    SeasonPlanManagerSynthesisModel,
     SeasonReviewDecisionModel,
     WeekDayBlueprintModel,
     WeekPlanBundleModel,
@@ -94,43 +101,20 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                 captured_crew["manager_agent"] = kwargs.get("manager_agent")
             captured_crew["process"] = kwargs.get("process")
 
-        def kickoff(self):
-            task = self.tasks[-1]
+        def _build_output(self, task):
             model_cls = task.output_pydantic or task.output_json
             if model_cls is None:
-                payload = (
-                    {
-                        "event_priority": {},
-                        "macrocycle": {},
-                        "phase_blueprints": [],
-                        "constraints": [
-                            {
-                                "blocking_issues": [],
-                                "warnings": [],
-                                "recommended_adjustments": [],
-                                "cadence_authority_preserved": True,
-                                "durability_first_respected": True,
-                            }
-                        ],
-                        "load_governance": [],
-                    }
-                    if getattr(task, "kwargs", {}).get("name") == "season_plan_finalize"
-                    else {
-                        "meta": {
-                            "artifact_type": "SEASON_PLAN",
-                            "schema_id": "SeasonPlanInterface",
-                            "schema_version": "1.0",
-                        },
-                        "data": {},
-                    }
-                )
+                payload = {
+                    "meta": {
+                        "artifact_type": "SEASON_PLAN",
+                        "schema_id": "SeasonPlanInterface",
+                        "schema_version": "1.0",
+                    },
+                    "data": {},
+                }
                 task.output = SimpleNamespace(pydantic=None, raw=json.dumps(payload))
                 return task.output
-            if (
-                task.output_json is not None
-                and task.output_pydantic is None
-                and model_cls is not SeasonPlanDraftBundleModel
-            ):
+            if task.output_json is not None and task.output_pydantic is None:
                 payload = {
                     "meta": {
                         "artifact_type": "SEASON_PLAN",
@@ -145,10 +129,17 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                     raw=json.dumps(payload),
                 )
                 return task.output
-            if model_cls is SeasonPlanDraftBundleModel:
+            if model_cls is SeasonPlanManagerSynthesisModel:
                 model = model_cls(
                     event_priority=SeasonEventAnchorModel(),
                     macrocycle=SeasonMacrocycleDraftModel(),
+                )
+            elif model_cls is ConstraintAuditModel:
+                model = model_cls()
+            elif model_cls is LoadGovernanceAuditModel:
+                model = model_cls()
+            elif model_cls is SeasonPhaseBlueprintDraftOutputModel:
+                model = model_cls(
                     phase_blueprints=[
                         SeasonPhaseDraftBlueprintModel(
                             phase_id="P01",
@@ -158,7 +149,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                             phase_type="BASE",
                             phase_intent="shortened_re_entry",
                         )
-                    ],
+                    ]
                 )
             elif model_cls is SeasonReviewDecisionModel:
                 model = model_cls(status="approved", writer_ready_summary="ready")
@@ -206,6 +197,11 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
                 raw=model.model_dump_json(),
             )
             return task.output
+
+        def kickoff(self):
+            for task in self.tasks:
+                self._build_output(task)
+            return self.tasks[-1].output
 
     class FakeProcess:
         sequential = "sequential"
@@ -313,7 +309,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         if getattr(task, "kwargs", {}).get("name") == "season_plan_finalize"
     )
     assert getattr(final_season_task, "output_json", None) is None
-    assert getattr(final_season_task, "output_pydantic", None) is None
+    assert getattr(final_season_task, "output_pydantic", None) is SeasonPlanManagerSynthesisModel
     macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
     assert "reasoning" not in macrocycle_agent
     assert "max_reasoning_attempts" not in macrocycle_agent
@@ -371,10 +367,9 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                 captured_crew["manager_agent"] = kwargs.get("manager_agent")
             captured_crew["process"] = kwargs.get("process")
 
-        def kickoff(self):
-            task = self.tasks[-1]
+        def _build_output(self, task):
             model_cls = task.output_pydantic
-            if model_cls is PhaseDraftBundleModel:
+            if model_cls is PhaseBundleManagerSynthesisModel:
                 model = model_cls(
                     phase_range="2026-17--2026-19",
                     phase_id="P01",
@@ -390,13 +385,16 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                             s5_band_max=6000,
                         )
                     ],
-                    guardrails={"phase_intent": "general_base", "phase_summary": {"primary_objective": "Conservative base support."}},
-                    structure={"phase_intent": "general_base"},
-                    preview={"phase_intent": "general_base", "phase_intent_summary": {"phase_intent": "general_base", "primary_objective": "Stable aerobic build."}},
-                    constraint_audit={"blocking_issues": []},
-                    load_governance_audit={"blocking_issues": []},
-                    decision_summary={},
+                    constraint_audit=ConstraintAuditModel(),
+                    load_governance_audit=LoadGovernanceAuditModel(),
+                    decision_summary=PhaseBundleDecisionModel(),
                 )
+            elif model_cls is PhaseGuardrailsPayloadModel:
+                model = model_cls(phase_intent="general_base")
+            elif model_cls is PhaseStructurePayloadModel:
+                model = model_cls(phase_intent="general_base")
+            elif model_cls is PhasePreviewPayloadModel:
+                model = model_cls(phase_intent="general_base")
             elif model_cls is PhaseReviewDecisionModel:
                 model = model_cls(status="approved", writer_ready_summary="ready")
             elif model_cls is PlanningDraftModel:
@@ -417,6 +415,11 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
                 model = model_cls()
             task.output = SimpleNamespace(pydantic=model, raw=model.model_dump_json())
             return task.output
+
+        def kickoff(self):
+            for task in self.tasks:
+                self._build_output(task)
+            return self.tasks[-1].output
 
     class FakeProcess:
         sequential = "sequential"

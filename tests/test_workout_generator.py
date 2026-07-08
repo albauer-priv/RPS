@@ -67,7 +67,7 @@ def test_build_week_plan_document_from_bundle_is_exportable() -> None:
             {"workout_id": "W-SAT", "date": "2026-05-23", "day_role": "ENDURANCE", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE", "protocol_type": "LONG_STEADY", "protocol_variant": "ENDURANCE_LONG_STEADY", "planned_duration_minutes": 210, "planned_kj": 2600, "progression_parameters": {"warmup_minutes": 10, "cooldown_minutes": 8, "main_target": "68%-72%", "main_cadence": "85-90rpm"}},
             {"workout_id": "W-SUN", "date": "2026-05-24", "day_role": "RECOVERY", "intensity_domain": "ENDURANCE", "workout_family": "ENDURANCE_LOW", "protocol_type": "LONG_STEADY", "protocol_variant": "ENDURANCE_LOW", "planned_duration_minutes": 60, "planned_kj": 600, "progression_parameters": {"warmup_minutes": 6, "cooldown_minutes": 6, "main_target": "60%-65%", "main_cadence": "85-90rpm"}},
         ],
-        "load_target_summary": ["Shortened re-entry week with two quality sessions and a weekend endurance anchor."],
+        "load_target_summary": [{"text": "Shortened re-entry week with two quality sessions and a weekend endurance anchor."}],
         "warnings": [],
     }
     week_calendar_context = {

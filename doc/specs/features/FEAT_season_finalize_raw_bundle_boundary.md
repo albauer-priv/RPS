@@ -1,16 +1,20 @@
 ---
 Version: 1.0
-Status: Implemented
-Last-Updated: 2026-06-10
+Status: Superseded
+Last-Updated: 2026-07-08
 Owner: Planning Runtime
 ---
 # FEAT: Season Finalize Raw Bundle Boundary
 
 * **ID:** FEAT_season_finalize_raw_bundle_boundary
-* **Status:** Implemented
+* **Status:** Superseded
 * **Owner/Area:** Planning Runtime
-* **Last-Updated:** 2026-06-10
+* **Last-Updated:** 2026-07-08
 * **Related:** `season_plan_finalize`, `SeasonPlanDraftBundleModel`
+
+Superseded by `doc/specs/features/FEAT_finalize_manager_synthesis_boundary.md`.
+
+`season_plan_finalize` no longer produces `constraints[]`/`load_governance[]`/`phase_blueprints` at all (they are assembled deterministically from already-typed sibling task outputs), which eliminates the audit-slot misclassification problem this spec patched at its source rather than coercing around it. `output_mode` reverted to `pydantic`.
 
 ---
 

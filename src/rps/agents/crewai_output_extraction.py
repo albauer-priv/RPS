@@ -9,9 +9,12 @@ from rps.crewai_runtime.generated_artifact_models import (
     artifact_model_for_schema_file,
     artifact_model_for_task_name,
 )
-from rps.crewai_runtime.guardrails_utilities import (
-    canonicalize_season_bundle_shape_aliases,
-    decode_json_object_from_text,
+from rps.crewai_runtime.guardrails_utilities import decode_json_object_from_text
+from rps.crewai_runtime.models import (
+    PhaseBundleManagerSynthesisModel,
+    PhaseDraftBundleModel,
+    SeasonPlanDraftBundleModel,
+    SeasonPlanManagerSynthesisModel,
 )
 
 JsonMap = dict[str, Any]
@@ -150,109 +153,95 @@ def _extract_structured_output(
     )
 
 
-def _freeze_season_bundle_audit_slots(
-    final_output: Any,
+def _collect_typed(
+    task_names: tuple[str, ...],
     *,
     result: object,
     tasks_by_name: dict[str, object],
     task_blueprints: dict[str, Any],
-) -> Any:
-    """Project canonical Season audit slots from typed specialist outputs onto the final bundle."""
+) -> list[JsonMap]:
+    """Collect typed structured output mappings from a fixed set of already-completed sibling tasks."""
 
-    if not isinstance(final_output, dict):
-        return final_output
-
-    frozen = dict(final_output)
-
-    def _collect(task_names: tuple[str, ...]) -> list[JsonMap]:
-        collected: list[JsonMap] = []
-        for task_name in task_names:
-            task_obj = tasks_by_name.get(task_name)
-            task_blueprint = task_blueprints.get(task_name)
-            if task_obj is None or task_blueprint is None:
-                continue
-            execution_policy = _as_map(getattr(task_blueprint, "execution_policy", {}))
-            output_mode = str(execution_policy.get("output_mode") or "pydantic")
-            try:
-                structured = _extract_structured_output(
-                    result,
-                    task_obj,
-                    task_name=task_name,
-                    output_mode=output_mode,
-                )
-            except Exception:
-                continue
-            mapping = structured.model_dump() if hasattr(structured, "model_dump") else structured
-            if isinstance(mapping, dict):
-                collected.append(mapping)
-        return collected
-
-    constraints = _collect(_SEASON_CONSTRAINT_AUDIT_TASKS)
-    if constraints:
-        frozen["constraints"] = constraints
-    load_governance = _collect(_SEASON_LOAD_GOVERNANCE_TASKS)
-    if load_governance:
-        frozen["load_governance"] = load_governance
-    frozen.pop("constraint_audit", None)
-    frozen.pop("load_governance_audit", None)
-    return frozen
+    collected: list[JsonMap] = []
+    for task_name in task_names:
+        task_obj = tasks_by_name.get(task_name)
+        task_blueprint = task_blueprints.get(task_name)
+        if task_obj is None or task_blueprint is None:
+            continue
+        execution_policy = _as_map(getattr(task_blueprint, "execution_policy", {}))
+        output_mode = str(execution_policy.get("output_mode") or "pydantic")
+        structured = _extract_structured_output(
+            result,
+            task_obj,
+            task_name=task_name,
+            output_mode=output_mode,
+        )
+        mapping = structured.model_dump() if hasattr(structured, "model_dump") else structured
+        if isinstance(mapping, dict):
+            collected.append(mapping)
+    return collected
 
 
-def _classify_season_audit_item(item: JsonMap) -> str:
-    """Classify a raw season audit item as constraint-only or governance-only."""
+def _assemble_season_plan_draft_bundle(
+    manager_synthesis: SeasonPlanManagerSynthesisModel,
+    *,
+    result: object,
+    tasks_by_name: dict[str, object],
+    task_blueprints: dict[str, Any],
+) -> SeasonPlanDraftBundleModel:
+    """Assemble the full Season draft bundle from the manager synthesis plus already-typed sibling outputs."""
 
-    keys = {str(key).strip() for key in item.keys() if str(key).strip()}
-    constraint_keys = {"blocking_issues", "warnings", "recommended_adjustments", "applied_sources"}
-    governance_keys = {
-        "blocking_issues",
-        "warnings",
-        "recommended_adjustments",
-        "cadence_authority_preserved",
-        "durability_first_respected",
-    }
-    has_constraint_only_key = "applied_sources" in keys
-    has_governance_only_key = "cadence_authority_preserved" in keys or "durability_first_respected" in keys
-    if has_constraint_only_key and has_governance_only_key:
-        raise RuntimeError("Mixed season audit-slot content: item combines constraint and governance families.")
-    if has_governance_only_key and keys <= governance_keys:
-        return "governance"
-    if keys <= constraint_keys:
-        return "constraint"
-    raise RuntimeError(f"Unclassifiable season audit-slot item: {sorted(keys)}")
+    constraints = _collect_typed(
+        _SEASON_CONSTRAINT_AUDIT_TASKS, result=result, tasks_by_name=tasks_by_name, task_blueprints=task_blueprints
+    )
+    load_governance = _collect_typed(
+        _SEASON_LOAD_GOVERNANCE_TASKS, result=result, tasks_by_name=tasks_by_name, task_blueprints=task_blueprints
+    )
+    phase_task_obj = tasks_by_name.get("season_phase_blueprint_draft")
+    if phase_task_obj is None:
+        raise RuntimeError("CrewAI task 'season_phase_blueprint_draft' did not run; cannot assemble season bundle.")
+    phase_output = _extract_typed_output(result, phase_task_obj)
+    if phase_output is None:
+        raise RuntimeError(
+            "CrewAI task 'season_phase_blueprint_draft' did not produce a typed pydantic output."
+        )
+    phase_blueprints = list(phase_output.phase_blueprints)
+    return SeasonPlanDraftBundleModel.model_validate(
+        {
+            **manager_synthesis.model_dump(),
+            "constraints": constraints,
+            "load_governance": load_governance,
+            "phase_blueprints": phase_blueprints,
+        }
+    )
 
 
-def coerce_season_plan_draft_bundle_slots(bundle_document: JsonMap) -> JsonMap:
-    """Move misplaced season audit items between `constraints` and `load_governance` before strict validation."""
+def _assemble_phase_draft_bundle(
+    manager_synthesis: PhaseBundleManagerSynthesisModel,
+    *,
+    result: object,
+    tasks_by_name: dict[str, object],
+) -> PhaseDraftBundleModel:
+    """Assemble the full Phase draft bundle from the manager synthesis plus already-typed sibling outputs."""
 
-    constraints: list[JsonMap] = []
-    load_governance: list[JsonMap] = []
-    normalized_bundle = canonicalize_season_bundle_shape_aliases(bundle_document)
-    raw_constraints = normalized_bundle.get("constraints", [])
-    raw_load_governance = normalized_bundle.get("load_governance", [])
-    for raw_item in raw_constraints:
-        if not isinstance(raw_item, dict):
-            raise RuntimeError("Unclassifiable season audit-slot item: constraints entry is not an object.")
-        destination = _classify_season_audit_item(raw_item)
-        if destination == "governance":
-            load_governance.append(raw_item)
-        else:
-            constraints.append(raw_item)
-    for raw_item in raw_load_governance:
-        if not isinstance(raw_item, dict):
-            raise RuntimeError("Unclassifiable season audit-slot item: load_governance entry is not an object.")
-        destination = _classify_season_audit_item(raw_item)
-        if destination == "constraint":
-            constraints.append(raw_item)
-        else:
-            load_governance.append(raw_item)
-    coerced = {
-        **normalized_bundle,
-        "constraints": constraints,
-        "load_governance": load_governance,
-    }
-    coerced.pop("constraint_audit", None)
-    coerced.pop("load_governance_audit", None)
-    return coerced
+    def _require_typed(task_name: str) -> Any:
+        task_obj = tasks_by_name.get(task_name)
+        if task_obj is None:
+            raise RuntimeError(f"CrewAI task '{task_name}' did not run; cannot assemble phase bundle.")
+        typed_output = _extract_typed_output(result, task_obj)
+        if typed_output is None:
+            raise RuntimeError(f"CrewAI task '{task_name}' did not produce a typed pydantic output.")
+        return typed_output
+
+    guardrails = _require_typed("phase_guardrail_band_draft")
+    structure = _require_typed("phase_structure_draft")
+    preview = _require_typed("phase_preview_draft")
+    return PhaseDraftBundleModel(
+        **manager_synthesis.model_dump(),
+        guardrails=guardrails,
+        structure=structure,
+        preview=preview,
+    )
 
 
 def _output_model_for_task(task_blueprint: Any, *, schema_file: str | None = None) -> type[Any]:

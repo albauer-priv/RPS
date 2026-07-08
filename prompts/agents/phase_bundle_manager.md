@@ -26,7 +26,7 @@ Keep season authority intact and leave final envelope serialization to the write
 
 In scope:
 - final exact-range phase synthesis
-- guardrails / structure / preview coherence
+- week blueprint and constraint/load-governance audit coherence
 - overload-policy execution inside the exact range
 
 Out of scope:
@@ -43,25 +43,18 @@ Out of scope:
 
 ## Hard rules
 
-- Nested `phase_intent` fields inside `guardrails`, `structure`, and `preview` are canonical taxonomy tokens only.
-- Do not put narrative explanations, objectives, summaries, or prose into any `phase_intent` field.
-- freeze `inherited_scenario_contract` exactly from injected deterministic authority before review handoff.
-- do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields such as `constraint_summary` or `risk_flags`.
-- `structure.upstream_intent.constraints` is for inherited planning facts only: availability/logistics constraints, risk/recovery constraints, event-window anchors, and genuine external planning constraints.
-- do not serialize runtime/process/governance rules into `structure.upstream_intent.constraints`.
+- `guardrails`, `structure`, and `preview` payloads are not part of this task's output. They are owned by `phase_guardrail_band_draft`, `phase_structure_draft`, and `phase_preview_draft` respectively, which complete earlier in the same crew, and are assembled deterministically from those tasks' own typed outputs after this synthesis is produced. Do not reproduce, paraphrase, or reference their shapes here.
 - when injected season/global wording exists, keep that wording instead of paraphrasing it.
-- Pass 2 must freeze exact legality, exact forbidden domains, exact load modalities, exact role-week load bands, and exact phase-local objective before review handoff.
+- Pass 2 must freeze exact legality, exact forbidden domains, exact load modalities, exact role-week load bands, and exact phase-local objective in the week blueprints and audits before review handoff.
 - If deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`.
 - Use injected authority directly and use tools only as fallback for genuinely missing authority fields.
 - Use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them.
-- Operational `NONE` belongs only to preview/non-training-day semantics and must never be reintroduced into `PHASE_STRUCTURE` structural legality.
 - Keep reload and re-entry semantically distinct.
 - Preserve Build-entry conservatism when shortened/base/re-entry context precedes the phase.
 - Do not let a threshold-shaped block survive when inherited phase or season authority suppresses `THRESHOLD`.
 - Do not widen exact phase legality from scenario-level eligibility.
 - Do not rewrite exact persisted role-week load bands from S5 context.
 - Do not substitute the global season objective when injected phase-local objective exists.
-- Phase preview must remain inside the shared deterministic week-skeleton semantics and must add no new day-role/domain freedom.
 - Objective mismatch is input-owned; surface it as warning/revisit context only.
 - Do not assume the writer will fix structure or semantics later.
 
@@ -76,14 +69,10 @@ Phase Finalizer Authority Freeze example:
   "phase_type": "BUILD",
   "phase_intent": "shortened_re_entry",
   "build_subtype": "durability_build",
-  "phase_allowed_intensity_domains": ["RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT"],
-  "phase_forbidden_intensity_domains": ["THRESHOLD", "VO2MAX"],
-  "phase_allowed_load_modalities": ["NONE"],
-  "phase_role_week_load_bands": [
-    {"week": "2026-24", "role": "LOAD_1", "band": {"min": 7200, "max": 8200}}
-  ],
-  "week_role_by_iso_week": {"2026-24": "LOAD_1", "2026-25": "RELOAD"},
-  "phase_primary_objective": "Rebuild load tolerance with controlled sweet spot support."
+  "week_blueprints": [
+    {"week": "2026-24", "phase_role": "LOAD_1", "week_role": "LOAD_1"},
+    {"week": "2026-25", "phase_role": "RELOAD", "week_role": "RELOAD"}
+  ]
 }
 ```
 
@@ -92,7 +81,7 @@ Pass 3 checklist:
 - week roles complete and consistent with deterministic context
 - exact role-week load bands preserved from deterministic phase authority
 - S5/load-band logic coherent and clearly subordinate to exact persisted phase authority
-- guardrails / structure / preview mutually consistent
+- constraint_audit and load_governance_audit internally consistent with the week blueprints
 - event integration consistent with season authority
 - phase semantics and domain shaping free of unresolved contradictions
 - preview remains aligned with the shared deterministic week skeleton

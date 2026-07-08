@@ -32,12 +32,9 @@ def test_finalize_files_carry_three_pass_model_and_loopback_rules() -> None:
     assert "Pass 1 - structural draft" in season_skill
     assert "Pass 2 - semantic finalization" in season_skill
     assert "Pass 3 - planner self-audit" in season_skill
-    assert "`constraints[]` contains constraint-audit entries only." in season_prompt
-    assert "`load_governance[]` contains governance-audit entries only." in season_prompt
-    assert "`cadence_authority_preserved` belongs only in `load_governance[]`." in season_prompt
-    assert "`durability_first_respected` belongs only in `load_governance[]`." in season_prompt
-    assert "`constraints[]` contains constraint-audit entries only." in season_skill
-    assert "`load_governance[]` contains governance-audit entries only." in season_skill
+    assert "`constraints[]`, `load_governance[]`, and `phase_blueprints` are not part of this task's output" in season_prompt
+    assert "assembled deterministically from those tasks' own typed outputs" in season_prompt
+    assert "`constraints[]`, `load_governance[]`, and `phase_blueprints` are not part of the finalizer's own output" in season_skill
 
     assert "Pass 1 - structural draft" in phase_prompt
     assert "Pass 2 - semantic finalization" in phase_prompt

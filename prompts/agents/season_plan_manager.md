@@ -45,19 +45,8 @@ Out of scope:
 ## Hard rules
 
 - Return one raw JSON object only; do not wrap the final output in prose or markdown fences.
-- Top-level `event_priority`, `macrocycle`, and `phase_blueprints` are mandatory in every final season bundle.
-- Season final output uses `constraints[]` and `load_governance[]` only.
-- Do not emit singular top-level `constraint_audit` or `load_governance_audit` keys.
-- `phase_blueprints` are owned by the earlier `season_phase_blueprint_draft` step; preserve and consolidate that structure here rather than inventing it from scratch.
-- `constraints[]` are owned by `season_constraint_review`, `season_historical_context_review`, and `season_kpi_guidance_review`; preserve and consolidate those canonical audit objects here rather than flattening them into row-shaped findings.
-- `load_governance[]` are owned by `season_load_corridor_draft` and `season_progression_review`; preserve and consolidate those canonical governance audit objects here rather than flattening them into row-shaped findings.
-- `constraints[]` contains constraint-audit entries only.
-- `load_governance[]` contains governance-audit entries only.
-- `cadence_authority_preserved` belongs only in `load_governance[]`.
-- `durability_first_respected` belongs only in `load_governance[]`.
-- Do not place governance audit items inside `constraints[]`.
-- Do not collapse both audit families into one list.
-- Do not emit finding-row shapes such as `constraint_type`, `status`, or `summary` inside final Season audit slots.
+- Top-level `event_priority` and `macrocycle` are mandatory in every final synthesis.
+- `constraints[]`, `load_governance[]`, and `phase_blueprints` are not part of this task's output. They are owned by already-typed sibling tasks (`season_constraint_review`/`season_historical_context_review`/`season_kpi_guidance_review`, `season_load_corridor_draft`/`season_progression_review`, and `season_phase_blueprint_draft`) that complete earlier in the same crew, and are assembled deterministically from those tasks' own typed outputs after this synthesis is produced. Do not reproduce, paraphrase, or reference their shapes here.
 - The final season bundle may contain one or more target macrocycles; do not assume the final A-event is the only reverse-planning anchor.
 - If multiple A-events are present, classify each one as `primary A-event`, `secondary A-event`, `equal-priority A-event`, or `cluster-member`.
 - If A-events are too close for recovery, re-entry, build, and taper, treat them as one A-event peak cluster rather than separate macrocycles.
@@ -79,7 +68,6 @@ Pass 3 checklist:
 
 - real event meaning only; no phantom no-event placeholders
 - no positive prose framing for domains that final phase semantics forbid
-- phase blueprints coherent with selected-scenario authority and deterministic season phase load context
 - cadence / overload / reset / taper logic coherent across the whole bundle
 - selected_scenario_contract complete and preserved without posture drift
 - cadence-family choice (`2:1`, `3:1`, `2:1:1`) justified from robustness, recovery, and risk context
@@ -97,15 +85,6 @@ Pass 3 checklist:
 - if structure is valid but rationale, overload semantics, domain explanation, or writer-ready summary is incomplete, route back to Pass 2
 
 ## Output discipline
-
-Concrete output guidance for `phase_blueprints[].event_constraints`:
-- use this field only for real event-linked phase constraints
-- if the phase contains no real event-driven constraint, emit `[]`
-- good examples:
-  - `["2026-09-12 A event: dedicated taper-contained event handling."]`
-  - `["2026-08-15 B event: rehearsal within ongoing build."]`
-  - `["2026-10-03 C event: low-priority participation without changing macrocycle direction."]`
-- never fill the field with negative placeholders or empty-status prose
 
 Generic intensity-intent decision rules:
 - `threshold_build` requires legal `THRESHOLD` plus threshold-led narrative and structure

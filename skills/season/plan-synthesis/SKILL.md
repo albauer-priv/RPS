@@ -30,21 +30,12 @@ Authority / injected sources:
 - if `BL_kJ` is not directly surfaced, use the deterministic baseline/progression information already embedded in the phase load context; do not derive it ad hoc from prose
 - this layer must not compute workout-level load math
 
-Audit-slot discipline:
+Manager synthesis vs. deterministic assembly:
 - final `season_plan_finalize` output must be one raw JSON object, not prose or markdown-wrapped JSON
-- top-level `event_priority`, `macrocycle`, and `phase_blueprints` are mandatory in every final SeasonPlanDraftBundle
-- season final output uses `constraints[]` and `load_governance[]` only
-- singular top-level `constraint_audit` and `load_governance_audit` are invalid final manager output keys
-- `phase_blueprints` are produced first by the early structural draft step and must be preserved and consolidated by the finalizer, not invented from scratch there
-- `constraints[]` are produced first by `season_constraint_review`, `season_historical_context_review`, and `season_kpi_guidance_review` and must be preserved as canonical audit objects
-- `load_governance[]` are produced first by `season_load_corridor_draft` and `season_progression_review` and must be preserved as canonical governance audit objects
-- `constraints[]` contains constraint-audit entries only.
-- `load_governance[]` contains governance-audit entries only.
-- `cadence_authority_preserved` belongs only in `load_governance[]`.
-- `durability_first_respected` belongs only in `load_governance[]`.
-- do not place governance audit items in `constraints[]`
-- do not collapse both audit families into one list
-- do not flatten final Season audit slots into row-shaped findings such as `constraint_type`, `status`, or `summary`
+- top-level `event_priority` and `macrocycle` are mandatory in every final manager synthesis
+- `constraints[]`, `load_governance[]`, and `phase_blueprints` are not part of the finalizer's own output; they are owned by already-typed sibling tasks that complete earlier in the same crew (`season_constraint_review`/`season_historical_context_review`/`season_kpi_guidance_review` for `constraints[]`; `season_load_corridor_draft`/`season_progression_review` for `load_governance[]`; `season_phase_blueprint_draft` for `phase_blueprints`) and are assembled deterministically from those tasks' own typed outputs after the finalizer synthesis is produced
+- the finalizer must not reproduce, paraphrase, or reference the shapes of `constraints[]`, `load_governance[]`, or `phase_blueprints`
+- `phase_blueprints` are produced by the early structural draft step (`season_phase_blueprint_draft` / `season_phase_blueprint_specialist`) in `SeasonPhaseDraftBlueprintModel` shape
 
 Method:
 1. Pass 1 - structural draft: preserve event hierarchy and macrocycle logic while assembling a structurally coherent candidate bundle.

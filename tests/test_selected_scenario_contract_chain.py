@@ -48,13 +48,17 @@ def test_task_descriptions_reference_selected_or_inherited_posture() -> None:
 
 
 def test_phase_bundle_and_skill_frontload_exact_inherited_contract_copy() -> None:
-    phase_prompt = Path("prompts/agents/phase_bundle_manager.md").read_text(encoding="utf-8")
-    phase_skill = Path("skills/phase/bundle-synthesis/SKILL.md").read_text(encoding="utf-8")
+    # guardrails/structure own `inherited_scenario_contract` directly now (phase_bundle_manager
+    # no longer reproduces those payloads; see PhaseBundleManagerSynthesisModel).
+    guardrails_prompt = Path("prompts/agents/guardrails_specialist.md").read_text(encoding="utf-8")
+    structure_prompt = Path("prompts/agents/structure_specialist.md").read_text(encoding="utf-8")
+    guardrails_skill = Path("skills/phase/guardrails-authoring/SKILL.md").read_text(encoding="utf-8")
+    structure_skill = Path("skills/phase/structure-authoring/SKILL.md").read_text(encoding="utf-8")
     artifact_skill = Path("skills/phase/artifact-writing/SKILL.md").read_text(encoding="utf-8")
 
-    assert "freeze `inherited_scenario_contract` exactly" in phase_prompt
-    assert "do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields" in phase_prompt
-    assert "inherited_scenario_contract" in phase_skill
-    assert "constraint_summary" in phase_skill
-    assert "risk_flags" in phase_skill
+    for text in (guardrails_prompt, structure_prompt, guardrails_skill, structure_skill):
+        assert "freeze `inherited_scenario_contract` exactly" in text
+        assert "do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields" in text
+        assert "constraint_summary" in text
+        assert "risk_flags" in text
     assert "must be copied exactly" in artifact_skill

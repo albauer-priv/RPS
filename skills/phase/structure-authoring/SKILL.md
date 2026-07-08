@@ -128,6 +128,7 @@ Hard rules:
 - objective mismatch remains warning-only and input-owned; do not rewrite it in phase structure authoring
 - emit `upstream_intent.phase_type`, `upstream_intent.phase_intent`, and `upstream_intent.phase_taxonomy_version` explicitly and keep them identical to upstream authority
 - emit `upstream_intent.build_subtype` explicitly for `BUILD` phases and keep it identical to upstream authority
+- freeze `inherited_scenario_contract` exactly from injected deterministic authority; do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields such as `constraint_summary` or `risk_flags`
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

@@ -485,11 +485,11 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
     assert "phase legality fields remain separate from the scenario ceiling" in writer_skill_text
     assert "Preview may use `NONE` only on `REST` or fixed non-training days" in preview_skill_text
     assert "Phase Finalizer Authority Freeze" in finalizer_prompt_text
-    assert "do not serialize runtime/process/governance rules into `structure.upstream_intent.constraints`" in finalizer_prompt_text
+    assert "`guardrails`, `structure`, and `preview` payloads are not part of this task's output" in finalizer_prompt_text
     assert "keep that wording instead of paraphrasing it" in finalizer_prompt_text
     assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in finalizer_prompt_text
-    assert "Compact authority-freeze example" in finalizer_skill_text
-    assert "keep runtime/process/governance rules out of `structure.upstream_intent.constraints`" in finalizer_skill_text
+    assert "week-blueprint example" in finalizer_skill_text
+    assert "`guardrails`, `structure`, and `preview` payloads are not part of this task's output" in finalizer_skill_text
     assert "keep that wording instead of paraphrasing it" in finalizer_skill_text
     assert "use tools only as fallback for genuinely missing authority fields" in finalizer_skill_text
 

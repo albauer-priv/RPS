@@ -37,7 +37,7 @@ Out of scope:
 - Return exactly one structured object with top-level `phase_blueprints`.
 - Do not emit prose, commentary, or markdown fences around the object.
 - Do not emit a full Season bundle.
-- `phase_blueprints` are owned here first; the finalizer must preserve and consolidate them later.
+- `phase_blueprints` are owned here first; the finalizer no longer reproduces them — repo code assembles them deterministically from this task's typed output after the finalizer synthesis is produced.
 - Every blueprint must already be in `SeasonPhaseDraftBlueprintModel` shape.
 - Use deterministic authority for:
   - `phase_id`
@@ -49,6 +49,10 @@ Out of scope:
 - Keep `event_constraints` factual and short; emit `[]` when no real event-linked constraint exists.
 - Do not emit placeholder lines such as `No target-week event` or `No event-driven load exception`.
 - Do not invent canonical phase taxonomy, allowed/forbidden domain legality, or season load-envelope truth outside injected context.
+- If a phase forbids an intensity domain, do not describe that domain positively anywhere in the phase narrative, metabolic focus, typical focus, expected adaptations, non-negotiables, or phase-justification intensity distribution.
+- If `THRESHOLD` is not legal, do not describe threshold as focus, support, maintenance, or secondary emphasis.
+- If `VO2MAX` is not legal, do not describe VO2MAX as focus, support, maintenance, or secondary emphasis.
+- Reframe phase language onto the legal phase intent and the actually allowed domains instead.
 
 ## Output discipline
 

@@ -35,13 +35,16 @@ tasks:
       - typed_output_present
       - pending_resolution_summary_present
   season_plan_finalize:
-    output_mode: json
+    # constraints[]/load_governance[]/phase_blueprints are no longer produced by the
+    # manager LLM (assembled deterministically post-kickoff from sibling task outputs;
+    # see _assemble_season_plan_draft_bundle). season_bundle_integrity,
+    # season_bundle_audit_slot_integrity, season_phase_load_feasibility, and
+    # season_bundle_review_readiness all depend on those fields, so they can no longer
+    # run as CrewAI guardrails against this task's narrower raw output; they run as
+    # plain post-assembly checks in _run_season_plan_document instead.
+    output_mode: pydantic
     guardrails:
       - typed_output_present
-      - season_bundle_integrity
-      - season_bundle_audit_slot_integrity
-      - season_phase_load_feasibility
-      - season_bundle_review_readiness
     guardrail_max_retries: 2
   season_plan_audit:
     guardrails:
@@ -92,12 +95,18 @@ tasks:
       - typed_output_present
       - audit_lists_are_lists
   phase_bundle_finalize:
+    # guardrails/structure/preview payloads are no longer produced by the manager LLM
+    # (assembled deterministically post-kickoff from sibling task outputs; see
+    # _assemble_phase_draft_bundle). phase_bundle_integrity and phase_bundle_review_readiness
+    # both depend on those fields (or on cross-checking them against phase_intent), so they
+    # can no longer run as CrewAI guardrails against this task's narrower raw output; they
+    # run as plain post-assembly checks in _run_phase_bundle_document instead.
+    # phase_week_role_load_coherence only needs week_blueprints, which stays LLM-authored,
+    # so it's unaffected and stays here.
     output_mode: pydantic
     guardrails:
       - typed_output_present
-      - phase_bundle_integrity
       - phase_week_role_load_coherence
-      - phase_bundle_review_readiness
     guardrail_max_retries: 2
   phase_review:
     output_mode: pydantic

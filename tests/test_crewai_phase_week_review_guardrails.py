@@ -26,6 +26,25 @@ from rps.crewai_runtime.models import (
 from rps.prompts.loader import PromptLoader
 
 
+def _valid_phase_bundle_document() -> dict[str, object]:
+    return {
+        "phase_range": "2026-24--2026-25",
+        "phase_id": "P01",
+        "phase_type": "BASE",
+        "phase_intent": "general_base",
+        "week_blueprints": [{"week": "2026-24", "phase_role": "LOAD_1", "week_role": "LOAD_1"}],
+        "guardrails": {"phase_intent": "general_base", "phase_summary": {"primary_objective": "Conservative base support."}},
+        "structure": {"phase_intent": "general_base"},
+        "preview": {
+            "phase_intent": "general_base",
+            "phase_intent_summary": {"phase_intent": "general_base", "primary_objective": "Stable aerobic build."},
+        },
+        "constraint_audit": {"blocking_issues": []},
+        "load_governance_audit": {"blocking_issues": []},
+        "decision_summary": {},
+    }
+
+
 def test_phase_and_week_finalizers_declare_deterministic_contract_tools() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
@@ -139,7 +158,7 @@ def test_run_phase_bundle_document_narrows_only_finalizer_tools_with_bound_contr
 
     def _fake_execute(**kwargs):
         captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
-        return {"guardrails": {}, "structure": {}, "preview": {}}
+        return _valid_phase_bundle_document()
 
     monkeypatch.setattr("rps.agents.crewai_task_execution._execute_crewai_multiagent_crew", _fake_execute)
     tool_map = {
@@ -194,7 +213,7 @@ def test_run_phase_bundle_document_keeps_finalizer_tools_without_bound_contracts
 
     def _fake_execute(**kwargs):
         captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
-        return {"guardrails": {}, "structure": {}, "preview": {}}
+        return _valid_phase_bundle_document()
 
     monkeypatch.setattr("rps.agents.crewai_task_execution._execute_crewai_multiagent_crew", _fake_execute)
 

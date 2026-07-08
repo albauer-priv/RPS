@@ -440,6 +440,31 @@ class SeasonPlanDraftBundleModel(StrictOutputModel):
     blocking_issues: list[str] = Field(default_factory=list)
 
 
+class SeasonPlanManagerSynthesisModel(StrictOutputModel):
+    """LLM-authored Season finalize synthesis, excluding pass-through audit/blueprint slots.
+
+    `constraints`, `load_governance`, and `phase_blueprints` are owned by already-typed
+    sibling tasks that complete earlier in the same crew (season_constraint_review /
+    season_historical_context_review / season_kpi_guidance_review; season_load_corridor_draft /
+    season_progression_review; season_phase_blueprint_draft). Repo code assembles those
+    fields deterministically after this model is produced; the manager LLM never
+    reproduces them, eliminating the shape-drift failure mode that reproduction caused.
+    """
+
+    selected_scenario_contract: SelectedScenarioContractModel | None = None
+    context_summary: list[str] = Field(default_factory=list)
+    scenario_interpretation: list[str] = Field(default_factory=list)
+    event_priority: SeasonEventAnchorModel
+    peak_window: list[str] = Field(default_factory=list)
+    macrocycle: SeasonMacrocycleDraftModel
+    season_load_envelope: SeasonLoadEnvelopeModel | None = None
+    season_semantic_notes: list[str] = Field(default_factory=list)
+    decision_summary: list[str] = Field(default_factory=list)
+    candidate_document_summary: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+
+
 class SeasonReviewDecisionModel(StrictOutputModel):
     """Holistic season review decision before writer handoff."""
 
@@ -780,6 +805,35 @@ class PhaseDraftBundleModel(StrictOutputModel):
     decision_summary: PhaseBundleDecisionModel
 
 
+class PhaseBundleManagerSynthesisModel(StrictOutputModel):
+    """LLM-authored Phase finalize synthesis, excluding pass-through draft-payload slots.
+
+    `guardrails`, `structure`, and `preview` are owned by already-typed sibling tasks that
+    complete earlier in the same crew (phase_guardrail_band_draft, phase_structure_draft,
+    phase_preview_draft). Repo code assembles those fields deterministically after this
+    model is produced; the manager LLM never reproduces them. `constraint_audit` and
+    `load_governance_audit` stay here — they are genuinely LLM-originated (the matching
+    phase_constraint_audit/phase_governance_review tasks run in a separate, later review
+    crew, not as upstream siblings within this crew, so there's nothing to pass through).
+    """
+
+    phase_range: str
+    phase_id: str | None = None
+    phase_type: str | None = None
+    phase_intent: str | None = None
+    build_subtype: str | None = None
+    cadence_source: str | None = None
+    week_blueprints: list[PhaseWeekDraftBlueprintModel] = Field(default_factory=list)
+    guardrails_document_summary: list[str] = Field(default_factory=list)
+    structure_document_summary: list[str] = Field(default_factory=list)
+    preview_document_summary: list[str] = Field(default_factory=list)
+    constraint_audit: ConstraintAuditModel
+    load_governance_audit: LoadGovernanceAuditModel
+    warnings: list[str] = Field(default_factory=list)
+    blocking_issues: list[str] = Field(default_factory=list)
+    decision_summary: PhaseBundleDecisionModel
+
+
 class PhaseReviewDecisionModel(StrictOutputModel):
     """Holistic phase review decision before writer handoff."""
 
@@ -844,15 +898,21 @@ class WeekWorkoutBlueprintModel(StrictOutputModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class WeekPlanningNoteModel(StrictOutputModel):
+    """One deterministic or LLM-derived week-planning note (constraint, load target, or revision)."""
+
+    text: str = Field(min_length=1)
+
+
 class WeekPlanBundleModel(StrictOutputModel):
     """Internal week planning bundle before review and writing."""
 
     context_summary: WeekContextAssessmentModel | None = None
     day_blueprints: list[WeekDayBlueprintModel] = Field(default_factory=list)
     workout_blueprints: list[WeekWorkoutBlueprintModel] = Field(default_factory=list)
-    constraint_summary: list[str] = Field(default_factory=list)
-    load_target_summary: list[str] = Field(default_factory=list)
-    revision_summary: list[str] = Field(default_factory=list)
+    constraint_summary: list[WeekPlanningNoteModel] = Field(default_factory=list)
+    load_target_summary: list[WeekPlanningNoteModel] = Field(default_factory=list)
+    revision_summary: list[WeekPlanningNoteModel] = Field(default_factory=list)
     workout_authoring_summary: list[str] = Field(default_factory=list)
     candidate_document_summary: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
