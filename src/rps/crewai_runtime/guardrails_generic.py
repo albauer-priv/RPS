@@ -9,10 +9,20 @@ from rps.crewai_runtime.guardrails_utilities import _coerce_payload
 
 
 def typed_output_present(result: Any) -> GuardrailResult:
-    payload = _coerce_payload(result)
-    if payload is None:
-        return (False, "Task produced no structured output payload.")
-    return (True, payload)
+    """Require a strictly-typed (pydantic-validated) structured output.
+
+    Only ever attached to `output_mode: pydantic` tasks. Checks `.pydantic`
+    directly rather than falling back to `.json_dict`/`.raw` through
+    `_coerce_payload`: a task whose LLM response failed strict pydantic
+    validation still has non-empty `.raw` text, and accepting that as
+    "present" would let a downstream consumer silently receive an
+    unstructured/untyped payload instead of triggering a guardrail retry.
+    """
+
+    pydantic_payload = getattr(result, "pydantic", None)
+    if pydantic_payload is None:
+        return (False, "Task produced no typed (pydantic-validated) structured output.")
+    return (True, pydantic_payload)
 
 
 def coaching_recommendation_text_present(result: Any) -> GuardrailResult:

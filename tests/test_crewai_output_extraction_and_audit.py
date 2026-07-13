@@ -4,16 +4,21 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 from rps.agents.crewai_output_extraction import (
     _assemble_phase_draft_bundle,
     _assemble_season_plan_draft_bundle,
+    _collect_typed,
     _extract_structured_output,
+    _extract_typed_output,
 )
 from rps.crewai_runtime import load_crewai_config_bundle
 from rps.crewai_runtime.bindings import (
     build_task_blueprints,
     should_bind_crewai_output_model,
 )
+from rps.crewai_runtime.guardrails_generic import typed_output_present
 from rps.crewai_runtime.guardrails_registry import (
     resolve_task_policy,
 )
@@ -183,6 +188,60 @@ def test_assemble_phase_draft_bundle_merges_typed_sibling_outputs() -> None:
     assert assembled.preview == preview_payload
     assert assembled.constraint_audit.applied_sources == ["availability"]
     assert assembled.decision_summary.cadence_source == "season"
+
+
+def test_typed_output_present_rejects_raw_only_fallback() -> None:
+    # A task whose LLM response failed strict pydantic validation still has
+    # non-empty raw text; typed_output_present must not accept that as "typed".
+    task_output = SimpleNamespace(pydantic=None, json_dict=None, raw="not valid structured output")
+
+    ok, reason = typed_output_present(task_output)
+
+    assert ok is False
+    assert "typed" in reason.lower()
+
+
+def test_typed_output_present_accepts_pydantic_payload() -> None:
+    model = ConstraintAuditModel(applied_sources=["availability"])
+    task_output = SimpleNamespace(pydantic=model, json_dict=None, raw=model.model_dump_json())
+
+    ok, payload = typed_output_present(task_output)
+
+    assert ok is True
+    assert payload is model
+
+
+def test_extract_typed_output_does_not_fall_back_to_crew_result_for_sibling_tasks() -> None:
+    # season_phase_blueprint_draft's own pydantic parsing failed (guardrail should have
+    # caught this and retried, but if it somehow didn't): the crew-level `result` reflects
+    # a *different* task (the crew's final task), so falling back to it here would silently
+    # return the wrong task's data instead of surfacing that this task's output is missing.
+    sibling_task_obj = SimpleNamespace(output=SimpleNamespace(pydantic=None, raw="malformed"))
+    crew_result = SimpleNamespace(pydantic=SeasonPlanManagerSynthesisModel(
+        event_priority=SeasonEventAnchorModel(), macrocycle=SeasonMacrocycleDraftModel()
+    ))
+
+    extracted = _extract_typed_output(crew_result, sibling_task_obj, allow_crew_result_fallback=False)
+
+    assert extracted is None
+
+
+def test_collect_typed_raises_when_sibling_task_output_is_unavailable() -> None:
+    tasks_by_name = {
+        "season_constraint_review": SimpleNamespace(output=SimpleNamespace(pydantic=None, raw="malformed")),
+    }
+    task_blueprints = {"season_constraint_review": SimpleNamespace(execution_policy={"output_mode": "pydantic"})}
+    crew_result = SimpleNamespace(pydantic=SeasonPlanManagerSynthesisModel(
+        event_priority=SeasonEventAnchorModel(), macrocycle=SeasonMacrocycleDraftModel()
+    ))
+
+    with pytest.raises(RuntimeError, match="season_constraint_review"):
+        _collect_typed(
+            ("season_constraint_review",),
+            result=crew_result,
+            tasks_by_name=tasks_by_name,
+            task_blueprints=task_blueprints,
+        )
 
 
 def test_extract_structured_output_supports_json_mode_for_internal_tasks() -> None:

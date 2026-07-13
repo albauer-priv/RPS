@@ -101,15 +101,28 @@ def _coerce_artifact_envelope(candidate: object) -> JsonMap | None:
     return None
 
 
-def _extract_typed_output(result: object, task_obj: object) -> Any:
-    """Extract the typed Pydantic output from a CrewAI task result."""
+def _extract_typed_output(
+    result: object,
+    task_obj: object,
+    *,
+    allow_crew_result_fallback: bool = True,
+) -> Any:
+    """Extract the typed Pydantic output from a CrewAI task result.
+
+    `allow_crew_result_fallback` must be `False` when `task_obj` is a sibling
+    task rather than the crew's own final task: `result` (the crew-level
+    `CrewOutput`) reflects the *final* task's output, so falling back to it
+    for a sibling lookup would silently return the wrong task's data (or the
+    raw `CrewOutput` itself, which has none of the expected fields) instead
+    of surfacing that the sibling task's own typed output is unavailable.
+    """
 
     task_output = getattr(task_obj, "output", None)
     pydantic_output = getattr(task_output, "pydantic", None) if task_output is not None else None
-    if pydantic_output is None:
+    if pydantic_output is None and allow_crew_result_fallback:
         pydantic_output = getattr(result, "pydantic", None)
-    if pydantic_output is None and hasattr(result, "model_dump"):
-        pydantic_output = result
+        if pydantic_output is None and hasattr(result, "model_dump"):
+            pydantic_output = result
     return pydantic_output
 
 
@@ -132,6 +145,7 @@ def _extract_structured_output(
     *,
     task_name: str,
     output_mode: str,
+    allow_crew_result_fallback: bool = True,
 ) -> Any:
     """Extract structured CrewAI output according to the resolved task output mode."""
 
@@ -143,7 +157,9 @@ def _extract_structured_output(
         if not raw:
             raise RuntimeError(f"CrewAI task '{task_name}' produced no raw JSON output.")
         return _parse_json_document(raw)
-    pydantic_output = _extract_typed_output(result, task_obj)
+    pydantic_output = _extract_typed_output(
+        result, task_obj, allow_crew_result_fallback=allow_crew_result_fallback
+    )
     if pydantic_output is not None:
         return pydantic_output
     raw = _extract_raw_output_text(result, task_obj)
@@ -175,6 +191,7 @@ def _collect_typed(
             task_obj,
             task_name=task_name,
             output_mode=output_mode,
+            allow_crew_result_fallback=False,
         )
         mapping = structured.model_dump() if hasattr(structured, "model_dump") else structured
         if isinstance(mapping, dict):
@@ -200,7 +217,7 @@ def _assemble_season_plan_draft_bundle(
     phase_task_obj = tasks_by_name.get("season_phase_blueprint_draft")
     if phase_task_obj is None:
         raise RuntimeError("CrewAI task 'season_phase_blueprint_draft' did not run; cannot assemble season bundle.")
-    phase_output = _extract_typed_output(result, phase_task_obj)
+    phase_output = _extract_typed_output(result, phase_task_obj, allow_crew_result_fallback=False)
     if phase_output is None:
         raise RuntimeError(
             "CrewAI task 'season_phase_blueprint_draft' did not produce a typed pydantic output."
@@ -228,7 +245,7 @@ def _assemble_phase_draft_bundle(
         task_obj = tasks_by_name.get(task_name)
         if task_obj is None:
             raise RuntimeError(f"CrewAI task '{task_name}' did not run; cannot assemble phase bundle.")
-        typed_output = _extract_typed_output(result, task_obj)
+        typed_output = _extract_typed_output(result, task_obj, allow_crew_result_fallback=False)
         if typed_output is None:
             raise RuntimeError(f"CrewAI task '{task_name}' did not produce a typed pydantic output.")
         return typed_output
