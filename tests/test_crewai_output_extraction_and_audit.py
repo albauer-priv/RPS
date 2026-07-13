@@ -190,6 +190,59 @@ def test_assemble_phase_draft_bundle_merges_typed_sibling_outputs() -> None:
     assert assembled.decision_summary.cadence_source == "season"
 
 
+def _valid_phase_manager_synthesis() -> PhaseBundleManagerSynthesisModel:
+    return PhaseBundleManagerSynthesisModel(
+        phase_range="2026-24--2026-25",
+        phase_id="P01",
+        constraint_audit=ConstraintAuditModel(),
+        load_governance_audit=LoadGovernanceAuditModel(),
+        decision_summary=PhaseBundleDecisionModel(),
+    )
+
+
+@pytest.mark.parametrize(
+    "sibling_task_name",
+    ["phase_guardrail_band_draft", "phase_structure_draft", "phase_preview_draft"],
+)
+def test_assemble_phase_draft_bundle_raises_when_a_sibling_output_is_malformed(sibling_task_name: str) -> None:
+    # Mirrors the real production failure: a sibling task's guardrail passes (raw text
+    # present) but strict pydantic parsing failed, so .output.pydantic is None. Assembly
+    # must raise a clear, task-named error -- not silently substitute the wrong task's data.
+    all_siblings = {
+        "phase_guardrail_band_draft": _typed_task(PhaseGuardrailsPayloadModel(phase_intent="general_base")),
+        "phase_structure_draft": _typed_task(PhaseStructurePayloadModel(phase_intent="general_base")),
+        "phase_preview_draft": _typed_task(PhasePreviewPayloadModel(phase_intent="general_base")),
+    }
+    all_siblings[sibling_task_name] = SimpleNamespace(output=SimpleNamespace(pydantic=None, raw="malformed"))
+
+    with pytest.raises(RuntimeError, match=sibling_task_name):
+        _assemble_phase_draft_bundle(
+            _valid_phase_manager_synthesis(),
+            result=SimpleNamespace(pydantic=_valid_phase_manager_synthesis()),
+            tasks_by_name=all_siblings,
+        )
+
+
+@pytest.mark.parametrize(
+    "sibling_task_name",
+    ["phase_guardrail_band_draft", "phase_structure_draft", "phase_preview_draft"],
+)
+def test_assemble_phase_draft_bundle_raises_when_a_sibling_task_did_not_run(sibling_task_name: str) -> None:
+    all_siblings = {
+        "phase_guardrail_band_draft": _typed_task(PhaseGuardrailsPayloadModel(phase_intent="general_base")),
+        "phase_structure_draft": _typed_task(PhaseStructurePayloadModel(phase_intent="general_base")),
+        "phase_preview_draft": _typed_task(PhasePreviewPayloadModel(phase_intent="general_base")),
+    }
+    del all_siblings[sibling_task_name]
+
+    with pytest.raises(RuntimeError, match=sibling_task_name):
+        _assemble_phase_draft_bundle(
+            _valid_phase_manager_synthesis(),
+            result=SimpleNamespace(pydantic=_valid_phase_manager_synthesis()),
+            tasks_by_name=all_siblings,
+        )
+
+
 def test_typed_output_present_rejects_raw_only_fallback() -> None:
     # A task whose LLM response failed strict pydantic validation still has
     # non-empty raw text; typed_output_present must not accept that as "typed".
