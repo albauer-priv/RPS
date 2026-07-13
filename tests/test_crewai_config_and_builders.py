@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import inspect
 import json
 import os
 import sys
+import tempfile
 import types
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,6 +17,7 @@ from rps.agents.crewai_output_extraction import (
 from rps.agents.crewai_task_execution import (
     _TASK_BLUEPRINT_BY_AGENT_TASK,
     _build_crewai_task,
+    _build_crewai_tooling,
     _build_internal_task_description,
     _compact_internal_user_input,
     _extract_authoritative_runtime_blocks,
@@ -56,6 +59,7 @@ from rps.crewai_runtime.models import (
 from rps.crewai_runtime.skills import build_crewai_skill_kwargs, resolve_agent_skill_profile
 from rps.orchestrator import season_flow
 from rps.prompts.loader import PromptLoader
+from rps.tools.workspace_read_tools import read_tool_defs
 from rps.ui.run_store import load_events
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
@@ -675,7 +679,7 @@ def test_internal_task_description_is_tool_first_and_compact() -> None:
     )
 
     assert "Shared system instructions for all agents." not in description
-    assert "payload_json" in description
+    assert "Call each workspace tool with its own named arguments" in description
     assert "call the tool instead of asking the user for it" in description
     assert "If prior specialist context already contains the needed facts" in description
     assert "Do not create, write, or verify workspace files unless the active task explicitly exposes a write-capable tool" in description
@@ -907,3 +911,117 @@ def test_coach_recommendation_answer_discipline_is_configured() -> None:
     assert "Use domain calculations, IF targets, thresholds, citations, and source claims only when" in coach_chat_source
     assert "finalize_reply_style_repair" in coach_chat_source
     assert "Use natural coach language and reserve DONE, READY, OUTPUT" in coach_chat_source
+
+def _fake_crewai_tool_decorator_module() -> types.ModuleType:
+    """A minimal stand-in for crewai.tools: tags the wrapped function, does not alter its signature."""
+
+    fake_tools = types.ModuleType("crewai.tools")
+
+    def _tool(name: str):
+        def _decorate(func):
+            func.tool_name = name
+            return func
+
+        return _decorate
+
+    setattr(fake_tools, "tool", _tool)
+    return fake_tools
+
+def test_build_crewai_tooling_exposes_native_named_parameters(monkeypatch) -> None:
+    """Tools built by _build_crewai_tooling take real named arguments, not a payload_json string.
+
+    Confirms the tool-calling migration: CrewAI's own function-calling binds against each
+    tool's actual signature (so a missing/misspelled field is rejected before this Python code
+    ever runs), rather than a single opaque payload_json string parsed by hand inside a
+    try/except that flattened errors into unhelpful strings.
+    """
+    monkeypatch.setitem(sys.modules, "crewai.tools", _fake_crewai_tool_decorator_module())
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        store = LocalArtifactStore(root=root)
+        athlete_id = "ath_tool_migration"
+        store.ensure_workspace(athlete_id)
+        store.save_document(
+            athlete_id,
+            ArtifactType.SEASON_PLAN,
+            "2026-29",
+            {"meta": {"artifact_type": "SEASON_PLAN"}, "data": {"phases": []}},
+            producer_agent="test",
+            run_id="season_plan_test",
+            update_latest=True,
+        )
+
+        tools, loaded_inputs = _build_crewai_tooling(athlete_id, root)
+
+        assert set(tools) == {
+            "workspace_get_latest",
+            "workspace_get_version",
+            "workspace_list_versions",
+            "workspace_get_phase_slot_contract",
+            "workspace_get_season_phase_load_context",
+            "workspace_get_phase_execution_context",
+            "workspace_get_week_calendar_context",
+            "workspace_resolve_season_phase",
+            "workspace_resolve_phase_range",
+            "workspace_find_best_phase_artefact",
+            "workspace_get_phase_context",
+            "workspace_get_input",
+        }
+
+        latest_tool = tools["workspace_get_latest"]
+        params = list(inspect.signature(latest_tool).parameters)
+        assert params == ["artifact_type"]
+
+        result = json.loads(latest_tool(artifact_type="SEASON_PLAN"))
+        assert result["ok"] is True
+        assert result["data"]["phases"] == []
+        assert loaded_inputs["workspace_get_latest"]["ok"] is True
+
+        resolve_params = inspect.signature(tools["workspace_resolve_season_phase"]).parameters
+        assert resolve_params["year"].annotation == "int"
+        assert resolve_params["week"].annotation == "int"
+        assert resolve_params["year"].default is inspect.Parameter.empty
+
+        phase_range_params = inspect.signature(tools["workspace_resolve_phase_range"]).parameters
+        assert phase_range_params["phase_len"].default == 4
+
+def test_build_crewai_tooling_signatures_match_read_tool_defs(monkeypatch) -> None:
+    """Each native tool's parameter set matches read_tool_defs()'s declared schema exactly.
+
+    read_tool_defs() is the manually-maintained contract _build_crewai_tooling's native
+    function signatures are derived from (see its docstring); this guards the two from
+    silently drifting apart as tools are added or changed.
+    """
+    monkeypatch.setitem(sys.modules, "crewai.tools", _fake_crewai_tool_decorator_module())
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        store = LocalArtifactStore(root=root)
+        athlete_id = "ath_tool_schema_check"
+        store.ensure_workspace(athlete_id)
+
+        tools, _ = _build_crewai_tooling(athlete_id, root)
+
+        for tool_def in read_tool_defs():
+            name = tool_def["name"]
+            schema = tool_def["parameters"]
+            declared_fields = set(schema["properties"])
+            declared_required = set(schema.get("required", []))
+            if name == "workspace_get_input":
+                # anyOf(input_type, artifact_type) can't be expressed as a plain
+                # function-signature required/optional split; both stay optional at the
+                # signature level and the cross-field requirement is enforced at runtime
+                # inside the handler, same as before the native-parameter migration.
+                declared_required = set()
+
+            sig = inspect.signature(tools[name])
+            actual_fields = set(sig.parameters)
+            assert actual_fields == declared_fields, name
+
+            actual_required = {
+                param.name
+                for param in sig.parameters.values()
+                if param.default is inspect.Parameter.empty
+            }
+            assert actual_required == declared_required, name

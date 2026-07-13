@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from rps.agents.crewai_builders import (
     _build_crewai_agent,
@@ -98,7 +98,7 @@ from rps.planning.week_engine import (
     extract_message_from_user_input,
     parse_target_week_from_user_input,
 )
-from rps.tools.workspace_read_tools import ReadToolContext, read_tool_defs, read_tool_handlers
+from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers
 from rps.workouts.generator import build_week_plan_document_from_bundle
 from rps.workouts.week_plan_consistency import normalize_week_plan_consistency
 from rps.workspace.guarded_store import GuardedValidatedStore
@@ -866,8 +866,7 @@ def _build_internal_task_description(
         _INTERNAL_TOOL_FIRST_RULES.strip(),
         "",
         "Tool contract:",
-        "- All available workspace tools accept exactly one string parameter named `payload_json`.",
-        "- `payload_json` must be a JSON object string that matches the tool's expected arguments.",
+        "- Call each workspace tool with its own named arguments (e.g. artifact_type, year, week) -- not a JSON string.",
         "- If a needed input is available through `workspace_get_input`, `workspace_get_latest`, or `workspace_get_version`, call the tool instead of asking the user for it.",
     ]
     parts.extend(
@@ -1570,16 +1569,24 @@ def _build_crewai_tooling(
     athlete_id: str,
     workspace_root: Any,
 ) -> tuple[ToolMap, dict[str, object]]:
-    """Create CrewAI tools backed by the existing workspace read handlers."""
+    """Create CrewAI tools backed by the existing workspace read handlers.
+
+    Each tool exposes its real parameters natively -- typed, with `Literal` enums where
+    `read_tool_defs()` declares one, and required-vs-optional reflected by the presence or
+    absence of a default -- instead of a single opaque `payload_json` string. CrewAI infers
+    each tool's function-calling schema from the wrapped function's signature, so a
+    missing/misspelled/mistyped field is rejected by CrewAI's own binding before the LLM's
+    call ever reaches this Python code, instead of surfacing as a bare `KeyError` deep inside
+    a handler. `read_tool_defs()` remains the source of truth these signatures are derived
+    from; keep the two in sync by hand since CrewAI does not consume that schema directly.
+    """
 
     crewai_tools = import_module("crewai.tools")
     tool_decorator = getattr(crewai_tools, "tool")
 
     ctx = ReadToolContext(athlete_id=athlete_id, workspace_root=workspace_root)
     handlers = read_tool_handlers(ctx)
-    tool_defs = read_tool_defs()
     loaded_inputs: dict[str, object] = {}
-    tools: ToolMap = {}
 
     def _capture_loaded_input(tool_name: str, args: JsonMap, result: object) -> None:
         if not isinstance(result, dict) or result.get("ok") is not True:
@@ -1591,46 +1598,189 @@ def _build_crewai_tooling(
         if isinstance(key, str):
             loaded_inputs[key] = result
 
-    for tool_def in tool_defs:
-        name = tool_def.get("name")
-        description = tool_def.get("description")
-        if not isinstance(name, str) or not isinstance(description, str):
-            continue
-        handler = handlers.get(name)
+    def _invoke(tool_name: str, args: JsonMap) -> str:
+        handler = handlers.get(tool_name)
         if handler is None:
-            continue
+            return json.dumps({"ok": False, "error": f"Tool handler missing for {tool_name}"})
+        try:
+            result = handler(args)
+        except Exception as exc:  # pragma: no cover - backend parity with legacy handler exceptions
+            result = {"ok": False, "error": str(exc)}
+        _capture_loaded_input(tool_name, args, result)
+        return json.dumps(result, ensure_ascii=False)
 
-        def _factory(
-            tool_name: str = str(name),
-            tool_description: str = str(description),
-            tool_handler: Callable[[dict[str, Any]], object] | None = handler,
-        ) -> Any:
-            def _run(payload_json: str = "{}") -> str:
-                """Execute the wrapped legacy workspace tool."""
+    @tool_decorator("workspace_get_latest")
+    def workspace_get_latest(artifact_type: str) -> str:
+        """Load latest artifact JSON from athlete workspace.
 
-                try:
-                    args = json.loads(payload_json) if payload_json else {}
-                except json.JSONDecodeError as exc:
-                    return json.dumps({"ok": False, "error": f"Invalid payload_json: {exc}"})
-                if not isinstance(args, dict):
-                    return json.dumps({"ok": False, "error": "payload_json must decode to an object"})
-                if tool_handler is None:
-                    return json.dumps({"ok": False, "error": f"Tool handler missing for {tool_name}"})
-                try:
-                    result = tool_handler(args)
-                except Exception as exc:  # pragma: no cover - backend parity with legacy handler exceptions
-                    result = {"ok": False, "error": str(exc)}
-                _capture_loaded_input(tool_name, args, result)
-                return json.dumps(result, ensure_ascii=False)
+        Do not use this for week-sensitive artefacts when a specific ISO week is required;
+        prefer workspace_get_version.
 
-            _run.__name__ = f"{tool_name}_tool"
-            _run.__doc__ = (
-                f"{tool_description} "
-                "Pass arguments as a JSON string in the single `payload_json` parameter."
-            )
-            return tool_decorator(tool_name)(_run)
+        Args:
+            artifact_type: The artifact type to load, e.g. "SEASON_PLAN".
+        """
+        return _invoke("workspace_get_latest", {"artifact_type": artifact_type})
 
-        tools[name] = _factory()
+    @tool_decorator("workspace_get_version")
+    def workspace_get_version(artifact_type: str, version_key: str) -> str:
+        """Load a specific version of an artifact JSON from athlete workspace.
+
+        Args:
+            artifact_type: The artifact type to load, e.g. "SEASON_PLAN".
+            version_key: The exact version key to load, e.g. "2026-29".
+        """
+        return _invoke("workspace_get_version", {"artifact_type": artifact_type, "version_key": version_key})
+
+    @tool_decorator("workspace_list_versions")
+    def workspace_list_versions(artifact_type: str) -> str:
+        """List version keys stored for an artifact type.
+
+        Args:
+            artifact_type: The artifact type to list versions for, e.g. "SEASON_PLAN".
+        """
+        return _invoke("workspace_list_versions", {"artifact_type": artifact_type})
+
+    @tool_decorator("workspace_get_phase_slot_contract")
+    def workspace_get_phase_slot_contract() -> str:
+        """Load the code-owned deterministic season phase-slot contract bound to the current run.
+
+        Use this instead of searching workspace artifacts for inherited season cadence, phase
+        ids, phase order, or phase ISO-week coverage.
+        """
+        return _invoke("workspace_get_phase_slot_contract", {})
+
+    @tool_decorator("workspace_get_season_phase_load_context")
+    def workspace_get_season_phase_load_context() -> str:
+        """Load the code-owned deterministic season phase-load context bound to the current run.
+
+        Use this for recommended_phase_corridor values, availability caps, role-week load
+        bands, and taper/load feasibility instead of searching for a persisted recommendation
+        artifact.
+        """
+        return _invoke("workspace_get_season_phase_load_context", {})
+
+    @tool_decorator("workspace_get_phase_execution_context")
+    def workspace_get_phase_execution_context() -> str:
+        """Load the code-owned deterministic phase execution context bound to the current run.
+
+        Use this for phase week roles, exact phase range, exact phase legality, exact
+        role-week load bands, phase-local objective, and S5 feasibility context.
+        """
+        return _invoke("workspace_get_phase_execution_context", {})
+
+    @tool_decorator("workspace_get_week_calendar_context")
+    def workspace_get_week_calendar_context() -> str:
+        """Load the code-owned deterministic week calendar and availability context bound to the current run.
+
+        Use this for active week role, active weekly band, target-week skeleton, Mon-Sun
+        dates, availability caps, fixed rest days, and allowed domains.
+        """
+        return _invoke("workspace_get_week_calendar_context", {})
+
+    @tool_decorator("workspace_resolve_season_phase")
+    def workspace_resolve_season_phase(year: int, week: int) -> str:
+        """Resolve the season plan phase covering a target ISO week based on SEASON_PLAN latest.
+
+        Args:
+            year: ISO year of the target week, e.g. 2026.
+            week: ISO week number of the target week, e.g. 29.
+        """
+        return _invoke("workspace_resolve_season_phase", {"year": year, "week": week})
+
+    @tool_decorator("workspace_resolve_phase_range")
+    def workspace_resolve_phase_range(year: int, week: int, phase_len: int = 4) -> str:
+        """Resolve the phase ISO week range covering a target week using SEASON_PLAN phase alignment.
+
+        Args:
+            year: ISO year of the target week, e.g. 2026.
+            week: ISO week number of the target week, e.g. 29.
+            phase_len: Phase length in weeks. Defaults to 4.
+        """
+        return _invoke(
+            "workspace_resolve_phase_range", {"year": year, "week": week, "phase_len": phase_len}
+        )
+
+    @tool_decorator("workspace_find_best_phase_artefact")
+    def workspace_find_best_phase_artefact(
+        artifact_type: str, year: int, week: int, phase_len: int = 4
+    ) -> str:
+        """Find and load the best exact-range phase artefact for a target ISO week.
+
+        Resolves the phase-aligned phase range from SEASON_PLAN and uses index.json to pick
+        the newest exact-range version.
+
+        Args:
+            artifact_type: The phase artefact type to load, e.g. "PHASE_STRUCTURE".
+            year: ISO year of the target week, e.g. 2026.
+            week: ISO week number of the target week, e.g. 29.
+            phase_len: Phase length in weeks. Defaults to 4.
+        """
+        return _invoke(
+            "workspace_find_best_phase_artefact",
+            {"artifact_type": artifact_type, "year": year, "week": week, "phase_len": phase_len},
+        )
+
+    @tool_decorator("workspace_get_phase_context")
+    def workspace_get_phase_context(
+        year: int, week: int, phase_len: int = 4, offset_phases: int = 0
+    ) -> str:
+        """Resolve the phase-aligned phase range for a target ISO week and return the newest
+        exact-range phase artefacts for that range.
+
+        Supports offset_phases to shift into the next or previous phase.
+
+        Args:
+            year: ISO year of the target week, e.g. 2026.
+            week: ISO week number of the target week, e.g. 29.
+            phase_len: Phase length in weeks. Defaults to 4.
+            offset_phases: Number of phases to shift the target week by before resolving.
+                Defaults to 0.
+        """
+        return _invoke(
+            "workspace_get_phase_context",
+            {"year": year, "week": week, "phase_len": phase_len, "offset_phases": offset_phases},
+        )
+
+    @tool_decorator("workspace_get_input")
+    def workspace_get_input(
+        input_type: Literal["athlete_profile", "availability", "logistics", "planning_events"] | None = None,
+        artifact_type: Literal["athlete_profile", "availability", "logistics", "planning_events"] | None = None,
+        year: int | None = None,
+    ) -> str:
+        """Load athlete-specific inputs (athlete_profile, planning_events, logistics,
+        availability) from inputs/ or latest/.
+
+        Exactly one of `input_type` or `artifact_type` (a backward-compatible alias) must be
+        provided.
+
+        Args:
+            input_type: The input type to load.
+            artifact_type: Backward-compatible alias for input_type.
+            year: Optional year hint for locating the input file.
+        """
+        args: JsonMap = {}
+        if input_type is not None:
+            args["input_type"] = input_type
+        if artifact_type is not None:
+            args["artifact_type"] = artifact_type
+        if year is not None:
+            args["year"] = year
+        return _invoke("workspace_get_input", args)
+
+    tools: ToolMap = {
+        "workspace_get_latest": workspace_get_latest,
+        "workspace_get_version": workspace_get_version,
+        "workspace_list_versions": workspace_list_versions,
+        "workspace_get_phase_slot_contract": workspace_get_phase_slot_contract,
+        "workspace_get_season_phase_load_context": workspace_get_season_phase_load_context,
+        "workspace_get_phase_execution_context": workspace_get_phase_execution_context,
+        "workspace_get_week_calendar_context": workspace_get_week_calendar_context,
+        "workspace_resolve_season_phase": workspace_resolve_season_phase,
+        "workspace_resolve_phase_range": workspace_resolve_phase_range,
+        "workspace_find_best_phase_artefact": workspace_find_best_phase_artefact,
+        "workspace_get_phase_context": workspace_get_phase_context,
+        "workspace_get_input": workspace_get_input,
+    }
 
     return tools, loaded_inputs
 
@@ -1655,8 +1805,7 @@ def _build_task_description(
         [
             "",
             "Tool contract:",
-            "- All available tools accept a single string parameter named `payload_json`.",
-            "- `payload_json` must be a JSON object string matching the legacy tool arguments.",
+            "- Call each workspace tool with its own named arguments (e.g. artifact_type, year, week) -- not a JSON string.",
             "",
             "User request:",
             user_input,

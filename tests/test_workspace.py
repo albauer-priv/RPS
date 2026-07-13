@@ -18,7 +18,6 @@ from rps.agents.task_router import AgentTaskRouter, RouterContext  # noqa: E402
 from rps.agents.tasks import AgentTask  # noqa: E402
 from rps.crewai_runtime.guardrails_context import guardrail_runtime_context  # noqa: E402
 from rps.tools.workspace_read_tools import ReadToolContext, read_tool_handlers  # noqa: E402
-from rps.tools.workspace_tools import ToolContext, get_tool_handlers  # noqa: E402
 from rps.workspace.api import Workspace  # noqa: E402
 from rps.workspace.guards import MissingDependenciesError  # noqa: E402
 from rps.workspace.helpers import (  # noqa: E402
@@ -767,6 +766,41 @@ class WorkspaceReadToolTests(unittest.TestCase):
 
             self.assertIn("version_key", str(exc_info.exception))
 
+    def test_year_week_tools_raise_actionable_errors_for_missing_or_invalid_fields(self) -> None:
+        """Same bug class as the artifact_type KeyError: bare args['year']/['week'] subscripts
+        must not leak a bare KeyError to the caller. Covers all four tools that still parse
+        year/week directly.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_007"
+            store.ensure_workspace(athlete_id)
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="coach",
+                )
+            )
+
+            missing_year_cases = [
+                ("workspace_resolve_season_phase", {"week": 15}),
+                ("workspace_resolve_phase_range", {"week": 15}),
+                ("workspace_find_best_phase_artefact", {"artifact_type": "PHASE_STRUCTURE", "week": 15}),
+                ("workspace_get_phase_context", {"week": 15}),
+            ]
+            for tool_name, args in missing_year_cases:
+                with self.assertRaises(ValueError) as exc_info:
+                    handlers[tool_name](args)
+                self.assertIn("year", str(exc_info.exception))
+                self.assertNotEqual(str(exc_info.exception), "'year'")
+
+            with self.assertRaises(ValueError) as exc_info:
+                handlers["workspace_resolve_season_phase"]({"year": "not-a-number", "week": 15})
+            self.assertIn("year", str(exc_info.exception))
+            self.assertIn("integer", str(exc_info.exception))
+
     def test_workspace_get_input_canonicalizes_legacy_meta(self) -> None:
         """Verify input reads normalize legacy meta like data_confidence=USER."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -896,36 +930,50 @@ class WorkspaceReadToolTests(unittest.TestCase):
             self.assertLess(len(entries), 34)
             self.assertEqual(entries[0]["date"], "2026-05-03")
 
-    def test_workspace_tools_get_latest_warns_for_week_sensitive_artifact(self) -> None:
-        """Verify validated workspace tools expose the same latest-warning guidance."""
+    def test_get_latest_get_version_list_versions_all_return_ok_true_on_success(self) -> None:
+        """workspace_get_latest/get_version/list_versions must expose the same {"ok": ...}
+        envelope as the other 9 read tools on success, not an unwrapped raw payload -- a caller
+        checking `.get("ok")` before trusting a result must not silently mishandle these three.
+        """
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             store = LocalArtifactStore(root=root)
-            athlete_id = "ath_010"
+            athlete_id = "ath_014"
             store.ensure_workspace(athlete_id)
             store.save_document(
                 athlete_id,
-                ArtifactType.DES_ANALYSIS_REPORT,
-                "2026-15",
-                {"meta": {"artifact_type": "DES_ANALYSIS_REPORT"}, "data": {}},
+                ArtifactType.SEASON_PLAN,
+                "2026-29",
+                {"meta": {"artifact_type": "SEASON_PLAN"}, "data": {"phases": []}},
                 producer_agent="test",
-                run_id="des_analysis_report_test",
+                run_id="season_plan_test",
                 update_latest=True,
             )
-            handlers = get_tool_handlers(
-                ToolContext(
+            handlers = read_tool_handlers(
+                ReadToolContext(
                     athlete_id=athlete_id,
-                    agent_name="performance_analysis",
                     workspace_root=root,
-                    schema_dir=ROOT / "specs" / "schemas",
+                    agent_name="coach",
                 )
             )
 
-            result = handlers["workspace_get_latest"]({"artifact_type": "DES_ANALYSIS_REPORT"})
+            latest_result = handlers["workspace_get_latest"]({"artifact_type": "SEASON_PLAN"})
+            self.assertIsInstance(latest_result, dict)
+            self.assertIs(latest_result["ok"], True)
+            self.assertEqual(latest_result["data"], {"phases": []})
 
-            self.assertIsInstance(result, dict)
-            self.assertIn("_tool_warning", result)
-            self.assertIn("week-sensitive", result["_tool_warning"])
+            version_key = store.get_latest_version_key(athlete_id, ArtifactType.SEASON_PLAN)
+            version_result = handlers["workspace_get_version"](
+                {"artifact_type": "SEASON_PLAN", "version_key": version_key}
+            )
+            self.assertIsInstance(version_result, dict)
+            self.assertIs(version_result["ok"], True)
+            self.assertEqual(version_result["data"], {"phases": []})
+
+            list_result = handlers["workspace_list_versions"]({"artifact_type": "SEASON_PLAN"})
+            self.assertIsInstance(list_result, dict)
+            self.assertIs(list_result["ok"], True)
+            self.assertIn(version_key, list_result["versions"])
 
 
 class TaskRouterTests(unittest.TestCase):

@@ -61,19 +61,37 @@ def _parse_artifact_type(value: str) -> ArtifactType:
 def _require_artifact_type(args: dict[str, Any]) -> ArtifactType:
     """Parse `args['artifact_type']`, raising a clear, LLM-actionable error if missing.
 
-    Every read tool here shares the same `payload_json` envelope; a plain `args["artifact_type"]`
-    subscript raises a bare `KeyError: 'artifact_type'` when the LLM omits or misnames the field
-    -- caught by the wrapping try/except in `_build_crewai_tooling` and returned verbatim as the
-    tool's `error` field, giving the LLM (and anyone reading telemetry) no clue what to fix.
+    Every read tool here is invoked with the same `args` mapping shape; a plain
+    `args["artifact_type"]` subscript raises a bare `KeyError: 'artifact_type'` when the
+    caller omits or misnames the field -- caught by the wrapping try/except in
+    `_build_crewai_tooling` and returned verbatim as the tool's `error` field, giving the LLM
+    (and anyone reading telemetry) no clue what to fix.
     """
 
     value = args.get("artifact_type")
     if not value:
         raise ValueError(
-            "payload_json must include a non-empty 'artifact_type' field, "
-            'e.g. {"artifact_type": "SEASON_PLAN"}.'
+            "Tool call must include a non-empty 'artifact_type' argument, "
+            'e.g. artifact_type="SEASON_PLAN".'
         )
     return _parse_artifact_type(value)
+
+
+def _require_int(args: dict[str, Any], key: str, *, example: str) -> int:
+    """Parse `args[key]` as an int, raising a clear, LLM-actionable error if missing/invalid.
+
+    Same rationale as `_require_artifact_type`: a bare `args[key]` subscript raises an
+    unhelpful `KeyError` that the outer try/except in `_build_crewai_tooling` flattens into
+    an opaque `error` string.
+    """
+
+    value = args.get(key)
+    if value is None:
+        raise ValueError(f"Tool call must include a '{key}' argument, e.g. {example}.")
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"Tool call argument '{key}' must be an integer, got {value!r}.") from None
 
 
 def _week_sensitive_latest_warning(artifact_type: ArtifactType) -> str | None:
@@ -435,12 +453,12 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         payload = workspace.get_latest(artifact_type)
         if artifact_type == ArtifactType.WELLNESS:
             payload = _compact_wellness_payload(payload)
+        result = dict(payload) if isinstance(payload, dict) else {"value": payload}
+        result.setdefault("ok", True)
         warning = _week_sensitive_latest_warning(artifact_type)
-        if warning and isinstance(payload, dict):
-            result = dict(payload)
+        if warning:
             result.setdefault("_tool_warning", warning)
-            return result
-        return payload
+        return result
 
     def workspace_get_version(args: dict[str, Any]) -> object:
         """Load a specific artifact version."""
@@ -448,15 +466,19 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
         version_key = args.get("version_key")
         if not version_key:
             raise ValueError(
-                "payload_json must include a non-empty 'version_key' field, "
-                'e.g. {"artifact_type": "SEASON_PLAN", "version_key": "2026-29__..."}.'
+                "Tool call must include a non-empty 'version_key' argument, "
+                'e.g. artifact_type="SEASON_PLAN", version_key="2026-29__...".'
             )
-        return workspace.get(artifact_type, version_key)
+        payload = workspace.get(artifact_type, version_key)
+        result = dict(payload) if isinstance(payload, dict) else {"value": payload}
+        result.setdefault("ok", True)
+        return result
 
     def workspace_list_versions(args: dict[str, Any]) -> object:
         """List known versions for a type."""
         artifact_type = _require_artifact_type(args)
-        return workspace.list_versions(artifact_type)
+        versions = workspace.list_versions(artifact_type)
+        return {"ok": True, "artifact_type": artifact_type.value, "versions": versions}
 
     def _contract_payload(context_key: str, label: str) -> JsonDict:
         context = current_guardrail_runtime_context()
@@ -498,8 +520,8 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
 
     def workspace_resolve_season_phase(args: dict[str, Any]) -> object:
         """Resolve the season plan phase covering the target week."""
-        year = int(args["year"])
-        week = int(args["week"])
+        year = _require_int(args, "year", example="year=2026, week=29")
+        week = _require_int(args, "week", example="year=2026, week=29")
         season_plan = _as_map(workspace.get_latest(ArtifactType.SEASON_PLAN))
         info = resolve_season_plan_phase_info(season_plan, IsoWeek(year, week))
         if not info:
@@ -521,8 +543,8 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
 
     def workspace_resolve_phase_range(args: dict[str, Any]) -> object:
         """Resolve the phase range covering the target week."""
-        year = int(args["year"])
-        week = int(args["week"])
+        year = _require_int(args, "year", example="year=2026, week=29")
+        week = _require_int(args, "week", example="year=2026, week=29")
         phase_len = int(args.get("phase_len", 4))
 
         season_plan = _as_map(workspace.get_latest(ArtifactType.SEASON_PLAN))
@@ -543,8 +565,8 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
     def workspace_find_best_phase_artefact(args: dict[str, Any]) -> object:
         """Find and load the newest exact-range phase artifact."""
         artifact_type = _require_artifact_type(args)
-        year = int(args["year"])
-        week = int(args["week"])
+        year = _require_int(args, "year", example="artifact_type=\"PHASE_STRUCTURE\", year=2026, week=29")
+        week = _require_int(args, "week", example="artifact_type=\"PHASE_STRUCTURE\", year=2026, week=29")
         phase_len = int(args.get("phase_len", 4))
 
         try:
@@ -562,8 +584,8 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
 
     def workspace_get_phase_context(args: dict[str, Any]) -> object:
         """Resolve a phase range and return the newest exact-range phase artifacts."""
-        year = int(args["year"])
-        week = int(args["week"])
+        year = _require_int(args, "year", example="year=2026, week=29")
+        week = _require_int(args, "week", example="year=2026, week=29")
         phase_len = int(args.get("phase_len", 4))
         offset_phases = int(args.get("offset_phases", 0))
 
