@@ -52,7 +52,28 @@ def _parse_artifact_type(value: str) -> ArtifactType:
         return ArtifactType(cleaned)
     except ValueError:
         key = "".join([ch if ch.isalnum() else "_" for ch in cleaned]).upper()
-        return ArtifactType[key]
+        try:
+            return ArtifactType[key]
+        except KeyError:
+            raise ValueError(f"Unknown artifact_type: {cleaned!r}") from None
+
+
+def _require_artifact_type(args: dict[str, Any]) -> ArtifactType:
+    """Parse `args['artifact_type']`, raising a clear, LLM-actionable error if missing.
+
+    Every read tool here shares the same `payload_json` envelope; a plain `args["artifact_type"]`
+    subscript raises a bare `KeyError: 'artifact_type'` when the LLM omits or misnames the field
+    -- caught by the wrapping try/except in `_build_crewai_tooling` and returned verbatim as the
+    tool's `error` field, giving the LLM (and anyone reading telemetry) no clue what to fix.
+    """
+
+    value = args.get("artifact_type")
+    if not value:
+        raise ValueError(
+            "payload_json must include a non-empty 'artifact_type' field, "
+            'e.g. {"artifact_type": "SEASON_PLAN"}.'
+        )
+    return _parse_artifact_type(value)
 
 
 def _week_sensitive_latest_warning(artifact_type: ArtifactType) -> str | None:
@@ -410,7 +431,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
 
     def workspace_get_latest(args: dict[str, Any]) -> object:
         """Load the latest artifact for a type."""
-        artifact_type = _parse_artifact_type(args["artifact_type"])
+        artifact_type = _require_artifact_type(args)
         payload = workspace.get_latest(artifact_type)
         if artifact_type == ArtifactType.WELLNESS:
             payload = _compact_wellness_payload(payload)
@@ -423,12 +444,18 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
 
     def workspace_get_version(args: dict[str, Any]) -> object:
         """Load a specific artifact version."""
-        artifact_type = _parse_artifact_type(args["artifact_type"])
-        return workspace.get(artifact_type, args["version_key"])
+        artifact_type = _require_artifact_type(args)
+        version_key = args.get("version_key")
+        if not version_key:
+            raise ValueError(
+                "payload_json must include a non-empty 'version_key' field, "
+                'e.g. {"artifact_type": "SEASON_PLAN", "version_key": "2026-29__..."}.'
+            )
+        return workspace.get(artifact_type, version_key)
 
     def workspace_list_versions(args: dict[str, Any]) -> object:
         """List known versions for a type."""
-        artifact_type = _parse_artifact_type(args["artifact_type"])
+        artifact_type = _require_artifact_type(args)
         return workspace.list_versions(artifact_type)
 
     def _contract_payload(context_key: str, label: str) -> JsonDict:
@@ -515,7 +542,7 @@ def read_tool_handlers(ctx: ReadToolContext) -> dict[str, ToolHandler]:
 
     def workspace_find_best_phase_artefact(args: dict[str, Any]) -> object:
         """Find and load the newest exact-range phase artifact."""
-        artifact_type = _parse_artifact_type(args["artifact_type"])
+        artifact_type = _require_artifact_type(args)
         year = int(args["year"])
         week = int(args["week"])
         phase_len = int(args.get("phase_len", 4))

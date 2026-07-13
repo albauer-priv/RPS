@@ -407,7 +407,7 @@ def _compose_guardrail_failure_reason(base_reason: str, diagnostics_parts: list[
     return f"{base_reason[:available]}{suffix}"
 
 
-def _raw_output_snippet(result: Any, *, limit: int = 400) -> str:
+def _raw_output_snippet(result: Any, *, limit: int = 8000) -> str:
     """Best-effort raw/json text snippet from a CrewAI TaskOutput-like object, for diagnostics."""
 
     raw = getattr(result, "raw", None)
@@ -454,15 +454,15 @@ def _with_guardrail_telemetry(
                     component=context.get("component") or f"task:{task_name}",
                     task=task_name,
                     guardrail=guardrail_name,
-                    reason=f"pre_guardrail_normalization_failed: {exc}"[:500],
+                    reason=f"pre_guardrail_normalization_failed: {exc}"[:8000],
                     raw_output_snippet=_raw_output_snippet(result),
-                    prompt_snippet=(task_description or "")[:2000],
+                    prompt_snippet=(task_description or "")[:8000],
                 )
                 return (False, f"pre_guardrail_normalization_failed: {exc}")
         ok, payload = guardrail_fn(normalized_result)
         if not ok:
             context = _GUARDRAIL_CONTEXT.get({})
-            reason = str(payload)[:500]
+            reason = str(payload)[:8000]
             artifact_type = str(context.get("artifact_type") or "").strip().upper()
             if (
                 artifact_type == ArtifactType.PHASE_STRUCTURE.value
@@ -478,7 +478,7 @@ def _with_guardrail_telemetry(
                     if diagnostics:
                         diagnostics_parts.append(diagnostics)
                 if diagnostics_parts:
-                    reason = _compose_guardrail_failure_reason(reason, diagnostics_parts, limit=500)
+                    reason = _compose_guardrail_failure_reason(reason, diagnostics_parts, limit=8000)
             # raw_output_snippet/prompt_snippet are diagnostic-only fields (not surfaced in the
             # compact rps.log line, since _log_runtime_event only extracts a fixed key set) --
             # they land in the full JSON event (runs/<run_id>/events.jsonl) so a guardrail
@@ -491,7 +491,7 @@ def _with_guardrail_telemetry(
                 event_type="CREW_TASK_GUARDRAIL_FAILED",
                 component=context.get("component") or f"task:{task_name}",
                 raw_output_snippet=_raw_output_snippet(result),
-                prompt_snippet=(task_description or "")[:2000],
+                prompt_snippet=(task_description or "")[:8000],
                 task=task_name,
                 guardrail=guardrail_name,
                 reason=reason,

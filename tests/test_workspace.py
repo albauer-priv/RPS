@@ -719,6 +719,54 @@ class WorkspaceReadToolTests(unittest.TestCase):
             self.assertIn("_tool_warning", result)
             self.assertIn("week-sensitive", result["_tool_warning"])
 
+    def test_workspace_get_latest_raises_actionable_error_for_missing_artifact_type(self) -> None:
+        """A missing/empty artifact_type must raise a clear ValueError, not a bare KeyError.
+
+        A real production run showed an LLM specialist calling workspace_get_latest without
+        artifact_type in its payload_json; the raw `args["artifact_type"]` subscript raised
+        `KeyError: 'artifact_type'`, and the tool-call wrapper's `except Exception: str(exc)`
+        turned that into the bare string "'artifact_type'" as the tool's error field -- giving
+        the LLM no information about what to fix, so it reported the failure as a blocking
+        constraint instead of correcting the tool call.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_007"
+            store.ensure_workspace(athlete_id)
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="coach",
+                )
+            )
+
+            with self.assertRaises(ValueError) as exc_info:
+                handlers["workspace_get_latest"]({})
+
+            self.assertIn("artifact_type", str(exc_info.exception))
+            self.assertNotEqual(str(exc_info.exception), "'artifact_type'")
+
+    def test_workspace_get_version_raises_actionable_error_for_missing_version_key(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            store = LocalArtifactStore(root=root)
+            athlete_id = "ath_007"
+            store.ensure_workspace(athlete_id)
+            handlers = read_tool_handlers(
+                ReadToolContext(
+                    athlete_id=athlete_id,
+                    workspace_root=root,
+                    agent_name="coach",
+                )
+            )
+
+            with self.assertRaises(ValueError) as exc_info:
+                handlers["workspace_get_version"]({"artifact_type": "SEASON_PLAN"})
+
+            self.assertIn("version_key", str(exc_info.exception))
+
     def test_workspace_get_input_canonicalizes_legacy_meta(self) -> None:
         """Verify input reads normalize legacy meta like data_confidence=USER."""
         with tempfile.TemporaryDirectory() as tmpdir:

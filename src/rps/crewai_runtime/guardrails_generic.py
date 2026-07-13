@@ -22,7 +22,7 @@ def typed_output_present(result: Any) -> GuardrailResult:
     pydantic_payload = getattr(result, "pydantic", None)
     if pydantic_payload is None:
         raw = getattr(result, "raw", None)
-        detail = f" Raw output: {raw.strip()[:300]}" if isinstance(raw, str) and raw.strip() else " No raw output either."
+        detail = f" Raw output: {raw.strip()[:6000]}" if isinstance(raw, str) and raw.strip() else " No raw output either."
         return (False, f"Task produced no typed (pydantic-validated) structured output.{detail}")
     return (True, pydantic_payload)
 
