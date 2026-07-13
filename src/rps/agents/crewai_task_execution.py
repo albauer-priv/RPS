@@ -140,6 +140,7 @@ _INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning 
 - If the task has workspace tools, use them first and keep the number of retrieval attempts tight and relevant.
 - If still blocked, return one compact blocked result only once. Include: missing_inputs, attempted_tools, and reason.
 - No repeated paragraphs. No duplicate missing-input lists. No generic apology text.
+- Final answer discipline: once you have gathered what you need, your final response must be the structured output only. Do not add narration, a summary of the tool calls you made, or any prose before or after the structured output.
 """
 
 JsonMap = dict[str, Any]

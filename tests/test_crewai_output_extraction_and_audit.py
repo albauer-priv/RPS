@@ -254,6 +254,16 @@ def test_typed_output_present_rejects_raw_only_fallback() -> None:
 
     assert ok is False
     assert "typed" in reason.lower()
+    assert "not valid structured output" in reason
+
+
+def test_typed_output_present_reports_when_raw_output_is_also_missing() -> None:
+    task_output = SimpleNamespace(pydantic=None, json_dict=None, raw=None)
+
+    ok, reason = typed_output_present(task_output)
+
+    assert ok is False
+    assert "no raw output either" in reason.lower()
 
 
 def test_typed_output_present_accepts_pydantic_payload() -> None:
