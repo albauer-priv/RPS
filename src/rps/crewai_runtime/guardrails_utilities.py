@@ -411,21 +411,34 @@ def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn:
     """Wrap one guardrail so failures become compact retry-relevant runtime events."""
 
     def _wrapped(result: Any):
-        try:
-            normalized_result = normalize_artifact_candidate_for_task_guardrails(result)
-        except Exception as exc:
-            context = _GUARDRAIL_CONTEXT.get({})
-            emit_runtime_event(
-                root=context.get("root"),
-                athlete_id=context.get("athlete_id"),
-                run_id=context.get("run_id"),
-                event_type="CREW_TASK_GUARDRAIL_FAILED",
-                component=context.get("component") or f"task:{task_name}",
-                task=task_name,
-                guardrail=guardrail_name,
-                reason=f"pre_guardrail_normalization_failed: {exc}"[:500],
-            )
-            return (False, f"pre_guardrail_normalization_failed: {exc}")
+        if guardrail_name == "typed_output_present":
+            # This guardrail checks whether CrewAI's own output_pydantic binding
+            # populated `.pydantic` on the raw TaskOutput -- a property of the
+            # binding step itself, not of content shape. Every other guardrail
+            # here validates *content*, so pre-normalizing through
+            # `normalize_artifact_candidate_for_task_guardrails` (which projects
+            # `.pydantic`/`.json_dict`/`.raw` down to a plain dict via
+            # `_coerce_mapping`) is exactly right for them and exactly wrong for
+            # this one: a dict never has a `.pydantic` attribute, so checking it
+            # post-normalization would fail unconditionally regardless of whether
+            # the binding actually succeeded.
+            normalized_result = result
+        else:
+            try:
+                normalized_result = normalize_artifact_candidate_for_task_guardrails(result)
+            except Exception as exc:
+                context = _GUARDRAIL_CONTEXT.get({})
+                emit_runtime_event(
+                    root=context.get("root"),
+                    athlete_id=context.get("athlete_id"),
+                    run_id=context.get("run_id"),
+                    event_type="CREW_TASK_GUARDRAIL_FAILED",
+                    component=context.get("component") or f"task:{task_name}",
+                    task=task_name,
+                    guardrail=guardrail_name,
+                    reason=f"pre_guardrail_normalization_failed: {exc}"[:500],
+                )
+                return (False, f"pre_guardrail_normalization_failed: {exc}")
         ok, payload = guardrail_fn(normalized_result)
         if not ok:
             context = _GUARDRAIL_CONTEXT.get({})

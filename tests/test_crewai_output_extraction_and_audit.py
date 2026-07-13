@@ -18,8 +18,10 @@ from rps.crewai_runtime.bindings import (
     build_task_blueprints,
     should_bind_crewai_output_model,
 )
+from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.guardrails_generic import typed_output_present
 from rps.crewai_runtime.guardrails_registry import (
+    build_task_guardrail_kwargs,
     resolve_task_policy,
 )
 from rps.crewai_runtime.guardrails_season import season_bundle_audit_slot_integrity
@@ -262,6 +264,36 @@ def test_typed_output_present_accepts_pydantic_payload() -> None:
 
     assert ok is True
     assert payload is model
+
+
+def test_typed_output_present_wired_through_guardrail_wrapper_checks_raw_pydantic() -> None:
+    # Regression test for a real production bug: the CrewAI-facing guardrail callable is
+    # built by build_task_guardrail_kwargs -> _with_guardrail_telemetry, which pre-normalizes
+    # the raw TaskOutput into a plain dict (via normalize_artifact_candidate_for_task_guardrails
+    # -> _coerce_mapping) before calling the guardrail function. typed_output_present must see
+    # the RAW TaskOutput -- it checks whether CrewAI's own output_pydantic binding succeeded,
+    # not content shape -- so calling it in isolation (as the tests above do) never exercises
+    # this wiring and would not have caught the regression that shipped in c24baad.
+    bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
+    task_blueprints = build_task_blueprints(bundle)
+    task_blueprint = task_blueprints["season_plan_finalize"]
+    assert resolve_task_policy(task_blueprint, bundle.task_policies).guardrails == ("typed_output_present",)
+
+    wrapped_guardrail = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)["guardrail"]
+
+    valid_model = SeasonPlanManagerSynthesisModel(
+        event_priority=SeasonEventAnchorModel(), macrocycle=SeasonMacrocycleDraftModel()
+    )
+    valid_output = SimpleNamespace(pydantic=valid_model, json_dict=None, raw=valid_model.model_dump_json())
+    invalid_output = SimpleNamespace(pydantic=None, json_dict=None, raw="not valid structured output")
+
+    with guardrail_runtime_context(task_name="season_plan_finalize"):
+        ok_valid, _ = wrapped_guardrail(valid_output)
+        ok_invalid, reason_invalid = wrapped_guardrail(invalid_output)
+
+    assert ok_valid is True
+    assert ok_invalid is False
+    assert "typed" in str(reason_invalid).lower()
 
 
 def test_extract_typed_output_does_not_fall_back_to_crew_result_for_sibling_tasks() -> None:
