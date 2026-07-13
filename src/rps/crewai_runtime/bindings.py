@@ -406,7 +406,9 @@ def build_crewai_bindings(
                     f"Task '{name}' references unknown or later context tasks: {', '.join(missing)}"
                 )
             task_kwargs["context"] = [tasks[item] for item in task_blueprint.context_names]
-        guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
+        guardrail_kwargs = build_task_guardrail_kwargs(
+            task_blueprint, bundle.task_policies, task_description=task_blueprint.description
+        )
         output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
         output_model = output_model_for_task(task_blueprint)
         if output_mode == "json" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):

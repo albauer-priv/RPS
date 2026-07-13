@@ -395,7 +395,7 @@ def _execute_crewai_task(
             run_id=run_id,
         )
     )
-    guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
+    guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies, task_description=description)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
     output_model = _output_model_for_task(task_blueprint, schema_file=artifact_schema_file)
     if output_mode == "json" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):
@@ -556,7 +556,7 @@ def _build_crewai_task(
             run_id=run_id,
         )
     )
-    guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies)
+    guardrail_kwargs = build_task_guardrail_kwargs(task_blueprint, bundle.task_policies, task_description=description)
     output_mode = str(guardrail_kwargs.pop("_resolved_output_mode", "pydantic"))
     output_model = _output_model_for_task(task_blueprint)
     if output_mode == "json" and should_bind_crewai_output_model(task_blueprint, output_mode=output_mode):

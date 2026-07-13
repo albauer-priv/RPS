@@ -13,6 +13,7 @@ from rps.agents.crewai_output_extraction import (
     _extract_structured_output,
     _extract_typed_output,
 )
+from rps.crewai_runtime import guardrails_utilities as crewai_guardrails_utilities
 from rps.crewai_runtime import load_crewai_config_bundle
 from rps.crewai_runtime.bindings import (
     build_task_blueprints,
@@ -304,6 +305,55 @@ def test_typed_output_present_wired_through_guardrail_wrapper_checks_raw_pydanti
     assert ok_valid is True
     assert ok_invalid is False
     assert "typed" in str(reason_invalid).lower()
+
+
+def test_guardrail_failure_event_carries_raw_output_and_prompt_snippets(monkeypatch) -> None:
+    # A guardrail failure alone ("Task produced no typed output") isn't enough to diagnose
+    # without a live rerun: what did the LLM actually return, and what was it actually asked?
+    # _with_guardrail_telemetry now attaches both as diagnostic-only fields on the emitted
+    # CREW_TASK_GUARDRAIL_FAILED event (captured in runs/<run_id>/events.jsonl).
+    emitted: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        crewai_guardrails_utilities,
+        "emit_runtime_event",
+        lambda **kwargs: emitted.append(kwargs),
+    )
+
+    wrapped = crewai_guardrails_utilities._with_guardrail_telemetry(
+        "season_context_read",
+        "typed_output_present",
+        typed_output_present,
+        task_description="Summarize season planning context using workspace tools.",
+    )
+    invalid_output = SimpleNamespace(pydantic=None, json_dict=None, raw="I looked at the tools and here's a summary...")
+
+    with guardrail_runtime_context(task_name="season_context_read"):
+        ok, _ = wrapped(invalid_output)
+
+    assert ok is False
+    assert len(emitted) == 1
+    assert "I looked at the tools" in str(emitted[0]["raw_output_snippet"])
+    assert emitted[0]["prompt_snippet"] == "Summarize season planning context using workspace tools."
+
+
+def test_guardrail_failure_event_omits_prompt_snippet_when_not_provided(monkeypatch) -> None:
+    emitted: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        crewai_guardrails_utilities,
+        "emit_runtime_event",
+        lambda **kwargs: emitted.append(kwargs),
+    )
+
+    wrapped = crewai_guardrails_utilities._with_guardrail_telemetry(
+        "season_context_read", "typed_output_present", typed_output_present
+    )
+    invalid_output = SimpleNamespace(pydantic=None, json_dict=None, raw="malformed")
+
+    with guardrail_runtime_context(task_name="season_context_read"):
+        wrapped(invalid_output)
+
+    assert emitted[0]["prompt_snippet"] == ""
+    assert emitted[0]["raw_output_snippet"] == "malformed"
 
 
 def test_extract_typed_output_does_not_fall_back_to_crew_result_for_sibling_tasks() -> None:

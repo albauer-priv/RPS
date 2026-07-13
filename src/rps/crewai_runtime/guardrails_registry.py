@@ -156,14 +156,18 @@ def resolve_task_policy(task_blueprint: Any, task_policies: JsonMap) -> TaskExec
     )
 
 
-def build_task_guardrail_kwargs(task_blueprint: Any, task_policies: JsonMap) -> JsonMap:
+def build_task_guardrail_kwargs(
+    task_blueprint: Any, task_policies: JsonMap, *, task_description: str | None = None
+) -> JsonMap:
     """Return CrewAI Task kwargs for guardrails and output-mode policy."""
 
     policy = resolve_task_policy(task_blueprint, task_policies)
     kwargs: JsonMap = {"guardrail_max_retries": policy.guardrail_max_retries}
     if policy.guardrails:
         guardrail_fns = [
-            _with_guardrail_telemetry(task_blueprint.name, name, resolve_guardrail(name))
+            _with_guardrail_telemetry(
+                task_blueprint.name, name, resolve_guardrail(name), task_description=task_description
+            )
             for name in policy.guardrails
         ]
         if len(guardrail_fns) == 1:

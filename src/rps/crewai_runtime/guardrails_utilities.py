@@ -407,7 +407,25 @@ def _compose_guardrail_failure_reason(base_reason: str, diagnostics_parts: list[
     return f"{base_reason[:available]}{suffix}"
 
 
-def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn: GuardrailFn) -> GuardrailFn:
+def _raw_output_snippet(result: Any, *, limit: int = 400) -> str:
+    """Best-effort raw/json text snippet from a CrewAI TaskOutput-like object, for diagnostics."""
+
+    raw = getattr(result, "raw", None)
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()[:limit]
+    json_dict = getattr(result, "json_dict", None)
+    if json_dict is not None:
+        return str(json_dict)[:limit]
+    return ""
+
+
+def _with_guardrail_telemetry(
+    task_name: str,
+    guardrail_name: str,
+    guardrail_fn: GuardrailFn,
+    *,
+    task_description: str | None = None,
+) -> GuardrailFn:
     """Wrap one guardrail so failures become compact retry-relevant runtime events."""
 
     def _wrapped(result: Any):
@@ -437,6 +455,8 @@ def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn:
                     task=task_name,
                     guardrail=guardrail_name,
                     reason=f"pre_guardrail_normalization_failed: {exc}"[:500],
+                    raw_output_snippet=_raw_output_snippet(result),
+                    prompt_snippet=(task_description or "")[:2000],
                 )
                 return (False, f"pre_guardrail_normalization_failed: {exc}")
         ok, payload = guardrail_fn(normalized_result)
@@ -459,12 +479,19 @@ def _with_guardrail_telemetry(task_name: str, guardrail_name: str, guardrail_fn:
                         diagnostics_parts.append(diagnostics)
                 if diagnostics_parts:
                     reason = _compose_guardrail_failure_reason(reason, diagnostics_parts, limit=500)
+            # raw_output_snippet/prompt_snippet are diagnostic-only fields (not surfaced in the
+            # compact rps.log line, since _log_runtime_event only extracts a fixed key set) --
+            # they land in the full JSON event (runs/<run_id>/events.jsonl) so a guardrail
+            # failure is diagnosable from what was actually asked and returned, without needing
+            # another live run.
             emit_runtime_event(
                 root=context.get("root"),
                 athlete_id=context.get("athlete_id"),
                 run_id=context.get("run_id"),
                 event_type="CREW_TASK_GUARDRAIL_FAILED",
                 component=context.get("component") or f"task:{task_name}",
+                raw_output_snippet=_raw_output_snippet(result),
+                prompt_snippet=(task_description or "")[:2000],
                 task=task_name,
                 guardrail=guardrail_name,
                 reason=reason,
