@@ -979,8 +979,8 @@ def test_build_crewai_tooling_exposes_native_named_parameters(monkeypatch) -> No
         assert loaded_inputs["workspace_get_latest"]["ok"] is True
 
         resolve_params = inspect.signature(tools["workspace_resolve_season_phase"]).parameters
-        assert resolve_params["year"].annotation == "int"
-        assert resolve_params["week"].annotation == "int"
+        assert resolve_params["year"].annotation is int
+        assert resolve_params["week"].annotation is int
         assert resolve_params["year"].default is inspect.Parameter.empty
 
         phase_range_params = inspect.signature(tools["workspace_resolve_phase_range"]).parameters
@@ -1025,3 +1025,32 @@ def test_build_crewai_tooling_signatures_match_read_tool_defs(monkeypatch) -> No
                 if param.default is inspect.Parameter.empty
             }
             assert actual_required == declared_required, name
+
+def test_build_crewai_tooling_annotations_are_resolved_not_postponed(monkeypatch) -> None:
+    """Every tool's parameter/return annotations must be real type objects, not strings.
+
+    A real production run hit `class-not-fully-defined` for workspace_get_input:
+    crewai_task_execution.py has `from __future__ import annotations`, so every parameter
+    annotation on the tool functions is a plain string at runtime (e.g.
+    "Literal[...] | None"); CrewAI's @tool decorator builds a pydantic args model straight
+    from the function signature, and pydantic couldn't self-resolve that string annotation,
+    leaving the generated model not fully defined until something calls .model_rebuild().
+    _with_resolved_annotations (applied to every tool function) fixes this by eagerly
+    resolving annotations via typing.get_type_hints() before CrewAI ever inspects the
+    function. This test would have caught the regression before it reached production.
+    """
+    monkeypatch.setitem(sys.modules, "crewai.tools", _fake_crewai_tool_decorator_module())
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        store = LocalArtifactStore(root=root)
+        athlete_id = "ath_tool_annotation_check"
+        store.ensure_workspace(athlete_id)
+
+        tools, _ = _build_crewai_tooling(athlete_id, root)
+
+        for name, tool_fn in tools.items():
+            for param_name, annotation in tool_fn.__annotations__.items():
+                assert not isinstance(annotation, str), (
+                    f"{name}.{param_name} annotation is still a postponed string: {annotation!r}"
+                )

@@ -15,6 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+## [0.20.29] - 2026-07-13
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Fixed `class-not-fully-defined` (`error_code=class-not-fully-defined`) crashing `CREATE_SEASON_PLAN` on the very first real Docker run after the v0.20.28 native-tool-calling migration: `workspace_get_input`'s `Literal[...] | None` parameter annotation is a plain string at runtime (`crewai_task_execution.py` has `from __future__ import annotations`), and CrewAI's `@tool` decorator builds a pydantic args model straight from the function signature — pydantic couldn't self-resolve that string annotation into a real `Literal`, leaving the generated model class not fully defined. New `_with_resolved_annotations` helper (`src/rps/agents/crewai_task_execution.py`) eagerly resolves every tool function's annotations via `typing.get_type_hints()` before CrewAI ever inspects them, applied to all 12 tool functions (not just the one that happened to fail this run, since the same postponed-string-annotation risk applies to any of them under a different CrewAI/pydantic version). Added `test_build_crewai_tooling_annotations_are_resolved_not_postponed`, confirmed to fail without the fix by temporarily reverting it and re-running — exactly the class of regression the v0.20.28 CHANGELOG entry flagged as unverifiable without a real Docker run.
+
+### Removed
+
 ## [0.20.28] - 2026-07-13
 
 ### Added

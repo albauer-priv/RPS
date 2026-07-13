@@ -7,7 +7,7 @@ import logging
 from collections.abc import Callable
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar, get_type_hints
 
 from rps.agents.crewai_builders import (
     _build_crewai_agent,
@@ -1565,6 +1565,26 @@ def run_phase_bundle_crewai(
     return {"ok": True, "produced": produced, "warnings": warnings}
 
 
+_ToolFunc = TypeVar("_ToolFunc", bound=Callable[..., str])
+
+
+def _with_resolved_annotations(func: _ToolFunc) -> _ToolFunc:
+    """Replace a function's postponed (stringified) annotations with real type objects.
+
+    This module has `from __future__ import annotations`, so every parameter annotation on
+    the tool functions below is a plain string at runtime (e.g. `"Literal[...] | None"`).
+    CrewAI's `@tool` decorator builds a pydantic args model straight from the function
+    signature; a live run showed pydantic leaving that model in a not-fully-defined state for
+    `workspace_get_input` (its `Literal[...] | None` annotation couldn't self-resolve) with
+    `class-not-fully-defined` at task-execution time -- not at import time, so nothing local
+    catches it. Resolving annotations eagerly, before CrewAI ever inspects the function, avoids
+    the whole class of failure regardless of which tool or CrewAI/pydantic version is involved.
+    """
+
+    func.__annotations__ = get_type_hints(func, include_extras=True)
+    return func
+
+
 def _build_crewai_tooling(
     athlete_id: str,
     workspace_root: Any,
@@ -1610,6 +1630,7 @@ def _build_crewai_tooling(
         return json.dumps(result, ensure_ascii=False)
 
     @tool_decorator("workspace_get_latest")
+    @_with_resolved_annotations
     def workspace_get_latest(artifact_type: str) -> str:
         """Load latest artifact JSON from athlete workspace.
 
@@ -1622,6 +1643,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_get_latest", {"artifact_type": artifact_type})
 
     @tool_decorator("workspace_get_version")
+    @_with_resolved_annotations
     def workspace_get_version(artifact_type: str, version_key: str) -> str:
         """Load a specific version of an artifact JSON from athlete workspace.
 
@@ -1632,6 +1654,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_get_version", {"artifact_type": artifact_type, "version_key": version_key})
 
     @tool_decorator("workspace_list_versions")
+    @_with_resolved_annotations
     def workspace_list_versions(artifact_type: str) -> str:
         """List version keys stored for an artifact type.
 
@@ -1641,6 +1664,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_list_versions", {"artifact_type": artifact_type})
 
     @tool_decorator("workspace_get_phase_slot_contract")
+    @_with_resolved_annotations
     def workspace_get_phase_slot_contract() -> str:
         """Load the code-owned deterministic season phase-slot contract bound to the current run.
 
@@ -1650,6 +1674,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_get_phase_slot_contract", {})
 
     @tool_decorator("workspace_get_season_phase_load_context")
+    @_with_resolved_annotations
     def workspace_get_season_phase_load_context() -> str:
         """Load the code-owned deterministic season phase-load context bound to the current run.
 
@@ -1660,6 +1685,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_get_season_phase_load_context", {})
 
     @tool_decorator("workspace_get_phase_execution_context")
+    @_with_resolved_annotations
     def workspace_get_phase_execution_context() -> str:
         """Load the code-owned deterministic phase execution context bound to the current run.
 
@@ -1669,6 +1695,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_get_phase_execution_context", {})
 
     @tool_decorator("workspace_get_week_calendar_context")
+    @_with_resolved_annotations
     def workspace_get_week_calendar_context() -> str:
         """Load the code-owned deterministic week calendar and availability context bound to the current run.
 
@@ -1678,6 +1705,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_get_week_calendar_context", {})
 
     @tool_decorator("workspace_resolve_season_phase")
+    @_with_resolved_annotations
     def workspace_resolve_season_phase(year: int, week: int) -> str:
         """Resolve the season plan phase covering a target ISO week based on SEASON_PLAN latest.
 
@@ -1688,6 +1716,7 @@ def _build_crewai_tooling(
         return _invoke("workspace_resolve_season_phase", {"year": year, "week": week})
 
     @tool_decorator("workspace_resolve_phase_range")
+    @_with_resolved_annotations
     def workspace_resolve_phase_range(year: int, week: int, phase_len: int = 4) -> str:
         """Resolve the phase ISO week range covering a target week using SEASON_PLAN phase alignment.
 
@@ -1701,6 +1730,7 @@ def _build_crewai_tooling(
         )
 
     @tool_decorator("workspace_find_best_phase_artefact")
+    @_with_resolved_annotations
     def workspace_find_best_phase_artefact(
         artifact_type: str, year: int, week: int, phase_len: int = 4
     ) -> str:
@@ -1721,6 +1751,7 @@ def _build_crewai_tooling(
         )
 
     @tool_decorator("workspace_get_phase_context")
+    @_with_resolved_annotations
     def workspace_get_phase_context(
         year: int, week: int, phase_len: int = 4, offset_phases: int = 0
     ) -> str:
@@ -1742,6 +1773,7 @@ def _build_crewai_tooling(
         )
 
     @tool_decorator("workspace_get_input")
+    @_with_resolved_annotations
     def workspace_get_input(
         input_type: Literal["athlete_profile", "availability", "logistics", "planning_events"] | None = None,
         artifact_type: Literal["athlete_profile", "availability", "logistics", "planning_events"] | None = None,
