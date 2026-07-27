@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "last_attempt_at": "2026-07-13T07:37:49.908486Z",
-  "last_success_at": "2026-07-13T07:37:49.908486Z",
-  "last_search_date": "2026-07-13",
+  "last_attempt_at": "2026-07-27T07:51:59.128749Z",
+  "last_success_at": "2026-07-27T07:51:59.128749Z",
+  "last_search_date": "2026-07-27",
   "stats": {
     "queries_run": 7,
-    "candidates_seen": 10,
-    "new_candidates_added": 10,
+    "candidates_seen": 11,
+    "new_candidates_added": 11,
     "duplicates_skipped": 0,
     "unresolved_skipped": 0,
     "activated_entries": 0,
@@ -16,7 +16,7 @@
     "legacy_backfilled": 1,
     "processed_entries": 5,
     "skipped_unchanged": 20,
-    "skipped_due_to_cap": 32,
+    "skipped_due_to_cap": 33,
     "rate_limited_skipped": 0
   }
 }
