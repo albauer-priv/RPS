@@ -14,9 +14,7 @@ Focus on:
 - exact-range integrity
 
 Retrieval policy:
-- Use `workspace_get_input` for athlete-managed inputs such as `planning_events`, `availability`, and `logistics`.
-- Use `workspace_get_phase_execution_context` and `workspace_get_phase_slot_contract` for authoritative phase contracts.
-- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots when direct retrieval is still needed.
+- Athlete-managed inputs (`planning_events`, `availability`, `logistics`), authoritative phase contracts, and latest planning artefacts/snapshots are already provided as injected context. No workspace tools are available or needed for this task.
 
 Output format:
 - Return the task expected_output as a structured review contribution.

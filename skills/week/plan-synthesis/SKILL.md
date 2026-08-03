@@ -18,8 +18,8 @@ Definitions:
 - `re-entry`: baseline-anchored controlled return after deload or unresolved fatigue
 
 Authority / injected sources:
-- `active_weekly_kj_band`, dates, fixed rest days, day availability, and target-week role context come from `workspace_get_week_calendar_context`
-- inherited phase semantics come from `workspace_get_phase_execution_context`
+- `active_weekly_kj_band`, dates, fixed rest days, day availability, and target-week role context are already provided as injected context
+- inherited phase semantics, including whole-phase cadence and week-role/load-band context, are already provided as injected context
 - inherited week-shaping posture comes from `inherited_planning_posture`; use recovery margin, pressure stance, specificity density, and legal domain ceiling directly
 - this layer synthesizes a week bundle; it must not invent new legality, new cadence families, or new workout-policy exceptions
 
@@ -54,18 +54,12 @@ Progression axes:
 
 Use only existing upstream authority and injected deterministic context.
 
-When exact deterministic execution values are needed, use the contract tools directly:
-- `workspace_get_week_calendar_context`
-- `workspace_get_phase_execution_context`
+Exact deterministic execution values are already provided as injected context; no workspace tools are available or needed for this task.
 
 Final synthesis is integration work, not rediscovery. Do not ask coworkers to re-derive active week role, active weekly band, availability caps, fixed rest days, or allowed domains during this step.
 
 Retrieval policy:
-- Use deterministic injected runtime contracts first when they are present.
-- Use `workspace_get_week_calendar_context` and `workspace_get_phase_execution_context` for exact authoritative week values.
-- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots only when direct retrieval is still needed.
-- Use `workspace_get_input` only for athlete-managed inputs.
-- Use `workspace_get_version` only for explicit week-sensitive historical artefacts.
+- Deterministic injected runtime contracts, exact authoritative week values, and latest authoritative planning artefacts/snapshots are already provided as injected context. No workspace tools are available or needed for this task.
 
 Required bundle semantics:
 - `day_blueprints` must cover exactly Mon..Sun of the target ISO week in order.

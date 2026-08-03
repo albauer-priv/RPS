@@ -4,7 +4,7 @@ import pytest
 
 from rps.orchestrator.plan_week import (
     SnapshotPromptBlocks,
-    _build_historical_context_line,
+    _build_prior_phase_artefacts_block,
     _load_common_latest_payloads,
     _load_exact_range_payload,
     _load_week_version_payload,
@@ -17,35 +17,6 @@ from rps.planning.contracts import PlanningContractIssue
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
-
-
-def test_build_historical_context_line_renders_expected_versions() -> None:
-    resolution = PlanningEvidenceResolution(
-        target_week=IsoWeek(2026, 12),
-        evidence_week=IsoWeek(2026, 11),
-        activities_actual_version="2026-11",
-        activities_trend_version="2026-11",
-        des_analysis_report_version="2026-11",
-    )
-
-    line = _build_historical_context_line(resolution)
-
-    assert "DES_ANALYSIS_REPORT version_key 2026-11" in line
-    assert "ACTIVITIES_ACTUAL version_key 2026-11" in line
-    assert "ACTIVITIES_TREND version_key 2026-11" in line
-    assert "never use workspace_get_latest" in line
-
-
-def test_build_historical_context_line_returns_empty_when_incomplete() -> None:
-    resolution = PlanningEvidenceResolution(
-        target_week=IsoWeek(2026, 12),
-        evidence_week=IsoWeek(2026, 11),
-        activities_actual_version="2026-11",
-        activities_trend_version="2026-11",
-        des_analysis_report_version=None,
-    )
-
-    assert _build_historical_context_line(resolution) == ""
 
 
 def test_snapshot_freshness_error_returns_none_when_no_blockers(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -207,6 +178,54 @@ def test_load_exact_range_payload_returns_none_when_no_matching_version() -> Non
     )
 
     assert payload is None
+
+
+def test_build_prior_phase_artefacts_block_returns_empty_for_first_time_plan() -> None:
+    store = SimpleNamespace(load_version=lambda *_args: {"data": {}})
+    index_query = SimpleNamespace(best_exact_range_version=lambda *_args: None)
+
+    block = _build_prior_phase_artefacts_block(
+        store,
+        index_query,
+        "test_athlete",
+        IsoWeekRange(start=IsoWeek(2026, 10), end=IsoWeek(2026, 13)),
+    )
+
+    assert block == ""
+
+
+def test_build_prior_phase_artefacts_block_renders_found_artefacts_for_replan() -> None:
+    versions = {
+        ArtifactType.PHASE_GUARDRAILS.value: "2026-10--2026-13",
+        ArtifactType.PHASE_STRUCTURE.value: "2026-10--2026-13",
+    }
+    payloads = {
+        (ArtifactType.PHASE_GUARDRAILS, "2026-10--2026-13"): {"data": {"weekly_kj_bands": {"W1": 500}}},
+        (ArtifactType.PHASE_STRUCTURE, "2026-10--2026-13"): {"data": {"allowed_intensity_domains": ["ENDURANCE"]}},
+    }
+
+    def _best_exact_range_version(artifact_type: str, _phase_range: IsoWeekRange) -> str | None:
+        return versions.get(artifact_type)
+
+    def _load_version(_athlete_id: str, artifact_type: ArtifactType, version_key: str) -> dict:
+        return payloads[(artifact_type, version_key)]
+
+    store = SimpleNamespace(load_version=_load_version)
+    index_query = SimpleNamespace(best_exact_range_version=_best_exact_range_version)
+
+    block = _build_prior_phase_artefacts_block(
+        store,
+        index_query,
+        "test_athlete",
+        IsoWeekRange(start=IsoWeek(2026, 10), end=IsoWeek(2026, 13)),
+    )
+
+    assert "**Resolved Prior Phase Artefacts**" in block
+    assert "already planned before (re-plan)" in block
+    assert "no workspace tools are available to reload them" in block
+    assert 'PHASE_GUARDRAILS.data: {"weekly_kj_bands": {"W1": 500}}' in block
+    assert 'PHASE_STRUCTURE.data: {"allowed_intensity_domains": ["ENDURANCE"]}' in block
+    assert "PHASE_PREVIEW.data:" not in block
 
 
 def test_resolve_previous_week_report_gate_wraps_tuple_result(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

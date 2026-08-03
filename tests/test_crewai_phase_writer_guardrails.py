@@ -469,7 +469,7 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
     assert "`upstream_intent.constraints` is a closed field for real inherited planning facts only" in tasks_text
     assert "Invalid examples: `Use the injected role-week banding exactly.`" in tasks_text
     assert "use that wording rather than paraphrasing it" in tasks_text
-    assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in tasks_text
+    assert "Deterministic phase contracts are already provided above as injected context; no workspace tools are available or needed for this task." in tasks_text
     assert "Exact week bands come from persisted Season phase authority and must be copied, not recomputed from S5." in tasks_text
     assert "canonical `quality_intent` is `Stabilization`" in tasks_text
     assert "must formally trace the exact stored `PHASE_GUARDRAILS`" in tasks_text
@@ -487,11 +487,11 @@ def test_phase_active_files_frontload_exact_legality_and_operational_none_rules(
     assert "Phase Finalizer Authority Freeze" in finalizer_prompt_text
     assert "`guardrails`, `structure`, and `preview` payloads are not part of this task's output" in finalizer_prompt_text
     assert "keep that wording instead of paraphrasing it" in finalizer_prompt_text
-    assert "do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`" in finalizer_prompt_text
+    assert "Deterministic phase contracts are already provided as injected context; no workspace tools are available or needed for this task." in finalizer_prompt_text
     assert "week-blueprint example" in finalizer_skill_text
     assert "`guardrails`, `structure`, and `preview` payloads are not part of this task's output" in finalizer_skill_text
     assert "keep that wording instead of paraphrasing it" in finalizer_skill_text
-    assert "use tools only as fallback for genuinely missing authority fields" in finalizer_skill_text
+    assert "deterministic phase contracts are already provided as injected context; no workspace tools are available or needed for this task" in finalizer_skill_text
 
 def test_phase_guardrails_writer_guardrails_pre_normalize_exact_phase_authority() -> None:
     candidate = {

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 from collections.abc import Callable, Iterable
@@ -36,6 +37,7 @@ from rps.orchestrator.planning_evidence import (
 from rps.orchestrator.resolved_context import (
     build_resolved_athlete_context_block,
     build_resolved_kpi_context_block,
+    build_resolved_report_evidence_block,
 )
 from rps.orchestrator.workout_export import run_workout_export
 from rps.planning.contracts import blocking_messages, validate_snapshot_freshness
@@ -768,24 +770,41 @@ def _load_exact_range_payload(
     return payload if isinstance(payload, dict) else None
 
 
-def _build_historical_context_line(evidence_resolution: PlanningEvidenceResolution | None) -> str:
-    """Render the standard previous-week evidence instruction block."""
+def _build_prior_phase_artefacts_block(
+    store: LocalArtifactStore,
+    index_query: IndexExactQuery,
+    athlete_id: str,
+    phase_range: IsoWeekRange,
+) -> str:
+    """Render any already-stored exact-range phase artefacts as reference context for a re-plan.
 
-    if evidence_resolution is None:
+    Omits entirely for a first-time phase plan (no prior artefacts for this exact range).
+    """
+    entries: list[tuple[str, JsonMap]] = []
+    for label, artifact_type in (
+        ("PHASE_GUARDRAILS", ArtifactType.PHASE_GUARDRAILS),
+        ("PHASE_STRUCTURE", ArtifactType.PHASE_STRUCTURE),
+        ("PHASE_PREVIEW", ArtifactType.PHASE_PREVIEW),
+    ):
+        payload = _load_exact_range_payload(store, index_query, athlete_id, artifact_type, phase_range)
+        if payload is not None:
+            entries.append((label, payload))
+    if not entries:
         return ""
-    actual_version = evidence_resolution.activities_actual_version
-    trend_version = evidence_resolution.activities_trend_version
-    report_version = evidence_resolution.des_analysis_report_version
-    if not (actual_version and trend_version and report_version):
-        return ""
-    return (
-        f"Load previous-week DES_ANALYSIS_REPORT version_key {report_version}, "
-        f"ACTIVITIES_ACTUAL version_key {actual_version}, and "
-        f"ACTIVITIES_TREND version_key {trend_version} for evidence week "
-        f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d} "
-        "with workspace_get_version before any STOP about missing evidence context; "
-        "never use workspace_get_latest for these week-sensitive evidence artefacts. "
-    )
+
+    lines = [
+        "**Resolved Prior Phase Artefacts**",
+        "This exact phase range was already planned before (re-plan). Use these stored artefacts as "
+        "reference context only; no workspace tools are available to reload them.",
+    ]
+    for label, payload in entries:
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
+        try:
+            rendered = json.dumps(data, ensure_ascii=False, sort_keys=True)
+        except TypeError:
+            rendered = str(data)
+        lines.append(f"{label}.data: {rendered}")
+    return "\n".join(lines) + "\n\n"
 
 
 def _snapshot_freshness_error(
@@ -1288,7 +1307,11 @@ def plan_week(
         )
         athlete_state_snapshot_block = snapshot_prompt_blocks.athlete_state_snapshot_block
         planning_context_snapshot_block = snapshot_prompt_blocks.planning_context_snapshot_block
-        historical_context_line = _build_historical_context_line(evidence_resolution)
+        # Previous-week DES_ANALYSIS_REPORT/ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is
+        # injected below via resolved_activity_block/resolved_report_evidence_block (built
+        # further down once evidence_resolution's versions are available) -- no tool-usage
+        # instruction line is needed here, unlike the week-planning call site below.
+        historical_context_line = ""
         spec = AGENTS["phase_architect"]
         phase_task_labels = ", ".join(task.value for task in phase_tasks)
         selected_structure_context = build_selected_scenario_structure_block(
@@ -1363,9 +1386,21 @@ def plan_week(
                 load_capacity_context=load_capacity_context.payload,
             )
         )
+        # Previous-week ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is already injected via
+        # planning_context_snapshot_block's "activity" prompt block (save_planning_context_snapshot
+        # below passes the same activities_actual_version/activities_trend_version) -- do not
+        # duplicate it here with a second build_resolved_activity_context_block call.
+        resolved_report_evidence_block = build_resolved_report_evidence_block(
+            store,
+            athlete_id,
+            des_analysis_report_version=evidence_resolution.des_analysis_report_version if evidence_resolution else None,
+        )
+        prior_phase_artefacts_block = _build_prior_phase_artefacts_block(
+            store, index_query, athlete_id, phase_range
+        )
         injected_block = render_context_blocks(
             [selected_structure_context, selected_scenario_contract, phase_slot_context, load_capacity_context]
-        ) + phase_execution_block
+        ) + phase_execution_block + resolved_report_evidence_block + prior_phase_artefacts_block
         message = (
             f"Running Phase-Architect Flow for phase range {phase_range_label} "
             f"covering tasks: {phase_task_labels}."
@@ -1393,8 +1428,9 @@ def plan_week(
                     f"Create phase artefacts {phase_task_labels} for phase range {phase_range_label} "
                     f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
                     "Use this phase range as the iso_week_range for the artefacts. "
-                    "Read season_plan first and use explicit week/range-scoped workspace tools for any "
-                    "week-sensitive or exact-range dependencies. "
+                    "Season plan, deterministic phase authority, previous-week evidence, and any prior "
+                    "artefacts for this exact range are already provided below as injected context; "
+                    "no workspace tools are available or needed for this task. "
                     f"{athlete_state_snapshot_block}"
                     f"{planning_context_snapshot_block}"
                     f"{historical_context_line}"
@@ -1576,7 +1612,11 @@ def plan_week(
             activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
             activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
         )
-        historical_context_line = _build_historical_context_line(evidence_resolution)
+        # Previous-week DES_ANALYSIS_REPORT/ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is already
+        # injected below via planning_context_snapshot_block's "activity"/"des_report" prompt
+        # blocks (save_planning_context_snapshot below passes the same versions) -- no tool-usage
+        # instruction line is needed here, matching the phase-architect call site above.
+        historical_context_line = ""
         athlete_state_snapshot = save_athlete_state_snapshot(
             store,
             athlete_id,
@@ -1679,6 +1719,25 @@ def plan_week(
             zone_model_payload=zone_model_payload or {},
             allowed_intensity_domains=load_capacity_context.payload.get("allowed_intensity_domains") or [],
         )
+        # Whole-phase execution context (cadence family, every week's role/band, deload intent) --
+        # the phase is already persisted in season_plan by the time weeks are planned, so
+        # phase_slot_context ({}) is unnecessary here; build_phase_execution_context falls back
+        # to phase_info.raw for cadence/week-role derivation the same way. This is not covered by
+        # week_calendar_block/planning_context_snapshot_block, which only carry the target week's
+        # slice of phase authority.
+        phase_execution_block = render_phase_execution_context_block(
+            build_phase_execution_context(
+                target_week=target,
+                phase_info=phase_info,
+                phase_range=phase_range,
+                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                phase_slot_context={},
+                availability_payload=availability_payload or {},
+                logistics_payload=logistics_payload or {},
+                planning_events_payload=planning_events_payload or {},
+                load_capacity_context=load_capacity_context.payload,
+            )
+        )
         week_calendar_context = build_week_calendar_context(
             target_week=target,
             phase_info=phase_info,
@@ -1697,7 +1756,11 @@ def plan_week(
             steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
             return PlanWeekResult(ok=False, steps=steps)
         week_calendar_block = render_week_calendar_context_block(week_calendar_context)
-        injected_block = render_context_blocks([load_capacity_context, workout_load_method_block]) + week_calendar_block
+        injected_block = (
+            render_context_blocks([load_capacity_context, workout_load_method_block])
+            + week_calendar_block
+            + phase_execution_block
+        )
         with guardrail_runtime_context(
             availability_payload=availability_payload or {},
             target_week=target,
@@ -1711,9 +1774,8 @@ def plan_week(
                 user_input=(
                     f"Create week_plan for ISO week {target_label} only (Mon-Sun of that week). "
                     "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
-                    "Read phase_guardrails and phase_structure from workspace. "
-                    f"For exact-range predecessor reads, use workspace_get_version with version_key {phase_range_label} "
-                    "for both PHASE_GUARDRAILS and PHASE_STRUCTURE; never use the single-week key for these range-scoped artefacts. "
+                    "PHASE_GUARDRAILS and PHASE_STRUCTURE for this exact phase range are already provided below "
+                    "as injected context; no workspace tools are available or needed for this task. "
                     f"{athlete_state_snapshot_block}"
                     f"{planning_context_snapshot_block}"
                     f"{historical_context_line}"

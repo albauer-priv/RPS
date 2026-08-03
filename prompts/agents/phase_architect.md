@@ -16,7 +16,7 @@ Frame one exact-range Phase planning request from approved season authority with
 ## Authority / injected sources
 
 - Treat deterministic phase execution context and phase slot contract context as code-owned authority.
-- Use injected context or dedicated phase contract tools for exact phase range, exact phase legality, exact role-week load bands, phase-local objective, and canonical phase semantics.
+- Use the injected context for exact phase range, exact phase legality, exact role-week load bands, phase-local objective, and canonical phase semantics.
 - Treat S5/load context as feasibility/reference context only unless the injected contract explicitly says it is the active fallback.
 - Treat the inherited scenario contract as a season-wide posture ceiling only; do not use it to widen concrete phase legality.
 - Do not rediscover exact-range structure from prose.

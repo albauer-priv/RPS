@@ -46,9 +46,8 @@ Out of scope:
 - `guardrails`, `structure`, and `preview` payloads are not part of this task's output. They are owned by `phase_guardrail_band_draft`, `phase_structure_draft`, and `phase_preview_draft` respectively, which complete earlier in the same crew, and are assembled deterministically from those tasks' own typed outputs after this synthesis is produced. Do not reproduce, paraphrase, or reference their shapes here.
 - when injected season/global wording exists, keep that wording instead of paraphrasing it.
 - Pass 2 must freeze exact legality, exact forbidden domains, exact load modalities, exact role-week load bands, and exact phase-local objective in the week blueprints and audits before review handoff.
-- If deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`.
-- Use injected authority directly and use tools only as fallback for genuinely missing authority fields.
-- Use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them.
+- Deterministic phase contracts are already provided as injected context; no workspace tools are available or needed for this task.
+- Use the injected `phase_allowed_intensity_domains` exactly.
 - Keep reload and re-entry semantically distinct.
 - Preserve Build-entry conservatism when shortened/base/re-entry context precedes the phase.
 - Do not let a threshold-shaped block survive when inherited phase or season authority suppresses `THRESHOLD`.

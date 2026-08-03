@@ -22,6 +22,14 @@ from rps.crewai_runtime.telemetry import emit_runtime_event
 from rps.planning.phase_authority import normalize_role_week_load_bands
 from rps.workspace.types import ArtifactType
 
+DIAGNOSTIC_TEXT_LIMIT = 50000
+"""Shared cap for diagnostic text fields (raw output, prompt, failure reason) written into
+`CREW_TASK_GUARDRAIL_FAILED` events. A live run showed 3 of 16 guardrail-failure raw outputs
+still hitting the previous 8000-char cap mid-JSON, leaving open whether the underlying LLM
+completion itself was truncated (a real, separate bug) or just our own capture -- this limit
+exists to close that diagnostic gap, not to bound realistic single-task output size.
+`events.jsonl` has no practical size concern for this."""
+
 
 def _coerce_payload(result: Any) -> Any:
     """Extract the richest payload view from a CrewAI TaskOutput-like object."""
@@ -407,7 +415,7 @@ def _compose_guardrail_failure_reason(base_reason: str, diagnostics_parts: list[
     return f"{base_reason[:available]}{suffix}"
 
 
-def _raw_output_snippet(result: Any, *, limit: int = 8000) -> str:
+def _raw_output_snippet(result: Any, *, limit: int = DIAGNOSTIC_TEXT_LIMIT) -> str:
     """Best-effort raw/json text snippet from a CrewAI TaskOutput-like object, for diagnostics."""
 
     raw = getattr(result, "raw", None)
@@ -454,15 +462,15 @@ def _with_guardrail_telemetry(
                     component=context.get("component") or f"task:{task_name}",
                     task=task_name,
                     guardrail=guardrail_name,
-                    reason=f"pre_guardrail_normalization_failed: {exc}"[:8000],
+                    reason=f"pre_guardrail_normalization_failed: {exc}"[:DIAGNOSTIC_TEXT_LIMIT],
                     raw_output_snippet=_raw_output_snippet(result),
-                    prompt_snippet=(task_description or "")[:8000],
+                    prompt_snippet=(task_description or "")[:DIAGNOSTIC_TEXT_LIMIT],
                 )
                 return (False, f"pre_guardrail_normalization_failed: {exc}")
         ok, payload = guardrail_fn(normalized_result)
         if not ok:
             context = _GUARDRAIL_CONTEXT.get({})
-            reason = str(payload)[:8000]
+            reason = str(payload)[:DIAGNOSTIC_TEXT_LIMIT]
             artifact_type = str(context.get("artifact_type") or "").strip().upper()
             if (
                 artifact_type == ArtifactType.PHASE_STRUCTURE.value
@@ -478,7 +486,7 @@ def _with_guardrail_telemetry(
                     if diagnostics:
                         diagnostics_parts.append(diagnostics)
                 if diagnostics_parts:
-                    reason = _compose_guardrail_failure_reason(reason, diagnostics_parts, limit=8000)
+                    reason = _compose_guardrail_failure_reason(reason, diagnostics_parts, limit=DIAGNOSTIC_TEXT_LIMIT)
             # raw_output_snippet/prompt_snippet are diagnostic-only fields (not surfaced in the
             # compact rps.log line, since _log_runtime_event only extracts a fixed key set) --
             # they land in the full JSON event (runs/<run_id>/events.jsonl) so a guardrail
@@ -491,7 +499,7 @@ def _with_guardrail_telemetry(
                 event_type="CREW_TASK_GUARDRAIL_FAILED",
                 component=context.get("component") or f"task:{task_name}",
                 raw_output_snippet=_raw_output_snippet(result),
-                prompt_snippet=(task_description or "")[:8000],
+                prompt_snippet=(task_description or "")[:DIAGNOSTIC_TEXT_LIMIT],
                 task=task_name,
                 guardrail=guardrail_name,
                 reason=reason,

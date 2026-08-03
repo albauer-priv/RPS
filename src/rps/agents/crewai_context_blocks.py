@@ -315,12 +315,3 @@ def _phase_bundle_finalize_authority_freeze_block() -> str:
     if not any(payload.values()):
         return ""
     return _render_json_block("Phase Finalizer Authority Freeze", payload)
-
-
-def _phase_bundle_finalize_has_bound_contracts() -> bool:
-    """Return whether the finalizer already has both deterministic contracts injected."""
-
-    context = current_guardrail_runtime_context()
-    return bool(_as_map(context.get("phase_execution_context"))) and bool(
-        _as_map(context.get("phase_slot_context"))
-    )

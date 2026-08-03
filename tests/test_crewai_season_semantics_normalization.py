@@ -583,23 +583,22 @@ def test_draft_bundle_models_accept_legacy_semantic_hints_before_normalization()
     assert season_model.phase_blueprints[0].phase_intent == "base_preparation"
     assert phase_model.week_blueprints[0].week_role == "LOAD_2"
 
-def test_season_plan_finalize_declares_deterministic_contract_tools() -> None:
+def test_season_plan_finalize_has_no_tools_since_contracts_are_pre_injected() -> None:
+    # Deterministic phase-slot/phase-load context reaches season_plan_finalize as an
+    # injected text block (see season_flow.py's create_season_plan), the same source the
+    # now-removed workspace_get_phase_slot_contract/workspace_get_season_phase_load_context
+    # tools would have read from -- the tools could never surface anything the injection
+    # didn't already have.
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
 
-    assert blueprints["season_plan_finalize"].config["tools"] == [
-        "workspace_get_phase_slot_contract",
-        "workspace_get_season_phase_load_context",
-    ]
+    assert blueprints["season_plan_finalize"].config.get("tools") is None
 
-def test_season_phase_blueprint_draft_declares_deterministic_contract_tools() -> None:
+def test_season_phase_blueprint_draft_has_no_tools_since_contracts_are_pre_injected() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
 
-    assert blueprints["season_phase_blueprint_draft"].config["tools"] == [
-        "workspace_get_phase_slot_contract",
-        "workspace_get_season_phase_load_context",
-    ]
+    assert blueprints["season_phase_blueprint_draft"].config.get("tools") is None
 
 def test_contract_context_blocks_for_season_finalize_include_bound_contracts() -> None:
     with guardrail_runtime_context(

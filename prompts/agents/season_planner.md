@@ -15,7 +15,7 @@ Frame one Season-planning request for the underlying specialist and manager path
 ## Authority / injected sources
 
 - Treat deterministic season structure and deterministic season phase load context as code-owned authority.
-- Use injected context or dedicated contract tools for numeric, slot, cadence, and feasibility facts.
+- Use the injected context for numeric, slot, cadence, and feasibility facts.
 - Do not re-derive season math, slot geometry, or phase-load semantics from prose.
 
 ## Scope and non-scope

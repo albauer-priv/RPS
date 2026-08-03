@@ -18,17 +18,14 @@ Definitions:
 - `week_role`: inherited deterministic week-role labels for the exact phase range
 
 Authority / injected sources:
-- exact-range week roles and phase execution authority come from `workspace_get_phase_execution_context`
-- exact phase-slot contract context comes from `workspace_get_phase_slot_contract`
+- exact-range week roles, phase execution authority, and exact phase-slot contract context are already provided as injected context; no workspace tools are available or needed for this task
 - this layer reviews exact-range overload calculations; it does not author new cadence math
 
 Method:
 1. Treat guardrail, governance, and exact-range violations as approval gates.
 2. Keep replan scope as small as possible.
 3. Preserve approved upstream decisions and unaffected phase sections.
-4. Use deterministic phase contract tools directly when exact contract values are needed:
-   - `workspace_get_phase_execution_context`
-   - `workspace_get_phase_slot_contract`
+4. Use the injected deterministic phase contract values directly when exact contract values are needed.
 5. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive phase-range, week-role, or S5 contract authority during this step.
 6. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, semantically coherent bundle.
 7. Formal review confirmation checklist:

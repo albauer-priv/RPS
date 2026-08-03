@@ -405,10 +405,7 @@ Positive execution pattern:
 - Produce concise workout-authoring guidance that helps the Week Plan writer emit valid workout text.
 
 Retrieval policy:
-- Prefer injected day-role, load-intent, and deterministic week execution context first.
-- Use `workspace_get_week_calendar_context` and `workspace_get_phase_execution_context` for exact authoritative week values when direct retrieval is still needed.
-- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots.
-- Use `workspace_get_input` only for athlete-managed inputs.
+- Injected day-role, load-intent, deterministic week execution context, athlete-managed inputs, and latest authoritative planning artefacts/snapshots are already provided as injected context. No workspace tools are available or needed for this task.
 
 Output format:
 - Return the task expected_output with workout construction decisions, syntax checks, and export-safety findings separated clearly.

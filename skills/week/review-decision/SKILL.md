@@ -15,9 +15,7 @@ Definitions:
 - `re-entry`: baseline-anchored controlled return after deload or unresolved fatigue
 
 Authority / injected sources:
-- exact target-week authority comes from:
-  - `workspace_get_week_calendar_context`
-  - `workspace_get_phase_execution_context`
+- exact target-week authority, including whole-phase cadence and week-role/load-band context, is already provided as injected context
 - this layer makes an approval decision only; it does not invent new week math or workout legality
 
 Decision order:
@@ -26,9 +24,7 @@ Decision order:
 2. Preserve must-keep constraints and identify smallest acceptable replan scope.
 3. Return either `approved`, `replan_required`, or `rejected`.
 4. Replan instructions must name target specialists, issues to fix, and what must stay unchanged.
-5. Use deterministic week contract tools directly when exact contract values are needed:
-   - `workspace_get_week_calendar_context`
-   - `workspace_get_phase_execution_context`
+5. Use the injected deterministic week contract values directly when exact contract values are needed; no workspace tools are available or needed for this task.
 6. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive active week role, active band, availability caps, or recovery-day authority during this step.
 7. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, export-safe bundle.
 8. Formal review confirmation checklist:

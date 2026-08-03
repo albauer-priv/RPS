@@ -229,13 +229,7 @@ tasks:
     agent: season_context_specialist
     kind: internal_reasoning
     output: planning_draft
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_version
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
-    description: "Summarize season planning context, selected scenario state, and upstream inputs. Tool usage: use `workspace_get_input` for athlete-managed inputs (`planning_events`, `athlete_profile`, `availability`, `logistics`); use `workspace_get_latest` for latest authoritative planning artefacts and snapshots; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
+    description: "Summarize season planning context, selected scenario state, and upstream inputs. All athlete-managed inputs (`planning_events`, `athlete_profile`, `availability`, `logistics`), latest authoritative planning artefacts/snapshots, and deterministic phase-slot/phase-load context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured planning draft for season context.
   season_scenario_interpretation:
     agent: scenario_interpreter
@@ -247,52 +241,34 @@ tasks:
     agent: event_priority_specialist
     kind: internal_reasoning
     output: season_event_anchor
-    description: "Define A/B/C priority handling and event anchors for season planning. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `ATHLETE_STATE_SNAPSHOT`; use `workspace_get_version` only when a week-sensitive historical artefact is explicitly required."
+    description: "Define A/B/C priority handling and event anchors for season planning. `planning_events`, `SEASON_SCENARIOS`, `SEASON_SCENARIO_SELECTION`, and `ATHLETE_STATE_SNAPSHOT` are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured event-priority draft.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_version
   season_peak_window_review:
     agent: peak_window_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Define peak window and taper-window logic for the season plan. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for selected-scenario and snapshot context; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
+    description: "Define peak window and taper-window logic for the season plan. `planning_events` and selected-scenario/snapshot context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured planning draft for peak-window logic.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_version
   season_macrocycle_draft:
     agent: macrocycle_architect
     kind: internal_reasoning
     output: season_macrocycle_draft
     context:
       - season_evidence_alignment
-    description: "Reverse-plan macrocycle structure from one or more priority A-event anchors. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then macrocycle synthesis. Consume the `season_evidence_alignment` output actively as advisory shaping input for continuity, conservatism, and overreach prevention; it must shape the first real macrocycle draft but must not rewrite authority. A season may contain multiple target macrocycles when spacing supports recovery, re-entry, build, and taper; tightly spaced A-events must be modeled as one A-event peak cluster instead of separate overlapping macrocycles. Tool usage: use `workspace_get_input` for `planning_events`; use `workspace_get_latest` for selected-scenario and snapshot context; use `workspace_get_phase_slot_contract` for deterministic phase-slot structure. Return the structured macrocycle draft directly; do not assume a workspace file-write step."
+    description: "Reverse-plan macrocycle structure from one or more priority A-event anchors. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then macrocycle synthesis. Consume the `season_evidence_alignment` output actively as advisory shaping input for continuity, conservatism, and overreach prevention; it must shape the first real macrocycle draft but must not rewrite authority. A season may contain multiple target macrocycles when spacing supports recovery, re-entry, build, and taper; tightly spaced A-events must be modeled as one A-event peak cluster instead of separate overlapping macrocycles. `planning_events`, selected-scenario/snapshot context, and deterministic phase-slot structure are already provided above as injected context -- no workspace tools are available or needed for this task. Return the structured macrocycle draft directly; do not assume a workspace file-write step."
     expected_output: A structured macrocycle draft with reverse-planning notes, A-event relationship classification, and explicit peak-cluster vs separate-macrocycle decisions.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_phase_slot_contract
   season_constraint_review:
     agent: season_constraint_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: "Summarize binding athlete, availability, logistics, and event constraints for season planning. Include fixed rest days, feasibility bounds, travel/work limitations, and binding event-timing constraints. Keep the result focused on hard and soft constraints only; do not turn KPI semantics, historical continuity, or progression philosophy into primary findings except to note that they cannot override a binding constraint. Treat planning events as the only source of A/B/C event truth. Report real event facts and real event implications only. When no event-specific constraint exists for a phase or window, say nothing about that event category rather than inventing placeholder findings such as 'No target-week event' or 'No event-driven load exception'. Tool usage: use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots."
+    description: "Summarize binding athlete, availability, logistics, and event constraints for season planning. Include fixed rest days, feasibility bounds, travel/work limitations, and binding event-timing constraints. Keep the result focused on hard and soft constraints only; do not turn KPI semantics, historical continuity, or progression philosophy into primary findings except to note that they cannot override a binding constraint. Treat planning events as the only source of A/B/C event truth. Report real event facts and real event implications only. When no event-specific constraint exists for a phase or window, say nothing about that event category rather than inventing placeholder findings such as 'No target-week event' or 'No event-driven load exception'. Athlete-managed inputs and latest authoritative planning artefacts/snapshots are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured constraint audit for season planning.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
   season_historical_context_review:
     agent: season_historical_context_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: "Summarize historical load, recovery, and re-entry implications for the current season run. Focus on recent tolerance, disruption risk, and continuity evidence only. Do not restate fixed rest days, phase corridors, event taper handling, or KPI pacing semantics as primary findings unless needed only to explain the historical evidence boundary. Tool usage: use `workspace_get_version` for week-sensitive `ACTIVITIES_ACTUAL` and `ACTIVITIES_TREND`; use `workspace_get_latest` only for non-week-sensitive supporting artefacts."
+    description: "Summarize historical load, recovery, and re-entry implications for the current season run. Focus on recent tolerance, disruption risk, and continuity evidence only. Do not restate fixed rest days, phase corridors, event taper handling, or KPI pacing semantics as primary findings unless needed only to explain the historical evidence boundary. Previous-week `ACTIVITIES_ACTUAL`/`ACTIVITIES_TREND` and `HISTORICAL_BASELINE` are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured historical-context review.
-    tools:
-      - workspace_get_latest
-      - workspace_get_version
   season_evidence_alignment:
     agent: season_evidence_alignment_specialist
     kind: internal_reasoning
@@ -307,37 +283,24 @@ tasks:
     agent: season_kpi_guidance_specialist
     kind: internal_reasoning
     output: constraint_audit
-    description: "Summarize KPI-profile, moving-time-rate, and pacing-band guidance for season planning. Focus on KPI semantics only: selected KPI bands, moving-time vs elapsed-time interpretation, pacing guardrails, and explicit limits of KPI authority. Do not restate fixed rest days, availability bounds, phase corridors, load caps, event-anchor/taper handling, or historical continuity as primary findings unless needed only to explain why KPI guidance cannot override them. Keep the output centered on pacing/rate-band interpretation rather than general season conservatism. Tool usage: use `workspace_get_latest` for latest KPI and snapshot context; use `workspace_get_input` only for athlete-managed inputs when explicitly needed."
+    description: "Summarize KPI-profile, moving-time-rate, and pacing-band guidance for season planning. Focus on KPI semantics only: selected KPI bands, moving-time vs elapsed-time interpretation, pacing guardrails, and explicit limits of KPI authority. Do not restate fixed rest days, availability bounds, phase corridors, load caps, event-anchor/taper handling, or historical continuity as primary findings unless needed only to explain why KPI guidance cannot override them. Keep the output centered on pacing/rate-band interpretation rather than general season conservatism. Latest KPI and snapshot context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured KPI-guidance review.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
   season_load_corridor_draft:
     agent: season_load_corridor_specialist
     kind: internal_reasoning
     output: load_governance_audit
     context:
       - season_evidence_alignment
-    description: "Draft season corridor logic and load realism checks. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then season corridor synthesis. Consume the `season_evidence_alignment` output actively as advisory shaping input for conservatism, tolerance, and prohibited-overreach interpretation; it must shape the first real corridor draft but must not rewrite authority. Apply the full progressive overload policy, not just one cadence fragment: cadence-family selection, ramp class choice, deload magnitude, mini-reset semantics, reload vs re-entry distinction, fallback behavior, and conservative next-baseline logic must all be explicit. Preserve season-level intensity authority from the selected scenario; do not infer season semantics backward from a narrower Phase Guardrails example. Base/Re-entry into the first Build week must be readiness-gated and large jumps must be explained rather than accepted silently. Objective mismatch is input-owned: surface it only as warning/revisit context and never rewrite it here. Tool usage: prefer deterministic injected load context and `workspace_get_latest` snapshot/planning artefacts; use `workspace_get_version` only for explicit historical load references."
+    description: "Draft season corridor logic and load realism checks. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then season corridor synthesis. Consume the `season_evidence_alignment` output actively as advisory shaping input for conservatism, tolerance, and prohibited-overreach interpretation; it must shape the first real corridor draft but must not rewrite authority. Apply the full progressive overload policy, not just one cadence fragment: cadence-family selection, ramp class choice, deload magnitude, mini-reset semantics, reload vs re-entry distinction, fallback behavior, and conservative next-baseline logic must all be explicit. Preserve season-level intensity authority from the selected scenario; do not infer season semantics backward from a narrower Phase Guardrails example. Base/Re-entry into the first Build week must be readiness-gated and large jumps must be explained rather than accepted silently. Objective mismatch is input-owned: surface it only as warning/revisit context and never rewrite it here. Deterministic load context and snapshot/planning artefacts are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured season load-corridor draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_version
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
   season_progression_review:
     agent: season_progression_specialist
     kind: internal_reasoning
     output: load_governance_audit
     context:
       - season_evidence_alignment
-    description: "Draft season progression, cadence, overload, fallback, and phase-level domain-shaping guidance. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then season progression synthesis. Consume the `season_evidence_alignment` output actively as advisory shaping input for cadence ambition, fallback sensitivity, and overreach prevention; it must shape the first real progression draft but must not rewrite authority. Carry the full progressive overload policy forward: cadence selection criteria (`2:1`, `3:1`, `2:1:1`), ramp classes, deload and re-entry targets, repeated week-3 collapse fallback, `2:1` stall / unnecessary-deload interpretation, conservative baseline updates, and build-entry readiness gates must all be explicit. Durability-first means `ENDURANCE` dominant, not `ENDURANCE only`; preserve scenario-permitted quality where later Base/Build/rehearsal semantics justify it. Keep objective mismatch warning-only and input-owned. Tool usage: prefer deterministic injected cadence/load context; use `workspace_get_latest` for latest planning artefacts and `workspace_get_version` only for explicit historical week-sensitive evidence."
+    description: "Draft season progression, cadence, overload, fallback, and phase-level domain-shaping guidance. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then season progression synthesis. Consume the `season_evidence_alignment` output actively as advisory shaping input for cadence ambition, fallback sensitivity, and overreach prevention; it must shape the first real progression draft but must not rewrite authority. Carry the full progressive overload policy forward: cadence selection criteria (`2:1`, `3:1`, `2:1:1`), ramp classes, deload and re-entry targets, repeated week-3 collapse fallback, `2:1` stall / unnecessary-deload interpretation, conservative baseline updates, and build-entry readiness gates must all be explicit. Durability-first means `ENDURANCE` dominant, not `ENDURANCE only`; preserve scenario-permitted quality where later Base/Build/rehearsal semantics justify it. Keep objective mismatch warning-only and input-owned. Deterministic cadence/load context and latest planning artefacts are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured season progression draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_version
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
   season_phase_blueprint_draft:
     agent: season_phase_blueprint_specialist
     kind: internal_reasoning
@@ -351,16 +314,10 @@ tasks:
       - season_progression_review
     description: "Draft the structural Season `phase_blueprints` before final bundle consolidation. Return exactly one structured object with top-level `phase_blueprints` only; do not emit a full Season bundle and do not wrap the output in prose or markdown fences. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then phase-blueprint synthesis. Consume the `season_evidence_alignment` output actively as advisory shaping input for continuity, conservatism, and overreach prevention; it must shape the first real phase-blueprint draft but must not rewrite authority. Use deterministic phase-slot and season phase-load context as binding authority for phase ids, week ranges, cadence roles, load corridors, availability caps, role-week load bands, and legality-constrained semantic fields. `phase_blueprints` are owned here first; `season_plan_finalize` no longer reproduces them — repo code assembles them deterministically from this task's typed output after the finalizer synthesis is produced. If a phase forbids an intensity domain, do not describe that domain positively anywhere in the phase narrative, metabolic focus, typical focus, expected adaptations, non-negotiables, or phase-justification intensity distribution; if `THRESHOLD` is not legal, do not describe threshold as focus, support, maintenance, or secondary emphasis, and if `VO2MAX` is not legal, do not describe VO2MAX as focus, support, maintenance, or secondary emphasis; reframe phase language onto the legal phase intent and the actually allowed domains instead."
     expected_output: A structured object with top-level `phase_blueprints` containing canonical Season phase draft blueprints only.
-    tools:
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
   season_plan_finalize:
     agent: season_plan_manager
     kind: internal_reasoning
     output: season_plan_manager_synthesis
-    tools:
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
     context:
       - season_context_read
       - season_scenario_interpretation
@@ -380,53 +337,36 @@ tasks:
     agent: season_governance_auditor
     kind: internal_reasoning
     output: load_governance_audit
-    description: "Review the injected candidate season bundle for governance realism and progression compliance. Tool usage: prefer prior specialist context, the injected candidate bundle, and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
+    description: "Review the injected candidate season bundle for governance realism and progression compliance. Prior specialist context, the injected candidate bundle, and deterministic contracts are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured load-governance review.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
   season_constraints_review:
     agent: season_constraints_reviewer
     kind: internal_reasoning
     output: constraint_audit
-    description: "Review the injected candidate season bundle for athlete, event, and logistics constraint compliance. Tool usage: prefer prior specialist context and the injected candidate bundle; use `workspace_get_input` for athlete-managed inputs and `workspace_get_latest` for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
+    description: "Review the injected candidate season bundle for athlete, event, and logistics constraint compliance. Prior specialist context, the injected candidate bundle, athlete-managed inputs, and latest authoritative planning artefacts/snapshots are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured season constraint review.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
   season_plan_audit:
     agent: season_plan_auditor
     kind: internal_reasoning
     output: season_plan_audit
-    description: "Audit the injected candidate season bundle for macrocycle and authority coherence. Block any full-season collapse to `ENDURANCE only` when deterministic selected-scenario authority is broader, while allowing individual phases to stay narrower. Tool usage: prefer prior specialist context, the injected candidate bundle, and deterministic contracts; use `workspace_get_latest` only for latest authoritative planning artefacts or snapshots when needed, not for any synthetic `candidate_season_bundle` lookup."
+    description: "Audit the injected candidate season bundle for macrocycle and authority coherence. Block any full-season collapse to `ENDURANCE only` when deterministic selected-scenario authority is broader, while allowing individual phases to stay narrower. Prior specialist context, the injected candidate bundle, and deterministic contracts are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured season-plan audit with warnings and blocking issues.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
   season_contract_review:
     agent: season_plan_auditor
     kind: internal_reasoning
     output: planning_draft
-    tools:
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
-    description: Review the injected candidate season bundle and writer handoff against deterministic selected-scenario, phase-slot, phase-load, season-domain-authority, and snapshot contracts. Do not retrieve or expect a synthetic `candidate_season_bundle` workspace artefact.
+    description: Review the injected candidate season bundle and writer handoff against deterministic selected-scenario, phase-slot, phase-load, season-domain-authority, and snapshot contracts, all already provided above as injected context. No workspace tools are available or needed for this task.
     expected_output: A structured contract-review draft that treats code-owned contract mismatches as blocking replan reasons.
   season_review:
     agent: season_review_manager
     kind: internal_reasoning
     output: season_review_decision
-    tools:
-      - workspace_get_phase_slot_contract
-      - workspace_get_season_phase_load_context
     context:
       - season_governance_review
       - season_constraints_review
       - season_plan_audit
       - season_contract_review
-    description: "Integrate season review outputs and decide approve, reject, or bounded replan against the injected candidate season bundle. Review is a policy gate, not a second planner. Use a short formal review confirmation checklist only: contract-clean or not, writer-ready or not, Pass 1 return vs Pass 2 return classification if not clean, and bounded replan instructions. Check cadence-family coherence, ramp plausibility, deload / mini-reset / reload / re-entry semantics, fallback correctness (`2:1`, `3:1`, `2:1:1`), conservative baseline handling, Build-entry readiness gating, taper semantics, and generic intent/domain coherence. Objective mismatch remains warning-only and input-owned. Default to approval when finalize already satisfied bundle and contract readiness. Use Pass 1 return when structure, authority, or macrocycle framing is wrong; use Pass 2 return when structure is intact but rationale or semantics are incomplete. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_season_bundle` workspace artefact."
+    description: "Integrate season review outputs and decide approve, reject, or bounded replan against the injected candidate season bundle. Review is a policy gate, not a second planner. Use a short formal review confirmation checklist only: contract-clean or not, writer-ready or not, Pass 1 return vs Pass 2 return classification if not clean, and bounded replan instructions. Check cadence-family coherence, ramp plausibility, deload / mini-reset / reload / re-entry semantics, fallback correctness (`2:1`, `3:1`, `2:1:1`), conservative baseline handling, Build-entry readiness gating, taper semantics, and generic intent/domain coherence. Objective mismatch remains warning-only and input-owned. Default to approval when finalize already satisfied bundle and contract readiness. Use Pass 1 return when structure, authority, or macrocycle framing is wrong; use Pass 2 return when structure is intact but rationale or semantics are incomplete. Deterministic contracts and prior specialist review context are already provided above as injected context; no workspace tools are available or needed for this task, and there is no synthetic `candidate_season_bundle` workspace artefact to look up."
     expected_output: A structured season review decision.
   season_plan:
     agent: season_artifact_writer
@@ -445,14 +385,7 @@ tasks:
     agent: phase_context_specialist
     kind: internal_reasoning
     output: planning_draft
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_version
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
-    description: "Summarize exact phase-range context and upstream authority. Tool usage: use `workspace_get_input` for athlete-managed inputs; use `workspace_get_phase_context`, `workspace_get_phase_execution_context`, and `workspace_get_phase_slot_contract` for authoritative phase contracts; use `workspace_get_latest` only for latest supporting artefacts."
+    description: "Summarize exact phase-range context and upstream authority. Athlete-managed inputs, authoritative phase contracts, and any prior artefacts for this exact range (on a re-plan) are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase context draft.
   phase_evidence_alignment:
     agent: phase_evidence_alignment_specialist
@@ -468,91 +401,52 @@ tasks:
     output: phase_guardrails_payload
     context:
       - phase_evidence_alignment
-    description: "Draft weekly band and corridor content for the exact phase range. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then phase guardrail synthesis. Consume the `phase_evidence_alignment` output actively as advisory shaping input for recovery caution, continuity, and overreach prevention; it must shape the first real guardrail-band draft but must not rewrite authority. Operationalize inherited season overload policy rather than merely naming it: build, deload, mini-reset, reload, and re-entry semantics must be visible in the phase guardrails; reload vs re-entry must stay distinct; and no week-role/load-shape may drift away from the inherited cadence family. Exact week bands come from persisted Season phase authority and must be copied, not recomputed from S5. Keep `body_metadata.phase_type`, `body_metadata.phase_intent`, `body_metadata.build_subtype`, and `body_metadata.phase_taxonomy_version` explicit and align domain narrowing with inherited canonical phase semantics. Treat the inherited scenario contract as season posture ceiling only, not as direct authorization for exact phase legality. For `BASE / shortened_re_entry`, canonical `quality_intent` is `Stabilization`. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft weekly band and corridor content for the exact phase range. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then phase guardrail synthesis. Consume the `phase_evidence_alignment` output actively as advisory shaping input for recovery caution, continuity, and overreach prevention; it must shape the first real guardrail-band draft but must not rewrite authority. Operationalize inherited season overload policy rather than merely naming it: build, deload, mini-reset, reload, and re-entry semantics must be visible in the phase guardrails; reload vs re-entry must stay distinct; and no week-role/load-shape may drift away from the inherited cadence family. Exact week bands come from persisted Season phase authority and must be copied, not recomputed from S5. Keep `body_metadata.phase_type`, `body_metadata.phase_intent`, `body_metadata.build_subtype`, and `body_metadata.phase_taxonomy_version` explicit and align domain narrowing with inherited canonical phase semantics. Treat the inherited scenario contract as season posture ceiling only, not as direct authorization for exact phase legality. For `BASE / shortened_re_entry`, canonical `quality_intent` is `Stabilization`. Deterministic phase context and any prior artefacts for this exact range are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase-guardrails payload draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_execution_rules_draft:
     agent: phase_execution_rules_specialist
     kind: internal_reasoning
     output: phase_guardrails_payload
-    description: "Draft allowed/forbidden semantics and execution non-negotiables for the exact phase range. Exact legality comes from the persisted Season phase authority; do not widen it from scenario-level eligibility. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft allowed/forbidden semantics and execution non-negotiables for the exact phase range. Exact legality comes from the persisted Season phase authority; do not widen it from scenario-level eligibility. Deterministic phase context is already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase execution-rules draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_structure_draft:
     agent: phase_structure_specialist
     kind: internal_reasoning
     output: phase_structure_payload
     context:
       - phase_evidence_alignment
-    description: "Draft phase structure and week-skeleton logic for the exact phase range. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then phase structure synthesis. Consume the `phase_evidence_alignment` output actively as advisory shaping input for continuity, recovery caution, and specificity conservatism; it must shape the first real structure draft but must not rewrite authority. Keep `upstream_intent.phase_type`, `upstream_intent.phase_intent`, `upstream_intent.build_subtype`, and `upstream_intent.phase_taxonomy_version` explicit and let inherited canonical phase semantics shape week-role emphasis, specificity, and recovery logic. `upstream_intent.constraints` is a closed field for real inherited planning facts only: availability/logistics constraints, risk/recovery constraints, event-window anchors, and genuine external planning constraints. Do not serialize runtime/process rules there. When injected season/global wording exists, use that wording rather than paraphrasing it. Valid examples: `Fixed rest days are Monday and Friday.`, `Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.`, `2026-15 B Brevet 200 km Toelzer-Land-Runde`. Invalid examples: `Use the injected role-week banding exactly.`, `Do not widen legality from scenario eligibility.`, `Operational NONE stays in preview/non-training-day semantics only.` Exact-authority copy rules are mandatory: `structural_phase_elements.allowed_intensity_domains` = exact inherited phase legality only; do not add `NONE`; `structural_phase_elements.allowed_load_modalities` = exact inherited modalities only; `execution_principles.load_intensity_handling.forbidden_intensity_domains` = exact inherited forbidden domains; `load_ranges.weekly_kj_bands` = exact copied `PHASE_GUARDRAILS` bands; `load_ranges.source` = exact stored `phase_guardrails_<version>.json`. Shared Preview/Week skeleton semantics must stay inside the exact phase legality and exact role-week load bands supplied by injected authority. Canonical example fragment: `allowed_intensity_domains: [\"RECOVERY\",\"ENDURANCE\",\"TEMPO\",\"SWEET_SPOT\"]`, `allowed_load_modalities: [\"NONE\"]`, `forbidden_intensity_domains: [\"THRESHOLD\",\"VO2MAX\"]`, `load_ranges.source: \"phase_guardrails_<version>.json\"`. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft phase structure and week-skeleton logic for the exact phase range. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then phase structure synthesis. Consume the `phase_evidence_alignment` output actively as advisory shaping input for continuity, recovery caution, and specificity conservatism; it must shape the first real structure draft but must not rewrite authority. Keep `upstream_intent.phase_type`, `upstream_intent.phase_intent`, `upstream_intent.build_subtype`, and `upstream_intent.phase_taxonomy_version` explicit and let inherited canonical phase semantics shape week-role emphasis, specificity, and recovery logic. `upstream_intent.constraints` is a closed field for real inherited planning facts only: availability/logistics constraints, risk/recovery constraints, event-window anchors, and genuine external planning constraints. Do not serialize runtime/process rules there. When injected season/global wording exists, use that wording rather than paraphrasing it. Valid examples: `Fixed rest days are Monday and Friday.`, `Weekday training must fit compact Tue-Thu windows, with longer work shifting to the weekend.`, `2026-15 B Brevet 200 km Toelzer-Land-Runde`. Invalid examples: `Use the injected role-week banding exactly.`, `Do not widen legality from scenario eligibility.`, `Operational NONE stays in preview/non-training-day semantics only.` Exact-authority copy rules are mandatory: `structural_phase_elements.allowed_intensity_domains` = exact inherited phase legality only; do not add `NONE`; `structural_phase_elements.allowed_load_modalities` = exact inherited modalities only; `execution_principles.load_intensity_handling.forbidden_intensity_domains` = exact inherited forbidden domains; `load_ranges.weekly_kj_bands` = exact copied `PHASE_GUARDRAILS` bands; `load_ranges.source` = exact stored `phase_guardrails_<version>.json`. Shared Preview/Week skeleton semantics must stay inside the exact phase legality and exact role-week load bands supplied by injected authority. Canonical example fragment: `allowed_intensity_domains: [\"RECOVERY\",\"ENDURANCE\",\"TEMPO\",\"SWEET_SPOT\"]`, `allowed_load_modalities: [\"NONE\"]`, `forbidden_intensity_domains: [\"THRESHOLD\",\"VO2MAX\"]`, `load_ranges.source: \"phase_guardrails_<version>.json\"`. Deterministic phase context is already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase-structure payload draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_cadence_recovery_draft:
     agent: phase_cadence_recovery_specialist
     kind: internal_reasoning
     output: phase_structure_payload
     context:
       - phase_evidence_alignment
-    description: "Apply full season-owned cadence, deload, mini-reset, reload, re-entry, fallback, and baseline-update logic to the exact phase range. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then cadence/recovery synthesis. Consume the `phase_evidence_alignment` output actively as advisory shaping input for cadence conservatism, recovery protection, and fallback sensitivity; it must shape the first real cadence/recovery draft but must not rewrite authority. Make inherited cadence operational, not decorative: `2:1`, `3:1`, and `2:1:1` each need explicit structure, fallback handling, and conservative Build-entry behavior when shortened/base/re-entry context precedes the phase. Objective mismatch remains warning-only and input-owned. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Apply full season-owned cadence, deload, mini-reset, reload, re-entry, fallback, and baseline-update logic to the exact phase range. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then cadence/recovery synthesis. Consume the `phase_evidence_alignment` output actively as advisory shaping input for cadence conservatism, recovery protection, and fallback sensitivity; it must shape the first real cadence/recovery draft but must not rewrite authority. Make inherited cadence operational, not decorative: `2:1`, `3:1`, and `2:1:1` each need explicit structure, fallback handling, and conservative Build-entry behavior when shortened/base/re-entry context precedes the phase. Objective mismatch remains warning-only and input-owned. Deterministic phase context is already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured cadence/recovery draft for the phase structure.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_intensity_distribution_draft:
     agent: phase_intensity_distribution_specialist
     kind: internal_reasoning
     output: phase_structure_payload
-    description: "Draft phase-appropriate intensity handling and density within existing guardrails. Tool usage: prefer injected phase context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft phase-appropriate intensity handling and density within existing guardrails. Deterministic phase context is already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured intensity-handling draft for the phase structure.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_event_integration_draft:
     agent: phase_event_integration_specialist
     kind: internal_reasoning
     output: phase_structure_payload
-    description: "Draft B/C event propagation rules inside the phase structure. Tool usage: use `workspace_get_input` for `planning_events`; use phase contract tools or `workspace_get_latest` for authoritative phase and season context."
+    description: "Draft B/C event propagation rules inside the phase structure. `planning_events` and authoritative phase/season context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase event-integration draft.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_preview_draft:
     agent: phase_preview_synthesizer
     kind: internal_reasoning
     output: phase_preview_payload
-    description: "Draft a derived phase preview that adds no new planning decisions. Keep `phase_intent_summary.phase_type`, `phase_intent_summary.phase_intent`, `phase_intent_summary.build_subtype`, and `phase_intent_summary.phase_taxonomy_version` explicit and derived from stored upstream structure authority. Structural-vs-operational split is mandatory: `PHASE_STRUCTURE.allowed_intensity_domains` excludes `NONE`; Preview may use `NONE` only on `REST` or fixed non-training days; `RECOVERY` must remain `RECOVERY`; training-day domains must stay inside exact structure legality. Preview day-role/domain shape must remain inside the shared deterministic Preview/Week skeleton semantics: `REST` stays `NONE/NONE`, `RECOVERY` stays `RECOVERY`, and no illegal domain widening is allowed. Preview is informational and derived: describe the current phase-derived skeleton, do not imply that Preview itself is the immutable binding authority for the week, and reserve week-level structural changes for explicit replan/change-control. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` only when exact authoritative values still need retrieval."
+    description: "Draft a derived phase preview that adds no new planning decisions. Keep `phase_intent_summary.phase_type`, `phase_intent_summary.phase_intent`, `phase_intent_summary.build_subtype`, and `phase_intent_summary.phase_taxonomy_version` explicit and derived from stored upstream structure authority. Structural-vs-operational split is mandatory: `PHASE_STRUCTURE.allowed_intensity_domains` excludes `NONE`; Preview may use `NONE` only on `REST` or fixed non-training days; `RECOVERY` must remain `RECOVERY`; training-day domains must stay inside exact structure legality. Preview day-role/domain shape must remain inside the shared deterministic Preview/Week skeleton semantics: `REST` stays `NONE/NONE`, `RECOVERY` stays `RECOVERY`, and no illegal domain widening is allowed. Preview is informational and derived: describe the current phase-derived skeleton, do not imply that Preview itself is the immutable binding authority for the week, and reserve week-level structural changes for explicit replan/change-control. Deterministic phase context is already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase-preview payload draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_bundle_finalize:
     agent: phase_bundle_manager
     kind: internal_reasoning
     output: phase_bundle_manager_synthesis
-    tools:
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
     context:
       - phase_context_read
       - phase_evidence_alignment
@@ -563,76 +457,49 @@ tasks:
       - phase_intensity_distribution_draft
       - phase_event_integration_draft
       - phase_preview_draft
-    description: "Synthesize one internal Phase bundle manager synthesis, including role-aware week blueprints for every phase week and the constraint/load-governance audits. `guardrails`, `structure`, and `preview` payloads are not part of this task's output — those are owned by `phase_guardrail_band_draft`, `phase_structure_draft`, and `phase_preview_draft` respectively, and are assembled deterministically from those tasks' own typed outputs after this synthesis is produced; do not reproduce, paraphrase, or reference their shapes here. Use a mandatory 3-pass planner flow: Pass 1 structural draft, Pass 2 semantic finalization, Pass 3 planner self-audit. Exact deterministic authority comes first, then resolved previous-week report/activity evidence, then evidence-alignment implications, then synthesis. Keep top-level phase semantics and week-role structure aligned with the injected deterministic context. When injected season/global wording exists, keep that wording instead of paraphrasing it. Pass 2 must fully operationalize inherited overload policy inside the exact phase range: build, deload, mini-reset, reload, re-entry, fallback behavior, and conservative Build-entry logic must already be visible and semantically coherent in the week blueprints and audits before review. If deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`; consume injected authority directly, and use tools only as fallback for genuinely missing authority fields. Use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them. Exact legality and exact role-week load bands come from persisted Season phase authority and must not be widened or rewritten from scenario eligibility or S5. Previous-week report/activity evidence may make the phase more conservative, more stabilization-oriented, or more continuity-protective, but it must never rewrite exact legality or exact week-band authority. Use only injected deterministic context, the active task contract, and local active skills as operative sources; historical migration audits and superseded prose are not runtime authority here. Objective mismatch remains warning-only and input-owned. Pass 3 must confirm the checklist is complete and classify findings before review: use Pass 2-return findings when week-role/load semantics, audit content, or writer-ready summary is incomplete; use Pass 1-return findings when exact-range week-role skeleton or phase-slot execution alignment is wrong. Finalize must resolve context-solvable role, load, and event contradictions in the week blueprints and audits before review so the writer is not expected to heal them later. Canonical phase taxonomy and writer-safe authority fields remain code-owned normalization outputs."
+    description: "Synthesize one internal Phase bundle manager synthesis, including role-aware week blueprints for every phase week and the constraint/load-governance audits. `guardrails`, `structure`, and `preview` payloads are not part of this task's output — those are owned by `phase_guardrail_band_draft`, `phase_structure_draft`, and `phase_preview_draft` respectively, and are assembled deterministically from those tasks' own typed outputs after this synthesis is produced; do not reproduce, paraphrase, or reference their shapes here. Use a mandatory 3-pass planner flow: Pass 1 structural draft, Pass 2 semantic finalization, Pass 3 planner self-audit. Exact deterministic authority comes first, then resolved previous-week report/activity evidence, then evidence-alignment implications, then synthesis. Keep top-level phase semantics and week-role structure aligned with the injected deterministic context. When injected season/global wording exists, keep that wording instead of paraphrasing it. Pass 2 must fully operationalize inherited overload policy inside the exact phase range: build, deload, mini-reset, reload, re-entry, fallback behavior, and conservative Build-entry logic must already be visible and semantically coherent in the week blueprints and audits before review. Deterministic phase contracts are already provided above as injected context; no workspace tools are available or needed for this task. Use the injected `phase_allowed_intensity_domains` exactly. Exact legality and exact role-week load bands come from persisted Season phase authority and must not be widened or rewritten from scenario eligibility or S5. Previous-week report/activity evidence may make the phase more conservative, more stabilization-oriented, or more continuity-protective, but it must never rewrite exact legality or exact week-band authority. Use only injected deterministic context, the active task contract, and local active skills as operative sources; historical migration audits and superseded prose are not runtime authority here. Objective mismatch remains warning-only and input-owned. Pass 3 must confirm the checklist is complete and classify findings before review: use Pass 2-return findings when week-role/load semantics, audit content, or writer-ready summary is incomplete; use Pass 1-return findings when exact-range week-role skeleton or phase-slot execution alignment is wrong. Finalize must resolve context-solvable role, load, and event contradictions in the week blueprints and audits before review so the writer is not expected to heal them later. Canonical phase taxonomy and writer-safe authority fields remain code-owned normalization outputs."
     expected_output: A structured internal Phase bundle manager synthesis with `week_blueprints`, `constraint_audit`, and `load_governance_audit`. The synthesis must already be review-ready on the fields it owns, with `guardrails`/`structure`/`preview` assembly, code-owned normalization, and artifact serialization left for later stages.
   phase_constraint_audit:
     agent: phase_constraint_auditor
     kind: internal_reasoning
     output: constraint_audit
-    description: "Audit phase constraints, event propagation, and applicable season feed-forward consistency. Tool usage: use `workspace_get_input` for athlete-managed inputs; use phase contract tools or `workspace_get_latest` for authoritative phase/season context."
+    description: "Audit phase constraints, event propagation, and applicable season feed-forward consistency. Athlete-managed inputs and authoritative phase/season context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase constraint audit.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_governance_review:
     agent: phase_governance_auditor
     kind: internal_reasoning
     output: load_governance_audit
-    description: "Audit phase corridor coherence, durability-first policy, and compression risk. Tool usage: prefer prior specialist context; use phase contract tools or `workspace_get_latest` for authoritative phase context when needed."
+    description: "Audit phase corridor coherence, durability-first policy, and compression risk. Prior specialist context and authoritative phase context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase governance review.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_structure_review:
     agent: phase_structure_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review structural consistency across the injected candidate phase bundle. Tool usage: prefer prior specialist context, the injected candidate bundle, and phase contract tools; use `workspace_get_latest` only for authoritative phase context when needed, not for any synthetic `candidate_phase_bundle` lookup."
+    description: "Review structural consistency across the injected candidate phase bundle. Prior specialist context, the injected candidate bundle, and authoritative phase context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase structure review draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_preview_review:
     agent: phase_preview_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review whether the injected candidate phase preview remains derived and non-decisional. Tool usage: prefer prior specialist context, the injected candidate bundle, and phase contract tools; use `workspace_get_latest` only for authoritative phase context when needed, not for any synthetic `candidate_phase_bundle` lookup."
+    description: "Review whether the injected candidate phase preview remains derived and non-decisional. Prior specialist context, the injected candidate bundle, and authoritative phase context are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured phase preview review draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
   phase_contract_review:
     agent: phase_structure_reviewer
     kind: internal_reasoning
     output: planning_draft
-    tools:
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
-    description: "Review the injected candidate phase bundle and writer handoff against deterministic phase slot, phase execution, exact phase-legality, exact role-week load-band, shared preview/week skeleton, and S5-feasibility contracts. Do not retrieve or expect a synthetic `candidate_phase_bundle` workspace artefact."
+    description: "Review the injected candidate phase bundle and writer handoff against deterministic phase slot, phase execution, exact phase-legality, exact role-week load-band, shared preview/week skeleton, and S5-feasibility contracts, all already provided above as injected context. No workspace tools are available or needed for this task, and there is no synthetic `candidate_phase_bundle` workspace artefact to look up."
     expected_output: A structured contract-review draft that treats deterministic phase-contract mismatches as blocking replan reasons.
   phase_review:
     agent: phase_review_manager
     kind: internal_reasoning
     output: phase_review_decision
-    tools:
-      - workspace_get_phase_execution_context
-      - workspace_get_phase_slot_contract
     context:
       - phase_constraint_audit
       - phase_governance_review
       - phase_structure_review
       - phase_preview_review
       - phase_contract_review
-    description: "Integrate phase review outputs and decide approve, reject, or bounded replan against the injected candidate phase bundle. Review is a policy gate, not a second planner. Use a short formal review confirmation checklist only: contract-clean or not, writer-ready or not, Pass 1 return vs Pass 2 return classification if not clean, and bounded replan instructions. Confirm that the inherited scenario contract from Season is preserved as exact-range posture ceiling semantics: recovery margin, fatigue exposure, specificity density, and legal-domain ceiling must still be visible in the approved phase shape without widening the exact phase legality. Verify that inherited cadence is visible in the phase structure, reload vs re-entry is semantically correct, fallback behavior is applied when indicated, exact role-week load bands are preserved, Preview remains inside the shared deterministic week skeleton, and phase intent remains coherent with allowed/forbidden domain authority. Objective mismatch remains warning-only and input-owned. Default to approval when finalize already satisfied bundle and contract readiness. Use Pass 1 return when exact-range structure, week-role skeleton, phase-slot execution alignment, or exact role-week band preservation is wrong; use Pass 2 return when structure is intact but reload/re-entry semantics, domain framing, preview meaning, or writer-ready summary is incomplete. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_phase_bundle` workspace artefact."
+    description: "Integrate phase review outputs and decide approve, reject, or bounded replan against the injected candidate phase bundle. Review is a policy gate, not a second planner. Use a short formal review confirmation checklist only: contract-clean or not, writer-ready or not, Pass 1 return vs Pass 2 return classification if not clean, and bounded replan instructions. Confirm that the inherited scenario contract from Season is preserved as exact-range posture ceiling semantics: recovery margin, fatigue exposure, specificity density, and legal-domain ceiling must still be visible in the approved phase shape without widening the exact phase legality. Verify that inherited cadence is visible in the phase structure, reload vs re-entry is semantically correct, fallback behavior is applied when indicated, exact role-week load bands are preserved, Preview remains inside the shared deterministic week skeleton, and phase intent remains coherent with allowed/forbidden domain authority. Objective mismatch remains warning-only and input-owned. Default to approval when finalize already satisfied bundle and contract readiness. Use Pass 1 return when exact-range structure, week-role skeleton, phase-slot execution alignment, or exact role-week band preservation is wrong; use Pass 2 return when structure is intact but reload/re-entry semantics, domain framing, preview meaning, or writer-ready summary is incomplete. Deterministic contracts and prior specialist review context are already provided above as injected context; no workspace tools are available or needed for this task, and there is no synthetic `candidate_phase_bundle` workspace artefact to look up."
     expected_output: A structured phase review decision.
   phase_guardrails:
     agent: phase_artifact_writer
@@ -663,14 +530,7 @@ tasks:
     agent: week_context_specialist
     kind: internal_reasoning
     output: week_context_assessment
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_version
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
-    description: "Inspect selected-week plan, actuals, and open constraints for planning. Tool usage: use `workspace_get_input` for athlete-managed inputs; use `workspace_get_week_calendar_context` and `workspace_get_phase_execution_context` for deterministic week authority; use `workspace_get_latest` for latest plan/report artefacts; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
+    description: "Inspect selected-week plan, actuals, and open constraints for planning. Athlete-managed inputs, deterministic week/phase authority, and previous-week evidence are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured week context assessment.
   week_evidence_alignment:
     agent: week_evidence_alignment_specialist
@@ -684,63 +544,36 @@ tasks:
     agent: week_constraint_specialist
     kind: internal_reasoning
     output: planning_draft
-    description: "Summarize binding week-level constraints from upstream artifacts and athlete context. Tool usage: use `workspace_get_input` for athlete-managed inputs; use deterministic week/phase contract tools and `workspace_get_latest` for authoritative context."
+    description: "Summarize binding week-level constraints from upstream artifacts and athlete context. Athlete-managed inputs and deterministic week/phase authority are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured week constraint draft.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
   week_load_target_draft:
     agent: week_load_target_specialist
     kind: internal_reasoning
     output: planning_draft
     context:
       - week_evidence_alignment
-    description: "Convert the active corridor into day and workout target logic for the week. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then week load-target synthesis. Consume the `week_evidence_alignment` output actively as advisory shaping input for conservatism, recovery protection, and quality-density restraint; it must shape the first real load-target draft but must not rewrite authority. Apply binding load-estimation semantics directly: preserve the distinction between workout/day mechanical `planned_kj` and weekly governance `planned_weekly_load_kj`, keep `weekly_load_corridor_kj` tied to the active week band, and reconcile load through duration-first adjustments before intensity escalation. Use inherited canonical phase semantics (`phase_type`, `phase_intent`, `build_subtype`) as a primary shaping signal for progression method, specificity, and quality density. Tool usage: prefer deterministic week/phase contract tools and `workspace_get_latest`; use `workspace_get_version` only for explicit week-sensitive historical artefacts."
+    description: "Convert the active corridor into day and workout target logic for the week. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then week load-target synthesis. Consume the `week_evidence_alignment` output actively as advisory shaping input for conservatism, recovery protection, and quality-density restraint; it must shape the first real load-target draft but must not rewrite authority. Apply binding load-estimation semantics directly: preserve the distinction between workout/day mechanical `planned_kj` and weekly governance `planned_weekly_load_kj`, keep `weekly_load_corridor_kj` tied to the active week band, and reconcile load through duration-first adjustments before intensity escalation. Use inherited canonical phase semantics (`phase_type`, `phase_intent`, `build_subtype`) as a primary shaping signal for progression method, specificity, and quality density. Deterministic week/phase authority is already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured week load-target draft.
-    tools:
-      - workspace_get_latest
-      - workspace_get_version
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
   week_revision_draft:
     agent: week_revision_specialist
     kind: internal_reasoning
     output: planning_draft
     context:
       - week_evidence_alignment
-    description: "Draft a candidate week structure or bounded revision consistent with active week role and inherited canonical phase semantics (`phase_type`, `phase_intent`, `build_subtype`). Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then week revision synthesis. Consume the `week_evidence_alignment` output actively as advisory shaping input for recovery caution, continuity, and bounded revision scope; it must shape the first real revision draft but must not rewrite authority. Tool usage: use deterministic week/phase contract tools for authoritative execution values; use `workspace_get_latest` for latest supporting artefacts and `workspace_get_input` for athlete-managed inputs when needed."
+    description: "Draft a candidate week structure or bounded revision consistent with active week role and inherited canonical phase semantics (`phase_type`, `phase_intent`, `build_subtype`). Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then week revision synthesis. Consume the `week_evidence_alignment` output actively as advisory shaping input for recovery caution, continuity, and bounded revision scope; it must shape the first real revision draft but must not rewrite authority. Deterministic week/phase authority and athlete-managed inputs are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured week revision draft.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
   week_workout_text_draft:
     agent: week_workout_authoring_specialist
     kind: internal_reasoning
     output: planning_draft
     context:
       - week_evidence_alignment
-    description: "Draft structured workout-family selection, inherited canonical phase-semantics family bias (`phase_type`, `phase_intent`, `build_subtype`), QUALITY-intent target placement, and rendering-safe workout blueprint guidance for the candidate week. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then workout-family synthesis. Consume the `week_evidence_alignment` output actively as advisory shaping input for workout conservatism, density restraint, and recovery-aware family choice; it must shape the first real workout-authoring draft but must not rewrite authority. Final `workout_text` is rendered deterministically in code from approved workout blueprints; do not rely on free-text workout authoring as the source of truth. Treat `PHASE_GUARDRAILS` as the legality authority; when recovery-like work is needed but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead. Tool usage: prefer deterministic week/phase contract tools and latest week context; use `workspace_get_input` only when an athlete-managed input is explicitly needed."
+    description: "Draft structured workout-family selection, inherited canonical phase-semantics family bias (`phase_type`, `phase_intent`, `build_subtype`), QUALITY-intent target placement, and rendering-safe workout blueprint guidance for the candidate week. Apply this order explicitly: exact deterministic authority first, then resolved previous-week evidence, then evidence-alignment implications, then workout-family synthesis. Consume the `week_evidence_alignment` output actively as advisory shaping input for workout conservatism, density restraint, and recovery-aware family choice; it must shape the first real workout-authoring draft but must not rewrite authority. Final `workout_text` is rendered deterministically in code from approved workout blueprints; do not rely on free-text workout authoring as the source of truth. Treat `PHASE_GUARDRAILS` as the legality authority; when recovery-like work is needed but `RECOVERY` is forbidden, author legal low-end `ENDURANCE` instead. Deterministic week/phase context and athlete-managed inputs are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured workout-authoring draft.
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
   week_plan_finalize:
     agent: week_plan_manager
     kind: internal_reasoning
     output: week_plan_bundle
-    tools:
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
     context:
       - week_context_read
       - week_evidence_alignment
@@ -754,57 +587,36 @@ tasks:
     agent: week_consistency_auditor
     kind: internal_reasoning
     output: planning_draft
-    description: "Review candidate week coherence across role, duration, and load intent. Tool usage: prefer prior specialist context; use deterministic week/phase contract tools or `workspace_get_latest` for authoritative context when needed."
+    description: "Review candidate week coherence across role, duration, and load intent. Prior specialist context and deterministic week/phase authority are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured week consistency review.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
   week_load_governance_review:
     agent: week_load_governance_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review candidate week corridor compliance and reconciliation behavior. Check binding load-estimation semantics, duration-first reconciliation, active band authority, progressive-overload role semantics, and durability-first repeatability. Tool usage: prefer prior specialist context; use deterministic week/phase contract tools or `workspace_get_latest` for authoritative context when needed."
+    description: "Review candidate week corridor compliance and reconciliation behavior. Check binding load-estimation semantics, duration-first reconciliation, active band authority, progressive-overload role semantics, and durability-first repeatability. Prior specialist context and deterministic week/phase authority are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured week load-governance review.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
   week_workout_syntax_review:
     agent: week_workout_syntax_reviewer
     kind: internal_reasoning
     output: planning_draft
-    description: "Review candidate workout text for strict project syntax subset compliance, workout-policy semantic compliance, inherited canonical phase-semantics fit (`phase_type`, `phase_intent`, `build_subtype`), phase-guardrails legality precedence, and export safety. Do not approve prose workout text or illegal `RECOVERY` drift when the active phase forbids `RECOVERY`. Tool usage: prefer prior specialist context and deterministic week/phase contract tools; use `workspace_get_latest` only when latest week context still needs direct retrieval."
+    description: "Review candidate workout text for strict project syntax subset compliance, workout-policy semantic compliance, inherited canonical phase-semantics fit (`phase_type`, `phase_intent`, `build_subtype`), phase-guardrails legality precedence, and export safety. Do not approve prose workout text or illegal `RECOVERY` drift when the active phase forbids `RECOVERY`. Prior specialist context and deterministic week/phase authority are already provided above as injected context -- no workspace tools are available or needed for this task."
     expected_output: A structured week workout-syntax review.
-    tools:
-      - workspace_get_latest
-      - workspace_get_phase_context
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
   week_contract_review:
     agent: week_consistency_auditor
     kind: internal_reasoning
     output: planning_draft
-    tools:
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
     description: Review the injected candidate week bundle and writer handoff against deterministic week execution, the binding target-week active weekly band, availability, day-blueprint, and workout-blueprint contracts. Use `active_s5_band` only as fallback/background when no week-specific band is present. Do not retrieve or expect a synthetic `candidate_week_bundle` workspace artefact. Use only injected deterministic context, the active task contract, and local active skills as operative sources; historical migration audits and superseded prose are not runtime authority here.
     expected_output: A structured contract-review draft that treats deterministic week-contract mismatches as blocking replan reasons.
   week_review:
     agent: week_review_manager
     kind: internal_reasoning
     output: week_review_decision
-    tools:
-      - workspace_get_week_calendar_context
-      - workspace_get_phase_execution_context
     context:
       - week_consistency_review
       - week_load_governance_review
       - week_workout_syntax_review
       - week_contract_review
-    description: "Integrate week review outputs and decide approve, reject, or bounded replan against the injected candidate week bundle. Review is a policy gate, not a second planner. Use a short formal review confirmation checklist only: contract-clean or not, writer-ready or not, Pass 1 return vs Pass 2 return classification if not clean, and bounded replan instructions. Check binding load-estimation semantics, active week-band compliance, progressive-overload role semantics, durability-first repeatability, and workout-policy legality/export safety. Default to approval when finalize already satisfied bundle readiness. Approval still requires strict export-safe workout syntax and phase-guardrails legality. Use Pass 1 return when agenda/day/workout blueprint structure or deterministic week authority alignment is wrong; use Pass 2 return when structure is intact but load semantics, reconciliation, durability-first tradeoffs, legality framing, or writer-ready summary is incomplete. Use deterministic contract tools directly when needed; do not reload or expect a synthetic `candidate_week_bundle` workspace artefact."
+    description: "Integrate week review outputs and decide approve, reject, or bounded replan against the injected candidate week bundle. Review is a policy gate, not a second planner. Use a short formal review confirmation checklist only: contract-clean or not, writer-ready or not, Pass 1 return vs Pass 2 return classification if not clean, and bounded replan instructions. Check binding load-estimation semantics, active week-band compliance, progressive-overload role semantics, durability-first repeatability, and workout-policy legality/export safety. Default to approval when finalize already satisfied bundle readiness. Approval still requires strict export-safe workout syntax and phase-guardrails legality. Use Pass 1 return when agenda/day/workout blueprint structure or deterministic week authority alignment is wrong; use Pass 2 return when structure is intact but load semantics, reconciliation, durability-first tradeoffs, legality framing, or writer-ready summary is incomplete. Deterministic contracts are already provided above as injected context; no workspace tools are available or needed for this task, and there is no synthetic `candidate_week_bundle` workspace artefact to look up."
     expected_output: A structured week review decision.
   week_plan:
     agent: week_artifact_writer

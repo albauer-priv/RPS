@@ -681,6 +681,7 @@ def test_internal_task_description_is_tool_first_and_compact() -> None:
     assert "Shared system instructions for all agents." not in description
     assert "Call each workspace tool with its own named arguments" in description
     assert "call the tool instead of asking the user for it" in description
+    assert "Never wrap your final structured output in markdown code fences" in description
     assert "If prior specialist context already contains the needed facts" in description
     assert "Do not create, write, or verify workspace files unless the active task explicitly exposes a write-capable tool" in description
     assert "If you are blocked after relevant tool attempts" in description
@@ -689,21 +690,32 @@ def test_internal_task_description_is_tool_first_and_compact() -> None:
     assert "**Athlete State Snapshot**" in description
     assert "**Resolved Planning Event Context**" in description
 
-def test_season_event_and_peak_tasks_expose_workspace_read_tools() -> None:
+def test_season_planning_tasks_have_no_tools_since_all_inputs_are_pre_injected() -> None:
+    # season_flow.py's create_season_plan resolves and injects every artifact these tools
+    # could fetch (athlete profile, availability, logistics, planning events, KPI profile,
+    # season scenarios/selection, previous-week activities, historical baseline, deterministic
+    # phase-slot/load context) as text into the crew's shared user_input before any task runs.
+    # A live run showed 10 of 11 tool-equipped season_planning tasks failing their first
+    # typed_output_present guardrail attempt, correlating with tool usage triggering CrewAI's
+    # less-reliable ReAct/AgentExecutor conversion path for a genuinely redundant fetch --
+    # the tool could never succeed where the injection didn't, since both read the same store.
     bundle = load_crewai_config_bundle(root=Path("."))
     task_blueprints = build_task_blueprints(bundle)
 
-    event_tools = task_blueprints["season_event_priority_review"].config.get("tools")
-    peak_tools = task_blueprints["season_peak_window_review"].config.get("tools")
-    macrocycle_tools = task_blueprints["season_macrocycle_draft"].config.get("tools")
-
-    assert event_tools == ["workspace_get_input", "workspace_get_latest", "workspace_get_version"]
-    assert peak_tools == ["workspace_get_input", "workspace_get_latest", "workspace_get_version"]
-    assert macrocycle_tools == [
-        "workspace_get_input",
-        "workspace_get_latest",
-        "workspace_get_phase_slot_contract",
-    ]
+    for task_name in (
+        "season_context_read",
+        "season_event_priority_review",
+        "season_peak_window_review",
+        "season_macrocycle_draft",
+        "season_constraint_review",
+        "season_historical_context_review",
+        "season_kpi_guidance_review",
+        "season_load_corridor_draft",
+        "season_progression_review",
+        "season_phase_blueprint_draft",
+        "season_plan_finalize",
+    ):
+        assert task_blueprints[task_name].config.get("tools") is None, task_name
 
 def test_season_specialist_task_scopes_are_explicitly_separated() -> None:
     bundle = load_crewai_config_bundle(root=Path("."))
@@ -778,22 +790,19 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         ]
     }
 
+    # report_context_read still declares tools: report_planning is not part of the
+    # deterministic-injection tool-redundancy cleanup applied to season/phase/week.
     assert _task_tools_for_blueprint(
-        tasks["week_context_read"], tool_map
+        tasks["report_context_read"], tool_map
     ) == [
         tool_map["workspace_get_input"],
         tool_map["workspace_get_latest"],
         tool_map["workspace_get_version"],
-        tool_map["workspace_get_phase_context"],
-        tool_map["workspace_get_week_calendar_context"],
-        tool_map["workspace_get_phase_execution_context"],
     ]
     assert _task_tools_for_blueprint(tasks["week_plan"], tool_map) == []
-    assert _task_tools_for_blueprint(tasks["season_macrocycle_draft"], tool_map) == [
-        tool_map["workspace_get_input"],
-        tool_map["workspace_get_latest"],
-        tool_map["workspace_get_phase_slot_contract"],
-    ]
+    # season_macrocycle_draft has no tools: all of its inputs are pre-injected as text
+    # into the season_planning crew's shared user_input (see season_flow.py).
+    assert _task_tools_for_blueprint(tasks["season_macrocycle_draft"], tool_map) == []
 
     class FakeTask:
         def __init__(self, **kwargs):
@@ -802,11 +811,11 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
     task = _build_crewai_task(
         task_cls=FakeTask,
         bundle=bundle,
-        task_blueprint=tasks["week_context_read"],
+        task_blueprint=tasks["report_context_read"],
         agent=object(),
         description="test",
         runtime=SimpleNamespace(workspace_root=Path(".")),
-        crew_name="week_planning",
+        crew_name="report_planning",
         athlete_id="i150546",
         run_id="run-1",
         tools=tool_map,
@@ -816,11 +825,8 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         tool_map["workspace_get_input"],
         tool_map["workspace_get_latest"],
         tool_map["workspace_get_version"],
-        tool_map["workspace_get_phase_context"],
-        tool_map["workspace_get_week_calendar_context"],
-        tool_map["workspace_get_phase_execution_context"],
     ]
-    assert task.kwargs["name"] == "week_context_read"
+    assert task.kwargs["name"] == "report_context_read"
     assert callable(task.kwargs["callback"])
 
 def test_build_crewai_task_tools_override_takes_precedence() -> None:

@@ -42,6 +42,69 @@ def _format_activity_session_line(activity: dict[str, object]) -> str | None:
     return ", ".join(parts)
 
 
+def build_resolved_report_evidence_block(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    des_analysis_report_version: str | None = None,
+) -> str:
+    """Build a compact previous-week DES_ANALYSIS_REPORT evidence block for planners."""
+    if not des_analysis_report_version:
+        return ""
+    try:
+        report_payload = store.load_version(athlete_id, ArtifactType.DES_ANALYSIS_REPORT, des_analysis_report_version)
+    except Exception:
+        return ""
+    if not isinstance(report_payload, dict):
+        return ""
+    data = report_payload.get("data")
+    if not isinstance(data, dict):
+        return ""
+
+    lines = [
+        "**Resolved Report Evidence**",
+        "Use this previous-week durability/fatigue/fueling report directly; do not reload the raw report artefact just to rediscover the same KPI status, trend, or recommendation signals when they are provided here.",
+        f"des_analysis_report_version: {des_analysis_report_version}",
+    ]
+
+    kpi_summary = data.get("kpi_summary")
+    if isinstance(kpi_summary, dict):
+        for kpi_key in ("durability", "fatigue_resistance", "fueling_stability"):
+            entry = kpi_summary.get(kpi_key)
+            if isinstance(entry, dict) and entry.get("status"):
+                lines.append(f"kpi_summary.{kpi_key}: status={entry.get('status')} confidence={entry.get('confidence')}")
+
+    weekly_analysis = data.get("weekly_analysis")
+    if isinstance(weekly_analysis, dict):
+        interpretation = weekly_analysis.get("interpretation")
+        summary = interpretation.get("summary") if isinstance(interpretation, dict) else None
+        if isinstance(summary, str) and summary.strip():
+            lines.append(f"weekly_analysis.interpretation.summary: {summary.strip()}")
+
+    trend_analysis = data.get("trend_analysis")
+    if isinstance(trend_analysis, dict):
+        observations = trend_analysis.get("observations")
+        if isinstance(observations, list):
+            for observation in observations:
+                if not isinstance(observation, dict):
+                    continue
+                metric = observation.get("metric")
+                trend = observation.get("trend")
+                if metric and trend:
+                    lines.append(f"trend_analysis.observation: {metric} is {trend}")
+
+    recommendation = data.get("recommendation")
+    if isinstance(recommendation, dict):
+        urgency = recommendation.get("urgency")
+        if urgency:
+            lines.append(f"recommendation.urgency: {urgency}")
+        rationale = recommendation.get("rationale")
+        if isinstance(rationale, list) and rationale:
+            lines.append(f"recommendation.rationale: {'; '.join(str(item) for item in rationale)}")
+
+    return "\n".join(lines) + "\n\n"
+
+
 def build_resolved_activity_context_block(
     store: LocalArtifactStore,
     athlete_id: str,

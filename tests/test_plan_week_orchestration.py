@@ -829,8 +829,12 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
     assert result.ok is True
     assert captured_inputs
     assert all("Selected KPI guidance:" not in user_input for user_input in captured_inputs)
-    assert all("ACTIVITIES_ACTUAL version_key 2026-11" in user_input for user_input in captured_inputs)
-    assert all("ACTIVITIES_TREND version_key 2026-11" in user_input for user_input in captured_inputs)
+    assert all("activities_actual_version: 2026-11" in user_input for user_input in captured_inputs)
+    assert all("activities_trend_version: 2026-11" in user_input for user_input in captured_inputs)
+    # Regression check: planning_context_snapshot_block already injects "Resolved Activity
+    # Context" via save_planning_context_snapshot's own activity block -- it must not also be
+    # duplicated by a second build_resolved_activity_context_block call in injected_block.
+    assert all(user_input.count("**Resolved Activity Context**") == 1 for user_input in captured_inputs)
     assert all("**Resolved Phase Context**" in user_input for user_input in captured_inputs)
     assert all("phase_iso_week_range: 2026-11--2026-13" in user_input for user_input in captured_inputs)
     assert all("**Resolved Availability Context**" in user_input for user_input in captured_inputs)
@@ -842,7 +846,7 @@ def test_plan_week_phase_architect_omits_direct_kpi_guidance(
 
 
 
-def test_plan_week_week_planner_uses_historical_activity_versions(
+def test_plan_week_week_planner_injects_historical_activity_content(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     athlete_id = "test_athlete"
@@ -925,13 +929,19 @@ def test_plan_week_week_planner_uses_historical_activity_versions(
 
     assert result.ok is True
     assert captured_inputs
-    assert any("ACTIVITIES_ACTUAL version_key 2026-11" in user_input for user_input in captured_inputs)
-    assert any("ACTIVITIES_TREND version_key 2026-11" in user_input for user_input in captured_inputs)
+    assert any("activities_actual_version: 2026-11" in user_input for user_input in captured_inputs)
+    assert any("activities_trend_version: 2026-11" in user_input for user_input in captured_inputs)
     assert any(
-        "use workspace_get_version with version_key 2026-11--2026-13 for both PHASE_GUARDRAILS and PHASE_STRUCTURE"
+        "PHASE_GUARDRAILS and PHASE_STRUCTURE for this exact phase range are already provided below "
+        "as injected context; no workspace tools are available or needed for this task."
         in user_input
         for user_input in captured_inputs
     )
+    assert all("use workspace_get_version" not in user_input for user_input in captured_inputs)
+    # The whole-phase execution context (cadence family, every week's role/band) closes the one
+    # real content gap for week planning that workspace_get_phase_execution_context used to fill.
+    assert any("**Deterministic Phase Execution Context**" in user_input for user_input in captured_inputs)
+    assert any("scenario_cadence: 2:1:1" in user_input for user_input in captured_inputs)
 
 
 

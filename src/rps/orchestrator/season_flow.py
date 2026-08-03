@@ -560,11 +560,10 @@ def create_season_plan(
         )
         season_evidence_alignment_block = render_evidence_alignment_block(season_evidence_alignment_payload)
         historical_context_line = (
-            f"If activity context is needed, use workspace_get_version for previous-week ACTIVITIES_ACTUAL and "
-            f"ACTIVITIES_TREND at evidence week "
-            f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d}: "
-            f"{actual_version} and {trend_version}; never use workspace_get_latest for week-sensitive "
-            "activity artefacts. "
+            f"Previous-week ACTIVITIES_ACTUAL and ACTIVITIES_TREND at evidence week "
+            f"{evidence_resolution.evidence_week.year:04d}-{evidence_resolution.evidence_week.week:02d} "
+            f"(versions {actual_version} and {trend_version}) are provided below as resolved activity context; "
+            "no workspace tools are available to reload them. "
         )
         selected_structure_payload = _as_map(binding.get("selected_scenario_structure_context"))
         selected_scenario_contract_payload = _as_map(binding.get("selected_scenario_contract"))

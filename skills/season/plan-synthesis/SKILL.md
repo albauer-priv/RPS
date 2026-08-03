@@ -52,10 +52,7 @@ Method:
 12. Treat `deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `shortened_phases`, and `shortening_budget_weeks` as inherited Scenario authority; never choose a replacement cadence in Season Plan synthesis.
 13. Preserve each slot's injected `cadence_week_roles` in the internal phase blueprint and reflect them in deload intent, typical duration/intensity pattern, and load-corridor notes.
 14. Use `Deterministic Season Phase Load Context` as the binding feasibility reference for phase role, availability cap, baseline, recommended phase corridor, and role-week load bands.
-15. When numeric phase-slot or phase-load contract values are needed, use the deterministic contract tools directly:
-   - `workspace_get_phase_slot_contract`
-   - `workspace_get_season_phase_load_context`
-   Never search the workspace for a synthetic recommendation artifact.
+15. Numeric phase-slot and phase-load contract values are already provided as injected context; no workspace tools are available or needed for this task. Never search the workspace for a synthetic recommendation artifact.
 16. Verify that phase count and ISO-week coverage match the season date range without gaps or overlaps.
 17. Apply the selected cadence pattern (`2:1`, `3:1`, or `2:1:1`) to phase deload intent and rationale.
    - `2:1:1` means two load weeks, one mini-reset, and one reload; do not collapse it into a generic deload phase.
@@ -239,10 +236,7 @@ Hard rules:
 - surface infeasible load corridors explicitly with review/replan guidance
 
 Retrieval policy:
-- Use deterministic injected runtime contracts first when they are present.
-- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots when a task still needs direct retrieval.
-- Use `workspace_get_input` only for athlete-managed inputs.
-- Use `workspace_get_version` only for explicit week-sensitive historical artefacts.
+- Deterministic injected runtime contracts, latest authoritative planning artefacts/snapshots, athlete-managed inputs, and previous-week historical evidence are already provided as injected context. No workspace tools are available or needed for this task.
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

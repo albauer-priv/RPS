@@ -17,9 +17,7 @@ Definitions:
 - `planned_weekly_load_kj`: governance week-load metric used for corridor semantics
 
 Authority / injected sources:
-- exact phase-slot and phase-load contract values come from:
-  - `workspace_get_phase_slot_contract`
-  - `workspace_get_season_phase_load_context`
+- exact phase-slot and phase-load contract values are already provided as injected context
 - this layer reviews overload semantics; it does not create new cadence math or compute workout-level work
 
 Method:
@@ -28,9 +26,7 @@ Method:
 3. Replan instructions must preserve valid event anchors and unaffected macrocycle decisions.
 4. If cadence, phase count, phase length, or ISO-week coverage conflicts with the selected Scenario, choose `replan_required` and target the Season synthesis/review specialists.
 5. If the final writer-ready summary lacks phase blueprint semantics, including inherited cadence roles and A/B event treatment, choose `replan_required` rather than approving a vague artifact handoff.
-6. Use deterministic season contract tools directly when exact contract values are needed:
-   - `workspace_get_phase_slot_contract`
-   - `workspace_get_season_phase_load_context`
+6. Use the injected deterministic season contract values directly when exact contract values are needed; no workspace tools are available or needed for this task.
 7. Final review is decision work, not rediscovery. Do not ask coworkers to re-derive cadence, phase-slot, or phase-load contract authority during this step.
 8. Treat the injected Candidate Season Bundle as the authoritative review subject. Do not reload or expect a synthetic `candidate_season_bundle` workspace artefact.
 9. Review is primarily a formal approval gate. Default to `approved` when finalize already produced a contract-clean, semantically coherent bundle.

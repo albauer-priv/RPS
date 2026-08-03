@@ -641,7 +641,10 @@ def test_create_season_plan_uses_historical_activity_versions(
     )
 
     assert captured_inputs
-    assert "previous-week ACTIVITIES_ACTUAL and ACTIVITIES_TREND at evidence week 2026-16: 2026-16 and 2026-16" in captured_inputs[0]
+    assert (
+        "Previous-week ACTIVITIES_ACTUAL and ACTIVITIES_TREND at evidence week 2026-16 "
+        "(versions 2026-16 and 2026-16) are provided below as resolved activity context"
+    ) in captured_inputs[0]
     assert "**Resolved Activity Context**" in captured_inputs[0]
     assert "historical_reference_week: 2026-16" in captured_inputs[0]
     assert "activities_actual_version: 2026-16" in captured_inputs[0]

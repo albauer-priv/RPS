@@ -356,6 +356,31 @@ def test_guardrail_failure_event_omits_prompt_snippet_when_not_provided(monkeypa
     assert emitted[0]["raw_output_snippet"] == "malformed"
 
 
+def test_guardrail_failure_raw_output_snippet_captures_well_past_8000_chars(monkeypatch) -> None:
+    # A real production run showed 3 of 16 guardrail-failure raw outputs still hitting the
+    # previous 8000-char capture cap mid-JSON, leaving open whether the underlying LLM
+    # completion itself was truncated (a real bug) or just our own diagnostic capture --
+    # DIAGNOSTIC_TEXT_LIMIT exists to close that gap. This confirms the cap is well above 8000.
+    emitted: list[dict[str, object]] = []
+    monkeypatch.setattr(
+        crewai_guardrails_utilities,
+        "emit_runtime_event",
+        lambda **kwargs: emitted.append(kwargs),
+    )
+
+    long_raw = "{" + ("x" * 20000) + "}"
+    wrapped = crewai_guardrails_utilities._with_guardrail_telemetry(
+        "season_context_read", "typed_output_present", typed_output_present
+    )
+    invalid_output = SimpleNamespace(pydantic=None, json_dict=None, raw=long_raw)
+
+    with guardrail_runtime_context(task_name="season_context_read"):
+        wrapped(invalid_output)
+
+    assert len(str(emitted[0]["raw_output_snippet"])) > 8000
+    assert str(emitted[0]["raw_output_snippet"]) == long_raw
+
+
 def test_extract_typed_output_does_not_fall_back_to_crew_result_for_sibling_tasks() -> None:
     # season_phase_blueprint_draft's own pydantic parsing failed (guardrail should have
     # caught this and retried, but if it somehow didn't): the crew-level `result` reflects

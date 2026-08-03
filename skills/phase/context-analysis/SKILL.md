@@ -30,13 +30,10 @@ Hard rules:
 - use injected date ranges and deterministic context
 - interpret wellness through active governance
 - keep week and workout content for downstream tasks
-- prefer the narrow configured workspace tools and injected deterministic context over broad rediscovery
+- prefer the injected deterministic context over broad rediscovery
 
 Retrieval policy:
-- Use `workspace_get_input` for athlete-managed inputs such as `planning_events`, `availability`, and `logistics`.
-- Use `workspace_get_phase_context`, `workspace_get_phase_execution_context`, and `workspace_get_phase_slot_contract` for authoritative phase contracts.
-- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots when direct retrieval is still needed.
-- Use `workspace_get_version` only when the task explicitly requires a week-sensitive historical artefact version.
+- Athlete-managed inputs (`planning_events`, `availability`, `logistics`), authoritative phase contracts, previous-week evidence, and any prior artefacts for this exact range are already provided as injected context. No workspace tools are available or needed for this task.
 
 Positive operating guidance:
 - Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.

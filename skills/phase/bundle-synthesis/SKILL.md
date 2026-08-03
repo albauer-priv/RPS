@@ -16,23 +16,20 @@ Definitions:
 - `re-entry`: baseline-anchored controlled return after deload or unresolved fatigue
 
 Authority / injected sources:
-- `week_role`, `phase_role`, exact range, and contract values come from deterministic phase execution context and slot contract tools
+- `week_role`, `phase_role`, exact range, and contract values come from deterministic phase execution context and slot contract, already provided as injected context
 - `weekly_kj_bands` come from approved phase guardrails
 - inherited scenario posture comes from `inherited_scenario_contract`; operationalize it rather than reopening scenario choice
 - this layer synthesizes the bundle; it must not invent a more aggressive overload interpretation than the approved cadence/recovery logic
 - `guardrails`, `structure`, and `preview` payloads are not part of this task's output; they are owned by `phase_guardrail_band_draft`, `phase_structure_draft`, and `phase_preview_draft` respectively, which complete earlier in the same crew, and are assembled deterministically from those tasks' own typed outputs after this synthesis is produced. Do not reproduce, paraphrase, or reference their shapes here.
 - when injected season/global wording exists, keep that wording instead of paraphrasing it
-- if deterministic phase contracts are injected, do not call `workspace_get_phase_execution_context` or `workspace_get_phase_slot_contract`
-- use tools only as fallback for genuinely missing authority fields
-- use the injected `phase_allowed_intensity_domains` exactly; do not re-fetch them
+- deterministic phase contracts are already provided as injected context; no workspace tools are available or needed for this task
+- use the injected `phase_allowed_intensity_domains` exactly
 
 Method:
 1. Pass 1 - structural draft: emit a structurally coherent exact-range week-blueprint draft only.
 2. Pass 2 - semantic finalization: apply cadence/recovery as a constraint on the week blueprints, not as a separate plan.
 3. Preserve event integration only where it does not violate season authority.
-4. Use deterministic contract tools directly when exact phase-slot or phase-execution values are needed:
-   - `workspace_get_phase_execution_context`
-   - `workspace_get_phase_slot_contract`
+4. Use the injected deterministic phase-slot and phase-execution values directly; no workspace tools are available or needed for this task.
 5. Final synthesis is integration work, not rediscovery. Do not ask coworkers to re-derive deterministic week roles, exact phase range, or S5 bands during this step.
 6. Emit one review-ready phase bundle.
 7. Review should mostly confirm. Resolve all context-decidable role/load/structure/event contradictions before handoff.
@@ -79,10 +76,7 @@ Operational synthesis rules:
   - no recovery compression
 
 Retrieval policy:
-- Use deterministic injected runtime contracts first when they are present.
-- Use `workspace_get_phase_execution_context` and `workspace_get_phase_slot_contract` for exact authoritative phase values.
-- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots only when direct retrieval is still needed.
-- Use `workspace_get_input` only for athlete-managed inputs.
+- Deterministic injected runtime contracts, exact authoritative phase values, and latest authoritative planning artefacts/snapshots are already provided as injected context. No workspace tools are available or needed for this task.
 
 Output format:
 - Return the task expected_output as one consolidated planning bundle or synthesis contribution.

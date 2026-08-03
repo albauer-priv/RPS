@@ -1,19 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from types import SimpleNamespace
-
-import pytest
 
 from rps.agents.crewai_context_blocks import (
     _contract_context_blocks_for_task,
     _phase_bundle_finalize_authority_freeze_block,
-    _phase_bundle_finalize_has_bound_contracts,
 )
-from rps.agents.crewai_task_execution import (
-    _run_phase_bundle_document,
-)
-from rps.agents.runtime import AgentRuntime
 from rps.crewai_runtime import load_crewai_config_bundle
 from rps.crewai_runtime.bindings import (
     build_agent_blueprints,
@@ -23,40 +15,17 @@ from rps.crewai_runtime.guardrails_context import guardrail_runtime_context
 from rps.crewai_runtime.models import (
     PhaseWeekBlueprintModel,
 )
-from rps.prompts.loader import PromptLoader
 
 
-def _valid_phase_bundle_document() -> dict[str, object]:
-    return {
-        "phase_range": "2026-24--2026-25",
-        "phase_id": "P01",
-        "phase_type": "BASE",
-        "phase_intent": "general_base",
-        "week_blueprints": [{"week": "2026-24", "phase_role": "LOAD_1", "week_role": "LOAD_1"}],
-        "guardrails": {"phase_intent": "general_base", "phase_summary": {"primary_objective": "Conservative base support."}},
-        "structure": {"phase_intent": "general_base"},
-        "preview": {
-            "phase_intent": "general_base",
-            "phase_intent_summary": {"phase_intent": "general_base", "primary_objective": "Stable aerobic build."},
-        },
-        "constraint_audit": {"blocking_issues": []},
-        "load_governance_audit": {"blocking_issues": []},
-        "decision_summary": {},
-    }
-
-
-def test_phase_and_week_finalizers_declare_deterministic_contract_tools() -> None:
+def test_phase_and_week_finalizers_have_no_tools() -> None:
+    # phase_bundle_finalize and week_plan_finalize: deterministic phase-slot/phase-execution
+    # contracts are already provided as injected text (see plan_week.py's phase-architect and
+    # week-planner call sites); the tools that would re-fetch the same data were removed.
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
 
-    assert blueprints["phase_bundle_finalize"].config["tools"] == [
-        "workspace_get_phase_execution_context",
-        "workspace_get_phase_slot_contract",
-    ]
-    assert blueprints["week_plan_finalize"].config["tools"] == [
-        "workspace_get_week_calendar_context",
-        "workspace_get_phase_execution_context",
-    ]
+    assert blueprints["phase_bundle_finalize"].config.get("tools") is None
+    assert blueprints["week_plan_finalize"].config.get("tools") is None
 
 def test_contract_context_blocks_for_phase_and_week_finalizers_include_bound_contracts() -> None:
     with guardrail_runtime_context(
@@ -126,124 +95,6 @@ def test_phase_bundle_finalize_authority_freeze_block_contains_exact_fields() ->
     assert "\"week_role_by_iso_week\"" in block
     assert "\"phase_primary_objective\": \"Rebuild load tolerance.\"" in block
 
-def test_phase_bundle_finalize_bound_contract_detector_requires_both_contexts() -> None:
-    with guardrail_runtime_context(
-        phase_execution_context={"phase_id": "P01"},
-        phase_slot_context={"phase_id": "P01"},
-    ):
-        assert _phase_bundle_finalize_has_bound_contracts() is True
-    with guardrail_runtime_context(
-        phase_execution_context={"phase_id": "P01"},
-        phase_slot_context={},
-    ):
-        assert _phase_bundle_finalize_has_bound_contracts() is False
-
-def test_run_phase_bundle_document_narrows_only_finalizer_tools_with_bound_contracts(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
-        temperature=1.0,
-        reasoning_effort="medium",
-        reasoning_summary="auto",
-        max_completion_tokens=8000,
-        prompt_loader=PromptLoader(Path("prompts")),
-        schema_dir=Path("specs/schemas"),
-        workspace_root=Path("runtime/athletes"),
-    )
-    bundle = load_crewai_config_bundle(root=Path("."))
-    task_blueprints = build_task_blueprints(bundle)
-    agent_blueprints = build_agent_blueprints(bundle)
-    captured: dict[str, object] = {}
-
-    def _fake_execute(**kwargs):
-        captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
-        return _valid_phase_bundle_document()
-
-    monkeypatch.setattr("rps.agents.crewai_task_execution._execute_crewai_multiagent_crew", _fake_execute)
-    tool_map = {
-        name: SimpleNamespace(name=name)
-        for name in [
-            "workspace_get_latest",
-            "workspace_get_phase_context",
-            "workspace_get_phase_execution_context",
-            "workspace_get_phase_slot_contract",
-        ]
-    }
-
-    with guardrail_runtime_context(
-        phase_execution_context={"phase_id": "P01"},
-        phase_slot_context={"phase_id": "P01"},
-    ):
-        _run_phase_bundle_document(
-            runtime=runtime,
-            bundle=bundle,
-            user_input="Create phase bundle.",
-            task_blueprints=task_blueprints,
-            agent_blueprints=agent_blueprints,
-            agent_cls=object,
-            crewai_llm_cls=object,
-            crew_cls=object,
-            task_cls=object,
-            process_cls=object,
-            tools=tool_map,
-            athlete_id="i150546",
-            run_id="run-phase",
-        )
-
-    assert captured["tools_override_by_task"] == {"phase_bundle_finalize": []}
-
-def test_run_phase_bundle_document_keeps_finalizer_tools_without_bound_contracts(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
-        temperature=1.0,
-        reasoning_effort="medium",
-        reasoning_summary="auto",
-        max_completion_tokens=8000,
-        prompt_loader=PromptLoader(Path("prompts")),
-        schema_dir=Path("specs/schemas"),
-        workspace_root=Path("runtime/athletes"),
-    )
-    bundle = load_crewai_config_bundle(root=Path("."))
-    task_blueprints = build_task_blueprints(bundle)
-    agent_blueprints = build_agent_blueprints(bundle)
-    captured: dict[str, object] = {}
-
-    def _fake_execute(**kwargs):
-        captured["tools_override_by_task"] = kwargs.get("tools_override_by_task")
-        return _valid_phase_bundle_document()
-
-    monkeypatch.setattr("rps.agents.crewai_task_execution._execute_crewai_multiagent_crew", _fake_execute)
-
-    with guardrail_runtime_context(
-        phase_execution_context={"phase_id": "P01"},
-        phase_slot_context={},
-    ):
-        _run_phase_bundle_document(
-            runtime=runtime,
-            bundle=bundle,
-            user_input="Create phase bundle.",
-            task_blueprints=task_blueprints,
-            agent_blueprints=agent_blueprints,
-            agent_cls=object,
-            crewai_llm_cls=object,
-            crew_cls=object,
-            task_cls=object,
-            process_cls=object,
-            tools={},
-            athlete_id="i150546",
-            run_id="run-phase",
-        )
-
-    assert captured["tools_override_by_task"] is None
-    with guardrail_runtime_context(
-        phase_execution_context={},
-        phase_slot_context={"phase_id": "P01"},
-    ):
-        assert _phase_bundle_finalize_has_bound_contracts() is False
-
 def test_phase_and_week_managers_disable_free_delegation_via_yaml_override() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     agent_blueprints = build_agent_blueprints(bundle)
@@ -251,22 +102,16 @@ def test_phase_and_week_managers_disable_free_delegation_via_yaml_override() -> 
     assert agent_blueprints["phase_bundle_manager"].config["allow_delegation"] is False
     assert agent_blueprints["week_plan_manager"].config["allow_delegation"] is False
 
-def test_review_finalizers_declare_deterministic_contract_tools() -> None:
+def test_review_finalizers_have_no_tools() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
 
-    assert blueprints["season_review"].config["tools"] == [
-        "workspace_get_phase_slot_contract",
-        "workspace_get_season_phase_load_context",
-    ]
-    assert blueprints["phase_review"].config["tools"] == [
-        "workspace_get_phase_execution_context",
-        "workspace_get_phase_slot_contract",
-    ]
-    assert blueprints["week_review"].config["tools"] == [
-        "workspace_get_week_calendar_context",
-        "workspace_get_phase_execution_context",
-    ]
+    # season_review/phase_review/week_review have no tools: they inherit the exact same
+    # injected user_input their planning crew received, plus the candidate bundle appended
+    # on top (see _run_review_decision_document) -- nothing left for a tool to fetch.
+    assert blueprints["season_review"].config.get("tools") is None
+    assert blueprints["phase_review"].config.get("tools") is None
+    assert blueprints["week_review"].config.get("tools") is None
 
 def test_contract_context_blocks_for_review_finalizers_include_bound_contracts() -> None:
     with guardrail_runtime_context(
@@ -369,46 +214,30 @@ def test_context_read_and_contract_review_tasks_use_narrow_tool_scopes() -> None
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
 
-    assert blueprints["season_context_read"].config["tools"] == [
-        "workspace_get_input",
-        "workspace_get_latest",
-        "workspace_get_version",
-        "workspace_get_phase_slot_contract",
-        "workspace_get_season_phase_load_context",
-    ]
-    assert blueprints["phase_context_read"].config["tools"] == [
-        "workspace_get_input",
-        "workspace_get_latest",
-        "workspace_get_version",
-        "workspace_get_phase_context",
-        "workspace_get_phase_execution_context",
-        "workspace_get_phase_slot_contract",
-    ]
-    assert blueprints["week_context_read"].config["tools"] == [
-        "workspace_get_input",
-        "workspace_get_latest",
-        "workspace_get_version",
-        "workspace_get_phase_context",
-        "workspace_get_week_calendar_context",
-        "workspace_get_phase_execution_context",
-    ]
+    # season_context_read has no tools: every artifact it could fetch is already
+    # deterministically resolved and injected as text into season_planning's shared
+    # user_input (see season_flow.py's create_season_plan).
+    assert blueprints["season_context_read"].config.get("tools") is None
+    # phase_context_read has no tools: athlete-managed inputs, deterministic phase context,
+    # previous-week evidence, and any prior artefacts for this exact range are all already
+    # injected as text into phase_planning's shared user_input (see plan_week.py).
+    assert blueprints["phase_context_read"].config.get("tools") is None
+    # week_context_read has no tools: athlete-managed inputs, deterministic week/phase
+    # authority (week_calendar_block + planning_context_snapshot_block's phase_authority/
+    # recovery/load_governance blocks + the whole-phase execution block), and previous-week
+    # evidence are all already injected as text into week_planning's shared user_input.
+    assert blueprints["week_context_read"].config.get("tools") is None
     assert blueprints["report_context_read"].config["tools"] == [
         "workspace_get_input",
         "workspace_get_latest",
         "workspace_get_version",
     ]
-    assert blueprints["season_contract_review"].config["tools"] == [
-        "workspace_get_phase_slot_contract",
-        "workspace_get_season_phase_load_context",
-    ]
-    assert blueprints["phase_contract_review"].config["tools"] == [
-        "workspace_get_phase_execution_context",
-        "workspace_get_phase_slot_contract",
-    ]
-    assert blueprints["week_contract_review"].config["tools"] == [
-        "workspace_get_week_calendar_context",
-        "workspace_get_phase_execution_context",
-    ]
+    # season_contract_review/phase_contract_review/week_contract_review have no tools: same
+    # reasoning as the review-finalizer tasks above -- the review crew inherits everything the
+    # planning crew already injected, plus the candidate bundle.
+    assert blueprints["season_contract_review"].config.get("tools") is None
+    assert blueprints["phase_contract_review"].config.get("tools") is None
+    assert blueprints["week_contract_review"].config.get("tools") is None
 
 def test_feed_forward_and_report_review_managers_disable_free_delegation() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])

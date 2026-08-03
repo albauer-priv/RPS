@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from rps.crewai_runtime.guardrails_context import GuardrailResult
-from rps.crewai_runtime.guardrails_utilities import _coerce_payload
+from rps.crewai_runtime.guardrails_utilities import DIAGNOSTIC_TEXT_LIMIT, _coerce_payload
 
 
 def typed_output_present(result: Any) -> GuardrailResult:
@@ -22,7 +22,11 @@ def typed_output_present(result: Any) -> GuardrailResult:
     pydantic_payload = getattr(result, "pydantic", None)
     if pydantic_payload is None:
         raw = getattr(result, "raw", None)
-        detail = f" Raw output: {raw.strip()[:6000]}" if isinstance(raw, str) and raw.strip() else " No raw output either."
+        detail = (
+            f" Raw output: {raw.strip()[:DIAGNOSTIC_TEXT_LIMIT]}"
+            if isinstance(raw, str) and raw.strip()
+            else " No raw output either."
+        )
         return (False, f"Task produced no typed (pydantic-validated) structured output.{detail}")
     return (True, pydantic_payload)
 

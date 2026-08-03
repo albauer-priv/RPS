@@ -29,7 +29,6 @@ from rps.agents.crewai_bundle_normalization import (
 )
 from rps.agents.crewai_context_blocks import (
     _contract_context_blocks_for_task,
-    _phase_bundle_finalize_has_bound_contracts,
     _phase_writer_authority_context_block,
 )
 from rps.agents.crewai_output_extraction import (
@@ -141,6 +140,7 @@ _INTERNAL_TOOL_FIRST_RULES = """Shared binding rules for this internal planning 
 - If still blocked, return one compact blocked result only once. Include: missing_inputs, attempted_tools, and reason.
 - No repeated paragraphs. No duplicate missing-input lists. No generic apology text.
 - Final answer discipline: once you have gathered what you need, your final response must be the structured output only. Do not add narration, a summary of the tool calls you made, or any prose before or after the structured output.
+- Never wrap your final structured output in markdown code fences (no ```json or ``` of any kind). Return the raw JSON object itself, nothing else.
 """
 
 JsonMap = dict[str, Any]
@@ -601,7 +601,6 @@ def _execute_crewai_multiagent_crew(
     task_blueprints: dict[str, Any],
     agent_blueprints: dict[str, Any],
     tools: list[Any] | ToolMap,
-    tools_override_by_task: dict[str, list[Any] | ToolMap] | None = None,
     user_input: str,
     final_public_task: AgentTask | None = None,
     athlete_id: str | None = None,
@@ -725,7 +724,6 @@ def _execute_crewai_multiagent_crew(
             athlete_id=athlete_id,
             run_id=run_id,
             tools=tools,
-            tools_override=(tools_override_by_task or {}).get(task_name),
             context_tasks=context_tasks,
         )
         crew_tasks.append(crew_task)
@@ -987,9 +985,6 @@ def _run_phase_bundle_document(
 ) -> JsonMap:
     """Execute the hierarchical phase planning crew and return the internal PhaseBundle."""
     final_task_name = _PHASE_PLANNING_TASKS[-1]
-    tools_override_by_task: dict[str, list[Any] | ToolMap] | None = None
-    if _phase_bundle_finalize_has_bound_contracts():
-        tools_override_by_task = {final_task_name: []}
     pydantic_output = _execute_crewai_multiagent_crew(
         agent_cls=agent_cls,
         crewai_llm_cls=crewai_llm_cls,
@@ -1005,7 +1000,6 @@ def _run_phase_bundle_document(
         task_blueprints=task_blueprints,
         agent_blueprints=agent_blueprints,
         tools=tools,
-        tools_override_by_task=tools_override_by_task,
         user_input=user_input,
         final_public_task=None,
         athlete_id=athlete_id,

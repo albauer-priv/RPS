@@ -14,9 +14,7 @@ Checklist:
 - the range remains exact and traceable
 
 Retrieval policy:
-- Use `workspace_get_phase_execution_context` and `workspace_get_phase_slot_contract` for authoritative phase contracts.
-- Use `workspace_get_latest` for latest authoritative planning artefacts and runtime snapshots when direct retrieval is still needed.
-- Use `workspace_get_input` only for athlete-managed inputs.
+- Authoritative phase contracts, latest planning artefacts/snapshots, and athlete-managed inputs are already provided as injected context. No workspace tools are available or needed for this task.
 
 Output format:
 - Return the task expected_output as a structured review contribution.
