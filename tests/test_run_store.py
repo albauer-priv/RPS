@@ -118,7 +118,7 @@ def test_summarize_runtime_events_reports_active_crew_task_and_progress() -> Non
             "crew": "phase_planning",
             "task": "phase_guardrail_band_draft",
             "agent": "phase_guardrail_band_specialist",
-            "model": "gpt-5.4-mini",
+            "model": "gpt-5.6-luna",
             "component": "crew:phase_bundle_finalize",
         },
     ]
@@ -130,7 +130,7 @@ def test_summarize_runtime_events_reports_active_crew_task_and_progress() -> Non
     assert summary["crew"] == "phase_planning"
     assert summary["task"] == "phase_guardrail_band_draft"
     assert summary["agent"] == "phase_guardrail_band_specialist"
-    assert summary["model"] == "gpt-5.4-mini"
+    assert summary["model"] == "gpt-5.6-luna"
     assert summary["task_progress"] == "2/9"
     assert summary["task_index"] == 2
     assert summary["task_total"] == 9

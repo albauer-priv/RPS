@@ -98,7 +98,7 @@ def test_crewai_runtime_status_compat_shim_matches_runtime_status_module() -> No
 
 def test_preview_scoped_week_replan_requires_message() -> None:
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -124,7 +124,7 @@ def test_preview_scoped_week_replan_returns_true_preview_metadata(monkeypatch, t
     athlete_id = "i150546"
     store = LocalArtifactStore(root=tmp_path)
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -249,24 +249,24 @@ def test_preview_report_and_feed_forward_operations_are_typed() -> None:
 
 def test_direct_crewai_provider_config_uses_env_without_litellm(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
-    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5.6-luna")
     monkeypatch.setenv("RPS_LLM_BASE_URL", "https://api.openai.com/v1")
 
     config = resolve_crewai_provider_config("coach")
     kwargs = build_crewai_llm_kwargs("coach")
 
     assert config.api_key == "global-key"
-    assert config.model == "openai/gpt-5-mini"
+    assert config.model == "openai/gpt-5.6-luna"
     assert kwargs["api_key"] == "global-key"
-    assert kwargs["model"] == "openai/gpt-5-mini"
+    assert kwargs["model"] == "openai/gpt-5.6-luna"
 
-def test_app_settings_default_model_uses_gpt54_family(monkeypatch) -> None:
+def test_app_settings_default_model_uses_gpt56_family(monkeypatch) -> None:
     monkeypatch.delenv("RPS_LLM_MODEL", raising=False)
     monkeypatch.delenv("RPS_LLM_BASE_URL", raising=False)
 
     settings = load_app_settings()
 
-    assert settings.openai_model == "gpt-5.4-mini"
+    assert settings.openai_model == "gpt-5.6-luna"
 
 def test_planning_provider_overrides_and_app_settings(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
@@ -275,31 +275,31 @@ def test_planning_provider_overrides_and_app_settings(monkeypatch) -> None:
     assert resolve_crewai_planning_enabled("season_planning", default_enabled=True) is True
     planning_kwargs = build_crewai_planning_llm_kwargs(
         "season_planning",
-        default_model="gpt-5.4",
+        default_model="gpt-5.6-terra",
     )
     assert planning_kwargs is not None
-    assert planning_kwargs["model"] == "gpt-5.4"
+    assert planning_kwargs["model"] == "gpt-5.6-terra"
     assert planning_kwargs["api_key"] == "global-key"
 
     settings = load_app_settings()
     assert settings.planning_enabled_for_crew("season_planning", True) is True
-    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-5.4"
+    assert settings.planning_model_for_crew("season_planning", "gpt-5.6-terra") == "gpt-5.6-terra"
 
 def test_app_settings_ignore_agent_and_crew_scoped_env_overrides(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "global-key")
-    monkeypatch.setenv("RPS_LLM_MODEL", "gpt-5.4-mini")
-    monkeypatch.setenv("RPS_LLM_MODEL_COACH", "gpt-5.4")
+    monkeypatch.setenv("RPS_LLM_MODEL", "gpt-5.6-luna")
+    monkeypatch.setenv("RPS_LLM_MODEL_COACH", "gpt-5.6-terra")
     monkeypatch.setenv("RPS_LLM_TEMPERATURE", "0.2")
     monkeypatch.setenv("RPS_LLM_TEMPERATURE_COACH", "0.9")
     monkeypatch.setenv("RPS_CREW_PLANNING_SEASON_PLANNING", "false")
-    monkeypatch.setenv("RPS_CREW_PLANNING_LLM_SEASON_PLANNING", "gpt-5.4-nano")
+    monkeypatch.setenv("RPS_CREW_PLANNING_LLM_SEASON_PLANNING", "gpt-5.6-luna")
 
     settings = load_app_settings()
 
-    assert settings.model_for_agent("coach") == "gpt-5.4-mini"
+    assert settings.model_for_agent("coach") == "gpt-5.6-luna"
     assert settings.temperature_for_agent("coach") == 0.2
     assert settings.planning_enabled_for_crew("season_planning", True) is True
-    assert settings.planning_model_for_crew("season_planning", "gpt-5.4") == "gpt-5.4"
+    assert settings.planning_model_for_crew("season_planning", "gpt-5.6-terra") == "gpt-5.6-terra"
     provider = resolve_crewai_provider_config("coach")
-    assert provider.model == "gpt-5.4-mini"
+    assert provider.model == "gpt-5.6-luna"
     assert provider.temperature == 0.2

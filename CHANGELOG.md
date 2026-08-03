@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Reworded `season_flow.py`'s `historical_context_line` to state the previous-week `ACTIVITIES_ACTUAL`/`ACTIVITIES_TREND` versions as already-injected facts instead of instructing `workspace_get_version` — a leftover from before the tools were removed from `season_planning` that had gone unnoticed since it never updated this specific instruction sentence.
+- Migrated the default/configured model family from GPT-5.4 (`gpt-5.4`/`gpt-5.4-mini`/`gpt-5.4-nano`) to GPT-5.6 (`gpt-5.6-terra`/`gpt-5.6-luna`) across `config/crewai/runtime_profiles.yaml`, `src/rps/core/config.py`'s `_DEFAULT_OPENAI_MODEL`, and `src/rps/crewai_runtime/provider.py`'s provider-config fallback. `gpt-5.4` maps to `gpt-5.6-terra`; both `gpt-5.4-mini` and `gpt-5.4-nano` map to `gpt-5.6-luna`, since GPT-5.6 only ships two API-facing tiers below the flagship `sol` model (`allowed_models` deduplicated accordingly). Verified via web search that the GPT-5.6 Sol/Terra/Luna family is real (released 2026-07-09) before making the change, and confirmed the exact old-to-new mapping with the user rather than guessing.
 
 ### Fixed
 

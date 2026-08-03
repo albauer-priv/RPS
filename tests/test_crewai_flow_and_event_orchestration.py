@@ -341,9 +341,9 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
     crewai_telemetry.register_runtime_label(crew, kind="crew", label="season_planning")
     crewai_telemetry.register_runtime_label(agent, kind="agent", label="season_plan_manager")
     crewai_telemetry.register_runtime_metadata(
-        task, assigned_agent="season_plan_manager", assigned_model="gpt-5.4-mini"
+        task, assigned_agent="season_plan_manager", assigned_model="gpt-5.6-luna"
     )
-    crewai_telemetry.register_runtime_metadata(agent, model="gpt-5.4-mini")
+    crewai_telemetry.register_runtime_metadata(agent, model="gpt-5.6-luna")
 
     caplog.set_level(logging.INFO, logger="rps.crewai_runtime.telemetry")
     with crewai_telemetry.runtime_event_scope(
@@ -360,16 +360,16 @@ def test_event_listener_uses_registered_runtime_labels(monkeypatch, tmp_path: Pa
     assert events[1]["task"] == "season_plan_finalize"
     assert events[1]["agent"] == "season_plan_manager"
     assert events[1]["assigned_agent"] == "season_plan_manager"
-    assert events[1]["model"] == "gpt-5.4-mini"
+    assert events[1]["model"] == "gpt-5.6-luna"
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert "crew=season_planning" in log_text
     assert "task=season_plan_finalize" in log_text
     assert "agent=season_plan_manager" in log_text
-    assert "model=gpt-5.4-mini" in log_text
+    assert "model=gpt-5.6-luna" in log_text
 
 def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path, caplog) -> None:
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -384,8 +384,8 @@ def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path
         runtime=runtime,
         crew_name="season_planning",
         tasks=[
-            ("season_context_read", "season_context_specialist", "gpt-5.4-nano"),
-            ("season_plan_finalize", "season_plan_manager", "gpt-5.4-mini"),
+            ("season_context_read", "season_context_specialist", "gpt-5.6-luna"),
+            ("season_plan_finalize", "season_plan_manager", "gpt-5.6-luna"),
         ],
         athlete_id="athlete",
         run_id="run-prepared",
@@ -396,11 +396,11 @@ def test_crewai_backend_emits_task_prepared_events_before_kickoff(tmp_path: Path
     assert [event["type"] for event in events] == ["CREW_TASK_PREPARED", "CREW_TASK_PREPARED"]
     assert events[0]["task"] == "season_context_read"
     assert events[0]["agent"] == "season_context_specialist"
-    assert events[0]["model"] == "gpt-5.4-nano"
+    assert events[0]["model"] == "gpt-5.6-luna"
     assert events[0]["status"] == "1/2"
     assert events[1]["task"] == "season_plan_finalize"
     assert events[1]["agent"] == "season_plan_manager"
-    assert events[1]["model"] == "gpt-5.4-mini"
+    assert events[1]["model"] == "gpt-5.6-luna"
     assert events[1]["status"] == "2/2"
     log_text = "\n".join(record.getMessage() for record in caplog.records)
     assert "type=CREW_TASK_PREPARED" in log_text
@@ -516,7 +516,7 @@ def test_run_season_flow_routes_to_requested_task(monkeypatch) -> None:
     monkeypatch.setattr("rps.crewai_runtime.flows.run_agent_multi_output", _fake_run_agent_multi_output)
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -547,7 +547,7 @@ def test_run_season_flow_uses_typed_flow_state(monkeypatch) -> None:
     )
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -579,7 +579,7 @@ def test_run_phase_flow_executes_bundle_once(monkeypatch) -> None:
     monkeypatch.setattr("rps.crewai_runtime.flows.run_phase_bundle_crewai", _fake_run_phase_bundle_crewai)
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -614,7 +614,7 @@ def test_run_phase_flow_uses_typed_flow_state(monkeypatch) -> None:
     )
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -646,7 +646,7 @@ def test_run_week_flow_dispatches_week_task(monkeypatch) -> None:
     monkeypatch.setattr("rps.crewai_runtime.flows.execute_week_engine", _fake_execute_week_engine)
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -679,7 +679,7 @@ def test_run_week_flow_uses_typed_flow_state(monkeypatch) -> None:
     )
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -711,7 +711,7 @@ def test_run_week_flow_preview_only_dispatches_preview_runner(monkeypatch) -> No
     monkeypatch.setattr("rps.crewai_runtime.flows.execute_week_engine", _fake_execute_week_engine)
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",

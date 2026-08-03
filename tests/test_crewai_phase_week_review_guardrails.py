@@ -174,7 +174,7 @@ def test_review_managers_disable_free_delegation_via_yaml_override() -> None:
 def test_season_review_manager_disables_reasoning_agent_path() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     review_manager = bundle.runtime_profiles["agents"]["season_review_manager"]
-    assert review_manager["model"] == "gpt-5.4-mini"
+    assert review_manager["model"] == "gpt-5.6-luna"
     assert review_manager["reasoning"]["enabled"] is False
 
 def test_phase_and_week_review_managers_disable_reasoning_agent_path() -> None:
@@ -184,9 +184,9 @@ def test_phase_and_week_review_managers_disable_reasoning_agent_path() -> None:
     phase_review_manager = profiles["phase_review_manager"]
     week_review_manager = profiles["week_review_manager"]
 
-    assert phase_review_manager["model"] == "gpt-5.4-mini"
+    assert phase_review_manager["model"] == "gpt-5.6-luna"
     assert phase_review_manager["reasoning"]["enabled"] is False
-    assert week_review_manager["model"] == "gpt-5.4-mini"
+    assert week_review_manager["model"] == "gpt-5.6-luna"
     assert week_review_manager["reasoning"]["enabled"] is False
 
 def test_bounded_phase_and_week_specialists_disable_reasoning_agent_path() -> None:

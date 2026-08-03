@@ -60,7 +60,7 @@ def _set_module_attrs(module: types.ModuleType, **attrs: Any) -> None:
 
 def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
-    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5.6-luna")
     fake_crewai = types.ModuleType("crewai")
     fake_tools = types.ModuleType("crewai.tools")
 
@@ -271,7 +271,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     )
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -288,7 +288,7 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
         tasks=[AgentTask.CREATE_SEASON_PLAN],
         user_input="Create the season plan.",
         run_id="run-1",
-        model_override="gpt-5.4-nano",
+        model_override="gpt-5.6-luna",
     )
 
     crews = cast(list[JsonMap], captured_crew["crews"])
@@ -313,21 +313,21 @@ def test_run_agent_multi_output_crewai_persists_typed_output(monkeypatch) -> Non
     macrocycle_agent = next(agent for agent in created_agents if agent["role"] == "Reverse-plan season macrocycles")
     assert "reasoning" not in macrocycle_agent
     assert "max_reasoning_attempts" not in macrocycle_agent
-    assert getattr(macrocycle_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4"
+    assert getattr(macrocycle_agent["llm"], "kwargs", {}).get("model") == "gpt-5.6-terra"
     writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted season artefact serializer")
     assert "reasoning" not in writer_agent
     assert writer_agent["allow_delegation"] is False
     assert writer_agent["max_iter"] == 2
     assert writer_agent["respect_context_window"] is True
     assert writer_agent["cache"] is False
-    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
+    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.6-luna"
     manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal season planning synthesizer")
     assert manager_agent["allow_delegation"] is False
     assert manager_agent["max_iter"] == 5
 
 def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
-    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5.6-luna")
     fake_crewai = types.ModuleType("crewai")
     fake_tools = types.ModuleType("crewai.tools")
 
@@ -465,7 +465,7 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     )
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -502,17 +502,17 @@ def test_run_agent_multi_output_crewai_phase_bundle_split(monkeypatch) -> None:
     band_agent = next(agent for agent in created_agents if agent["role"] == "Phase weekly corridor specialist")
     assert "reasoning" not in band_agent
     assert "max_reasoning_attempts" not in band_agent
-    assert getattr(band_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
+    assert getattr(band_agent["llm"], "kwargs", {}).get("model") == "gpt-5.6-luna"
     writer_agent = next(agent for agent in created_agents if agent["role"] == "Persisted phase artefact serializer")
     assert "reasoning" not in writer_agent
     assert writer_agent["allow_delegation"] is False
     assert writer_agent["max_iter"] == 2
     assert writer_agent["respect_context_window"] is True
-    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
+    assert getattr(writer_agent["llm"], "kwargs", {}).get("model") == "gpt-5.6-luna"
 
 def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_execution(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
-    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5.6-luna")
     fake_crewai = types.ModuleType("crewai")
     fake_tools = types.ModuleType("crewai.tools")
 
@@ -612,7 +612,7 @@ def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_exec
     monkeypatch.setitem(sys.modules, "crewai.tools", fake_tools)
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -671,7 +671,7 @@ def test_run_agent_multi_output_crewai_week_plan_uses_sequential_specialist_exec
     assert crews[0].get("manager_agent") is None
     assert crews[0].get("process") == "sequential"
     manager_agent = next(agent for agent in created_agents if agent["role"] == "Internal week bundle synthesizer")
-    assert getattr(manager_agent["llm"], "kwargs", {}).get("model") == "gpt-5.4-mini"
+    assert getattr(manager_agent["llm"], "kwargs", {}).get("model") == "gpt-5.6-luna"
 
 def test_run_multicrew_cycle_replays_only_sanitized_replan_context(tmp_path) -> None:
     captured_inputs: list[str] = []
@@ -712,7 +712,7 @@ def test_run_multicrew_cycle_replays_only_sanitized_replan_context(tmp_path) -> 
 
     planning_bundle, review_decision = _run_multicrew_cycle(
         runtime=AgentRuntime(
-            model="gpt-5.4-mini",
+            model="gpt-5.6-luna",
             temperature=None,
             reasoning_effort=None,
             reasoning_summary=None,
@@ -781,7 +781,7 @@ def test_review_decision_integrity_requires_replan_instructions_for_replan() -> 
 
 def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch) -> None:
     monkeypatch.setenv("RPS_LLM_API_KEY", "test-key")
-    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5-mini")
+    monkeypatch.setenv("RPS_LLM_MODEL", "openai/gpt-5.6-luna")
     fake_crewai = types.ModuleType("crewai")
     fake_tools = types.ModuleType("crewai.tools")
 
@@ -858,7 +858,7 @@ def test_run_agent_multi_output_crewai_normalizes_feed_forward_owner(monkeypatch
     )
 
     runtime = AgentRuntime(
-        model="openai/gpt-5-mini",
+        model="openai/gpt-5.6-luna",
         temperature=1.0,
         reasoning_effort="medium",
         reasoning_summary="auto",

@@ -38,7 +38,7 @@ def resolve_crewai_provider_config(
     if not api_key:
         raise RuntimeError("RPS_LLM_API_KEY is required")
 
-    model = model_override or os.getenv("RPS_LLM_MODEL") or "openai/gpt-5-mini"
+    model = model_override or os.getenv("RPS_LLM_MODEL") or "openai/gpt-5.6-luna"
 
     temperature = temperature_override
     if temperature is None:

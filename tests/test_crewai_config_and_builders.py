@@ -105,10 +105,10 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert flow_defs["coach"]["persist"] is False
     assert bundle.runtime_profiles["crews"]["season_planning"]["planning"]["enabled"] is False
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["enabled"] is False
-    assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.4-mini"
-    assert bundle.runtime_profiles["agents"]["season_plan_manager"]["model"] == "gpt-5.4-mini"
+    assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.6-luna"
+    assert bundle.runtime_profiles["agents"]["season_plan_manager"]["model"] == "gpt-5.6-luna"
     assert bundle.runtime_profiles["agents"]["season_plan_manager"]["reasoning"]["enabled"] is False
-    assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.4"
+    assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.6-terra"
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["reasoning"]["enabled"] is False
     assert bundle.runtime_profiles["agents"]["week_artifact_writer"]["reasoning"]["enabled"] is False
     assert bundle.skills["agents"]["week_revision_specialist"]["skill"] == "skills/week/revision-methodology"
@@ -646,7 +646,7 @@ Use the event list.
 
 def test_internal_task_description_is_tool_first_and_compact() -> None:
     runtime = AgentRuntime(
-        model="gpt-5.4-mini",
+        model="gpt-5.6-luna",
         temperature=0.2,
         reasoning_effort="medium",
         reasoning_summary="auto",
@@ -851,7 +851,7 @@ def test_build_crewai_task_tools_override_takes_precedence() -> None:
         agent=SimpleNamespace(llm=None),
         description="test",
         runtime=AgentRuntime(
-            model="openai/gpt-5-mini",
+            model="openai/gpt-5.6-luna",
             temperature=1.0,
             reasoning_effort="medium",
             reasoning_summary="auto",

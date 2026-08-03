@@ -8,7 +8,7 @@ from pathlib import Path
 
 _GROQ_BASE_URL_MARKER = "api.groq.com"
 _DEFAULT_GROQ_MODEL = "groq/openai/gpt-oss-20b"
-_DEFAULT_OPENAI_MODEL = "gpt-5.4-mini"
+_DEFAULT_OPENAI_MODEL = "gpt-5.6-luna"
 _DEFAULT_GROQ_MAX_COMPLETION_TOKENS = 2048
 
 

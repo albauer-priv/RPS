@@ -373,7 +373,7 @@ def test_runtime_profile_validation_rejects_unknown_model(tmp_path: Path) -> Non
         (crewai_dir / name).write_text((source_dir / name).read_text(encoding="utf-8"), encoding="utf-8")
     runtime_profiles_path = crewai_dir / "runtime_profiles.yaml"
     runtime_profiles_path.write_text(
-        runtime_profiles_path.read_text(encoding="utf-8").replace("gpt-5.4-mini", "bad-model", 1),
+        runtime_profiles_path.read_text(encoding="utf-8").replace("gpt-5.6-luna", "bad-model", 1),
         encoding="utf-8",
     )
 
