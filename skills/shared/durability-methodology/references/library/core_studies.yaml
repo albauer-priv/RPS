@@ -1,7 +1,7 @@
 version: 2
 library_type: core_studies
 curation_schema_version: '1'
-generated_at: '2026-08-03T07:46:32.333919Z'
+generated_at: '2026-08-10T05:46:24.779826Z'
 entries:
 - id: dur_core_026
   source_kind: core
@@ -115,7 +115,7 @@ entries:
     Part I: short term insufficient training stimulus'
   journal_or_outlet: Sports Medicine
   source_type: peer_reviewed
-  study_type: review
+  study_type: narrative_review
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/10966148/
   verification_status: verified
   locator_source: pubmed
@@ -124,91 +124,229 @@ entries:
   - recovery
   - performance_decay
   - endurance
-  question_or_focus: Review the short-term physiological and performance consequences
-    of insufficient training stimulus and detraining.
-  population_or_scope: Short-term detraining review context; useful for deconditioning
-    and re-entry framing pending fuller local curation.
-  what_was_examined: []
-  core_concepts: []
-  important_findings: []
-  practical_implications: []
+  question_or_focus: Physiological and performance consequences of short-term insufficient
+    training stimulus and detraining.
+  population_or_scope: Trained individuals discussed in a review of short-term insufficient
+    training stimulus, including highly trained athletes, recently trained individuals,
+    and strength athletes for selected hormonal observations. No specific RPS sport
+    population is established in the supplied abstract.
+  what_was_examined:
+  - Short-term detraining, defined in the abstract as less than 4 weeks of insufficient
+    training stimulus.
+  - Cardiorespiratory changes including maximal oxygen uptake, blood volume, stroke
+    volume, maximal cardiac output, ventilatory efficiency, and endurance performance.
+  - Metabolic changes including exercise respiratory exchange ratio, lipase activity,
+    GLUT-4 content, glycogen level, and lactate threshold.
+  - Muscle-level changes including capillary density, oxidative enzyme activities,
+    fibre cross-sectional area, and strength performance.
+  - Hormonal changes including insulin sensitivity, possible changes in testosterone
+    and growth hormone in strength athletes, and fluid-electrolyte-regulating hormones.
+  core_concepts:
+  - Detraining
+  - Short-term insufficient training stimulus
+  - Loss of training-induced physiological adaptations
+  - Loss of training-induced performance adaptations
+  - Cardiorespiratory, metabolic, muscular, hormonal, and endurance-performance responses
+  important_findings:
+  - The abstract reports that short-term detraining in highly trained athletes is
+    characterized by a rapid decline in maximal oxygen uptake and blood volume.
+  - The abstract reports reduced stroke volume, reduced maximal cardiac output, impaired
+    ventilatory efficiency, and impaired endurance performance.
+  - The abstract reports that these changes are more moderate in recently trained
+    individuals.
+  - The abstract reports increased reliance on carbohydrate metabolism during exercise,
+    with lowered lipase activity, GLUT-4 content, glycogen level, and lactate threshold.
+  - The abstract reports reduced capillary density and oxidative enzyme activities
+    at the muscle level.
+  - The abstract reports reversal of training-induced changes in fibre cross-sectional
+    area, with limited declines in strength performance.
+  - The abstract reports reduced insulin sensitivity and reversal of short-term training-induced
+    adaptations in fluid-electrolyte-regulating hormones.
+  practical_implications:
+  - The abstract supports using short-term detraining as a rationale for discussing
+    the possible consequences of an insufficient training stimulus in endurance planning.
+  - The abstract supports interpreting detraining-related responses in light of training
+    status and duration of insufficient stimulus.
+  - The abstract does not supply enough detail for direct training, taper, fueling,
+    progression, or intensity-distribution prescriptions.
   key_takeaways:
-  - Verified PubMed locator for a short-term detraining review.
-  - Candidate core source for short-term deconditioning and insufficient-stimulus
-    context pending fuller curation.
-  what_this_does_not_justify: []
+  - The abstract describes multiple endurance-related physiological and performance
+    changes after short-term insufficient training stimulus.
+  - The reported response varies by training status, with more moderate cardiorespiratory
+    changes in recently trained individuals.
+  - The source is best used as abstract-bounded rationale and background for RPS planning,
+    not as a prescriptive coaching protocol.
+  what_this_does_not_justify:
+  - Specific taper prescriptions or taper durations.
+  - Individualized coaching instructions about training reduction or maintenance.
+  - Direct claims about cycling, brevet, ultra, or masters-athlete outcomes.
+  - Quantified individual performance-loss predictions.
+  - Fueling, progression, recovery, or intensity-distribution prescriptions.
   important_limits:
-  - Metadata-only entry added from verified citation/locator; abstract and full-text
-    findings are not yet curated here.
-  - Do not infer exact short-term recovery-loss timelines from title-level metadata
-    alone.
+  - Only the abstract was supplied; full-text methods and detailed evidence synthesis
+    are unavailable.
+  - The scope is short-term insufficient training stimulus, defined as less than 4
+    weeks in the abstract, and does not cover the review's long-term section.
+  - The abstract does not provide sport-specific findings for RPS cycling, brevet,
+    ultra, or masters populations.
+  - The abstract does not quantify individual-level effects or establish causal thresholds
+    for training reduction.
+  - The abstract does not directly examine RPS operational outcomes such as durability,
+    repeatability, pacing stability, or low metabolic strain under prolonged work.
   allowed_uses:
-  - detraining_context
-  - recovery_context
+  - durability_definition
+  - durability_rationale
+  - planning_justification
   authority_limit: acceptable_for_explanation
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: restricted
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Added from user-supplied verified PubMed citation; pending deeper curation.
   summary_card:
-    focus: 'Detraining: loss of training-induced physiological and performance adaptations.
-      Part I: short term insufficient training stimulus'
-    main_takeaway: Verified PubMed locator for a short-term detraining review.
-    main_limit: Metadata-only entry added from verified citation/locator; abstract
-      and full-text findings are not yet curated here.
+    focus: Short-term detraining and the physiological and performance consequences
+      of an insufficient training stimulus.
+    main_takeaway: The review abstract reports that short-term insufficient training
+      stimulus may be associated with declines in endurance-related cardiorespiratory,
+      metabolic, muscular, and performance adaptations, with responses varying by
+      training status.
+    main_limit: Abstract-only material without detailed methods, quantified effects,
+      or direct RPS sport-population transfer.
   relevance_assessment:
     overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    relevance_rationale: This verified peer-reviewed review abstract directly addresses
+      insufficient training stimulus and reported losses in endurance-related physiological
+      and performance adaptations, making it relevant to RPS durability rationale
+      and planning context. Relevance is medium rather than high because only the
+      abstract is available, the source does not directly examine RPS populations
+      or operational long-duration outcomes, and it does not provide prescriptive
+      training guidance.
     rps_domains_supported:
-    - detraining
-    - recovery
-    - performance_decay
+    - durability
+    - fatigue_resistance
+    - pacing
     target_audiences_supported:
+    - season_planning
+    - phase_planning
+    - athlete_education
     - background_knowledge
     best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
-      pending deeper curation.
-    research_question_or_purpose: Review the short-term physiological and performance
-      consequences of insufficient training stimulus and detraining.
-    study_type: review
-    population_or_context: Short-term detraining review context; useful for deconditioning
-      and re-entry framing pending fuller local curation.
-    what_was_actually_examined: Review the short-term physiological and performance
-      consequences of insufficient training stimulus and detraining.
-    core_concepts: []
+    why_this_source_matters_for_rps: The abstract provides a scientific rationale
+      for treating insufficient training stimulus as relevant to the preservation
+      of endurance-related adaptations. For RPS, it is most useful as background and
+      planning context around durability and training continuity, while its abstract-only
+      scope limits direct transfer to long-duration cycling, brevet, ultra, and individualized
+      coaching decisions.
+    research_question_or_purpose: To describe the physiological and performance consequences
+      of short-term insufficient training stimulus, defined in the abstract as less
+      than 4 weeks, as part of a review of detraining.
+    study_type: Narrative review
+    population_or_context: The review abstract addresses short-term insufficient training
+      stimulus in trained individuals, with specific descriptions for highly trained
+      athletes and a comparison indicating more moderate cardiorespiratory changes
+      in recently trained individuals. It also mentions strength athletes in relation
+      to possible hormonal changes. The supplied material does not establish a specific
+      cycling, brevet, ultra, or masters-athlete population.
+    what_was_actually_examined: The abstract describes short-term detraining and insufficient
+      training stimulus, including cardiorespiratory, metabolic, muscle-level, hormonal,
+      and performance-related changes. It distinguishes short-term detraining from
+      long-term detraining and reports differences in the described cardiorespiratory
+      response between highly trained and recently trained individuals.
+    core_concepts:
+    - Detraining is described as the partial or complete loss of training-induced
+      adaptations in response to an insufficient training stimulus.
+    - Short-term detraining is defined in the abstract as less than 4 weeks of insufficient
+      training stimulus.
+    - The abstract describes cardiorespiratory, metabolic, muscular, hormonal, and
+      performance-related changes associated with short-term insufficient training
+      stimulus.
     key_takeaways:
-    - Verified PubMed locator for a short-term detraining review.
-    - Candidate core source for short-term deconditioning and insufficient-stimulus
-      context pending fuller curation.
-    important_findings: []
-    practical_implications_for_rps: []
-    what_this_source_does_not_justify: []
+    - The review abstract describes short-term insufficient training stimulus as potentially
+      affecting endurance-related physiological and performance adaptations.
+    - The abstract indicates that the extent of detraining-related change may differ
+      according to training status and the duration of training cessation or insufficient
+      training.
+    - The abstract supports distinguishing short-term detraining from long-term detraining,
+      which the review identifies as more than 4 weeks of insufficient training stimulus.
+    important_findings:
+    - The review abstract reports that, in highly trained athletes, short-term detraining
+      is characterized by a rapid decline in maximal oxygen uptake and blood volume.
+    - The abstract reports reduced stroke volume, reduced maximal cardiac output,
+      impaired ventilatory efficiency, and impaired endurance performance in highly
+      trained athletes.
+    - The abstract reports that these cardiorespiratory changes are more moderate
+      in recently trained individuals.
+    - The abstract reports increased reliance on carbohydrate metabolism during exercise,
+      alongside lowered lipase activity, GLUT-4 content, glycogen level, and lactate
+      threshold.
+    - The abstract reports reductions in capillary density and oxidative enzyme activities
+      at the muscle level.
+    - The abstract reports that training-induced changes in muscle fibre cross-sectional
+      area are reversed, while strength-performance declines are limited.
+    - The abstract reports hormonal changes including reduced insulin sensitivity
+      and reversal of short-term training-induced adaptations in fluid-electrolyte-regulating
+      hormones.
+    practical_implications_for_rps:
+    - For RPS education and planning context, the abstract supports explaining that
+      insufficient training stimulus may be associated with losses in endurance-related
+      physiological and performance adaptations.
+    - The abstract supports considering training status and the duration of insufficient
+      stimulus when interpreting possible detraining-related changes.
+    - Any RPS planning implication should remain abstract-supported and non-prescriptive
+      because the supplied material does not provide an intervention protocol or sport-specific
+      prescription.
+    what_this_source_does_not_justify:
+    - It does not justify a specific taper duration, taper structure, or claim that
+      tapering produces the reported detraining effects.
+    - It does not justify direct coaching instructions about how much training to
+      retain, reduce, or replace.
+    - It does not justify sport-specific conclusions for cycling, brevet, ultra, or
+      masters athletes.
+    - It does not justify claims that short-term training reduction inevitably causes
+      a particular magnitude of performance loss in an individual athlete.
+    - It does not justify using the reported physiological changes as direct measures
+      of durability, fatigue resistance, pacing stability, or repeatability.
+    - 'It does not justify fueling prescriptions, intensity-distribution prescriptions,
+      progression rules, or recovery timelines. '
     limits_and_transfer_boundaries:
-    - Metadata-only entry added from verified citation/locator; abstract and full-text
-      findings are not yet curated here.
-    - Do not infer exact short-term recovery-loss timelines from title-level metadata
-      alone.
+    - The available material is abstract-level only; the review methods, included
+      studies, evidence synthesis, and detailed conditions are not available here.
+    - The abstract focuses on short-term insufficient training stimulus and does not
+      provide a full account of long-term detraining.
+    - The source describes findings in highly trained athletes and notes more moderate
+      changes in recently trained individuals; direct transfer to cycling, brevet,
+      ultra, masters, or other RPS populations is not established by the abstract.
+    - The abstract does not establish specific thresholds for training frequency,
+      volume, intensity, or acceptable reductions in training stimulus.
+    - The abstract does not establish how these changes affect durability, repeatability,
+      pacing stability, or low metabolic strain during long-duration events as operational
+      RPS outcomes.
     allowed_uses_in_rps:
-    - detraining_context
-    - recovery_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Use as abstract-supported rationale for why an insufficient training stimulus
+      may be associated with losses in endurance-related physiological and performance
+      adaptations.
+    - Use to define short-term detraining as less than 4 weeks of insufficient training
+      stimulus within the scope described by the review abstract.
+    - Use as planning context for maintaining an adequate training stimulus, without
+      treating the abstract as a prescriptive planning protocol.
+    evidence_posture: abstract_curated
+    source_material_basis: Curated from abstract-level material. Verified PubMed locator
+      supplied; no full text or OA excerpt was provided.
   brief_path: studies/dur_core_027.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: true
   trusted_match_reason: 'Trusted author+outlet pair: inigo mujika / sports medicine'
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_027
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-08-10T05:45:14.770650Z'
+  activated_at: '2026-08-10T05:45:14.770650Z'
 - id: dur_core_028
   source_kind: core
   authors: Mujika, I., & Padilla, S.
@@ -217,7 +355,7 @@ entries:
     Part II: long term insufficient training stimulus'
   journal_or_outlet: Sports Medicine
   source_type: peer_reviewed
-  study_type: review
+  study_type: narrative_review
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/10999420/
   verification_status: verified
   locator_source: pubmed
@@ -226,91 +364,270 @@ entries:
   - recovery
   - performance_decay
   - long_term_adaptation
-  question_or_focus: Review the long-term physiological and performance consequences
-    of insufficient training stimulus and detraining.
-  population_or_scope: Long-term detraining review context; useful for prolonged deconditioning
-    and rebuild framing pending fuller local curation.
-  what_was_examined: []
-  core_concepts: []
-  important_findings: []
-  practical_implications: []
+  question_or_focus: Long-term insufficient training stimulus, detraining, associated
+    physiological and performance losses, and strategies that may limit those losses.
+  population_or_scope: Athletes undergoing an insufficient training stimulus for longer
+    than 4 weeks, including endurance athletes and strength athletes as described
+    in the review abstract; the abstract also refers to highly trained and moderately
+    trained individuals.
+  what_was_examined:
+  - The review abstract examines physiological and performance changes associated
+    with more than 4 weeks of insufficient training stimulus, including maximal oxygen
+    uptake, cardiovascular and ventilatory characteristics, endurance performance,
+    muscle glycogen and carbohydrate utilisation, lactate threshold, muscle-level
+    adaptations, muscle fibre characteristics, and force production.
+  - It also describes reduced-training and cross-training strategies that may limit
+    detraining effects.
+  core_concepts:
+  - Long-term insufficient training stimulus
+  - Detraining
+  - Loss and preservation of training-induced physiological adaptations
+  - Training intensity, frequency, and volume during reduced training
+  - Cross-training and similar-mode exercise
+  important_findings:
+  - The review abstract reports that, after more than 4 weeks of insufficient training
+    stimulus, athletes’ maximal oxygen uptake declines markedly but remains above
+    control values, while recently acquired maximal oxygen uptake gains may be completely
+    lost.
+  - The abstract reports reductions in blood volume, cardiac dimensions, ventilatory
+    efficiency, stroke volume, and cardiac output, with increased heart rates and
+    impaired endurance performance during long-term detraining.
+  - The abstract reports that resting muscle glycogen returns to baseline, carbohydrate
+    utilisation increases, and lactate threshold is lowered, although some values
+    remain above those of untrained individuals in highly trained athletes.
+  - The abstract reports declines in capillarisation, arterial-venous oxygen difference,
+    and oxidative enzyme activities; these adaptations are described as completely
+    reversed in recently trained individuals.
+  - The abstract reports that force production declines slowly and usually remains
+    above control values for very long periods.
+  - The abstract states that negative effects can be avoided or limited by reduced-training
+    strategies when training intensity is maintained, frequency is reduced only moderately,
+    and training volume is markedly reduced.
+  - The abstract reports that cross-training may help maintain training-induced adaptations,
+    with similar-mode exercise suggested for athletes and dissimilar-mode cross-training
+    potentially beneficial for moderately trained individuals.
+  practical_implications:
+  - For long-duration planning, the abstract supports treating prolonged insufficient
+    training as a potential threat to retained aerobic and endurance-performance adaptations
+    rather than assuming that all adaptations decay at the same rate.
+  - When discussing reduced-training periods, RPS can cite the abstract’s review-level
+    indication that maintaining intensity, reducing volume substantially, and limiting
+    frequency reduction may help preserve adaptations; this is not a direct individualized
+    coaching prescription.
+  - For athlete education, the source can explain why performance may decline during
+    extended undertraining and why recently acquired adaptations may be particularly
+    vulnerable.
+  - Cross-training can be discussed as an abstract-supported option for maintaining
+    adaptations, while acknowledging that the available material does not establish
+    a specific modality or workload for an individual athlete.
   key_takeaways:
-  - Verified PubMed locator for a long-term detraining review.
-  - Candidate core source for prolonged deconditioning and rebuild context pending
-    fuller curation.
-  what_this_does_not_justify: []
+  - The review abstract describes long-term detraining as a source of both physiological
+    and endurance-performance decline after an insufficient training stimulus lasting
+    longer than 4 weeks.
+  - 'The abstract indicates that the extent and speed of adaptation loss differ by
+    adaptation: recently acquired aerobic adaptations may be lost completely, whereas
+    some strength-related capacity may persist longer.'
+  - The abstract-supported preservation strategy is characterized by maintaining training
+    intensity while reducing volume substantially and frequency only moderately; this
+    should be treated as review-level guidance rather than an individualized prescription.
+  what_this_does_not_justify:
+  - It does not justify a precise taper, deload, or return-to-training prescription
+    for an individual athlete.
+  - It does not justify assuming that maintaining intensity and reducing volume will
+    produce the same result across athletes, training histories, event types, or health
+    states.
+  - It does not justify sport-specific conclusions for cycling, brevet, or ultra-endurance
+    performance beyond cautious conceptual transfer.
+  - It does not justify claims about pacing stability, fatigue resistance during long
+    events, fueling requirements, masters athletes, or recovery needs that are not
+    stated in the abstract.
+  - It does not justify treating the reported physiological changes as evidence from
+    a single controlled intervention or as a quantified dose-response relationship.
   important_limits:
-  - Metadata-only entry added from verified citation/locator; abstract and full-text
-    findings are not yet curated here.
-  - Do not infer exact long-term performance-loss or rebuild timelines from title-level
-    metadata alone.
+  - The available source material is abstract-level only; the review’s full methods,
+    evidence selection, study characteristics, and detailed support for each strategy
+    cannot be assessed here.
+  - The abstract does not provide athlete-level thresholds for how much volume or
+    frequency to retain, nor does it establish a specific duration, workload, or progression
+    for reduced training.
+  - The abstract concerns long-term insufficient training stimulus and detraining,
+    not the full range of tapering, recovery, fatigue-management, or race-preparation
+    contexts.
+  - The abstract does not directly examine cycling, brevet, ultra-endurance, masters
+    athletes, pacing stability, durability under repeated fatigue, or low-metabolic-strain
+    performance.
+  - Cross-training findings and transfer claims are reported in the abstract but are
+    not sufficiently detailed here to determine modality-specific equivalence or individualized
+    applicability.
   allowed_uses:
-  - detraining_context
-  - rebuild_context
+  - durability_definition
+  - durability_rationale
+  - planning_justification
+  - coaching_translation
   authority_limit: acceptable_for_explanation
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: restricted
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Added from user-supplied verified PubMed citation; pending deeper curation.
   summary_card:
-    focus: 'Detraining: loss of training-induced physiological and performance adaptations.
-      Part II: long term insufficient training stimulus'
-    main_takeaway: Verified PubMed locator for a long-term detraining review.
-    main_limit: Metadata-only entry added from verified citation/locator; abstract
-      and full-text findings are not yet curated here.
+    focus: Long-term detraining after more than 4 weeks of insufficient training stimulus
+      and strategies that may limit physiological and performance losses.
+    main_takeaway: The abstract reports that prolonged insufficient training impairs
+      endurance-related adaptations and performance, while maintaining intensity and
+      reducing volume substantially may help limit detraining effects.
+    main_limit: Abstract-only material does not provide full review methods, quantified
+      prescriptions, or direct evidence for cycling, brevet, ultra-endurance, masters,
+      pacing, or event-specific transfer.
   relevance_assessment:
-    overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    overall_relevance: high
+    relevance_rationale: The abstract directly addresses long-term insufficient training
+      stimulus, loss of endurance-related adaptations, impaired endurance performance,
+      and reduced-training strategies. This supports RPS durability rationale and
+      planning discussions, although the abstract-only evidence posture requires explicitly
+      bounded claims and prevents precise sport-specific or individualized prescriptions.
     rps_domains_supported:
-    - detraining
-    - recovery
-    - performance_decay
+    - durability
+    - fatigue_resistance
+    - progression
+    - coaching_translation
     target_audiences_supported:
+    - season_planning
+    - phase_planning
+    - coach_chat
+    - athlete_education
     - background_knowledge
     best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
-      pending deeper curation.
-    research_question_or_purpose: Review the long-term physiological and performance
-      consequences of insufficient training stimulus and detraining.
-    study_type: review
-    population_or_context: Long-term detraining review context; useful for prolonged
-      deconditioning and rebuild framing pending fuller local curation.
-    what_was_actually_examined: Review the long-term physiological and performance
-      consequences of insufficient training stimulus and detraining.
-    core_concepts: []
+    why_this_source_matters_for_rps: The abstract provides a peer-reviewed review-level
+      rationale for considering long-term training sufficiency and adaptation retention
+      in durability-oriented planning. Its relevance is strongest for explaining why
+      prolonged undertraining can impair endurance performance and why reduced-training
+      strategies may preserve some adaptations, while its abstract-only basis limits
+      precise coaching translation.
+    research_question_or_purpose: The review abstract discusses detraining following
+      an insufficient training stimulus lasting longer than 4 weeks, its physiological
+      and performance consequences, and strategies that may help avoid or limit those
+      effects.
+    study_type: Narrative review
+    population_or_context: Athletes undergoing an insufficient training stimulus for
+      longer than 4 weeks, including endurance athletes and strength athletes as described
+      in the review abstract; the abstract also refers to highly trained and moderately
+      trained individuals.
+    what_was_actually_examined: The review abstract examines physiological and performance
+      changes associated with more than 4 weeks of insufficient training stimulus,
+      including maximal oxygen uptake, cardiovascular and ventilatory characteristics,
+      endurance performance, muscle glycogen and carbohydrate utilisation, lactate
+      threshold, muscle-level adaptations, muscle fibre characteristics, and force
+      production. It also describes reduced-training and cross-training strategies
+      that may limit detraining effects.
+    core_concepts:
+    - Long-term insufficient training stimulus
+    - Detraining
+    - Loss and preservation of training-induced physiological adaptations
+    - Training intensity, frequency, and volume during reduced training
+    - Cross-training and similar-mode exercise
     key_takeaways:
-    - Verified PubMed locator for a long-term detraining review.
-    - Candidate core source for prolonged deconditioning and rebuild context pending
-      fuller curation.
-    important_findings: []
-    practical_implications_for_rps: []
-    what_this_source_does_not_justify: []
+    - The review abstract describes long-term detraining as a source of both physiological
+      and endurance-performance decline after an insufficient training stimulus lasting
+      longer than 4 weeks.
+    - 'The abstract indicates that the extent and speed of adaptation loss differ
+      by adaptation: recently acquired aerobic adaptations may be lost completely,
+      whereas some strength-related capacity may persist longer.'
+    - The abstract-supported preservation strategy is characterized by maintaining
+      training intensity while reducing volume substantially and frequency only moderately;
+      this should be treated as review-level guidance rather than an individualized
+      prescription.
+    important_findings:
+    - The review abstract reports that, after more than 4 weeks of insufficient training
+      stimulus, athletes’ maximal oxygen uptake declines markedly but remains above
+      control values, while recently acquired maximal oxygen uptake gains may be completely
+      lost.
+    - The abstract reports reductions in blood volume, cardiac dimensions, ventilatory
+      efficiency, stroke volume, and cardiac output, with increased heart rates and
+      impaired endurance performance during long-term detraining.
+    - The abstract reports that resting muscle glycogen returns to baseline, carbohydrate
+      utilisation increases, and lactate threshold is lowered, although some values
+      remain above those of untrained individuals in highly trained athletes.
+    - The abstract reports declines in capillarisation, arterial-venous oxygen difference,
+      and oxidative enzyme activities; these adaptations are described as completely
+      reversed in recently trained individuals.
+    - The abstract reports that force production declines slowly and usually remains
+      above control values for very long periods.
+    - The abstract states that negative effects can be avoided or limited by reduced-training
+      strategies when training intensity is maintained, frequency is reduced only
+      moderately, and training volume is markedly reduced.
+    - The abstract reports that cross-training may help maintain training-induced
+      adaptations, with similar-mode exercise suggested for athletes and dissimilar-mode
+      cross-training potentially beneficial for moderately trained individuals.
+    practical_implications_for_rps:
+    - For long-duration planning, the abstract supports treating prolonged insufficient
+      training as a potential threat to retained aerobic and endurance-performance
+      adaptations rather than assuming that all adaptations decay at the same rate.
+    - When discussing reduced-training periods, RPS can cite the abstract’s review-level
+      indication that maintaining intensity, reducing volume substantially, and limiting
+      frequency reduction may help preserve adaptations; this is not a direct individualized
+      coaching prescription.
+    - For athlete education, the source can explain why performance may decline during
+      extended undertraining and why recently acquired adaptations may be particularly
+      vulnerable.
+    - Cross-training can be discussed as an abstract-supported option for maintaining
+      adaptations, while acknowledging that the available material does not establish
+      a specific modality or workload for an individual athlete.
+    what_this_source_does_not_justify:
+    - It does not justify a precise taper, deload, or return-to-training prescription
+      for an individual athlete.
+    - It does not justify assuming that maintaining intensity and reducing volume
+      will produce the same result across athletes, training histories, event types,
+      or health states.
+    - It does not justify sport-specific conclusions for cycling, brevet, or ultra-endurance
+      performance beyond cautious conceptual transfer.
+    - It does not justify claims about pacing stability, fatigue resistance during
+      long events, fueling requirements, masters athletes, or recovery needs that
+      are not stated in the abstract.
+    - It does not justify treating the reported physiological changes as evidence
+      from a single controlled intervention or as a quantified dose-response relationship.
     limits_and_transfer_boundaries:
-    - Metadata-only entry added from verified citation/locator; abstract and full-text
-      findings are not yet curated here.
-    - Do not infer exact long-term performance-loss or rebuild timelines from title-level
-      metadata alone.
+    - The available source material is abstract-level only; the review’s full methods,
+      evidence selection, study characteristics, and detailed support for each strategy
+      cannot be assessed here.
+    - The abstract does not provide athlete-level thresholds for how much volume or
+      frequency to retain, nor does it establish a specific duration, workload, or
+      progression for reduced training.
+    - The abstract concerns long-term insufficient training stimulus and detraining,
+      not the full range of tapering, recovery, fatigue-management, or race-preparation
+      contexts.
+    - The abstract does not directly examine cycling, brevet, ultra-endurance, masters
+      athletes, pacing stability, durability under repeated fatigue, or low-metabolic-strain
+      performance.
+    - Cross-training findings and transfer claims are reported in the abstract but
+      are not sufficiently detailed here to determine modality-specific equivalence
+      or individualized applicability.
     allowed_uses_in_rps:
-    - detraining_context
-    - rebuild_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Use as abstract-supported rationale for understanding long-term insufficient
+      training stimulus, detraining, and preservation of training-induced adaptations
+      during reduced training periods.
+    - Use to inform season- and phase-planning discussions about maintaining training
+      intensity while reducing volume, with the limitation that the abstract does
+      not establish an individualized prescription.
+    - Use for athlete education about physiological and performance changes associated
+      with insufficient training stimulus longer than 4 weeks.
+    evidence_posture: abstract_curated
+    source_material_basis: Curated from abstract-level material.
   brief_path: studies/dur_core_028.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: true
   trusted_match_reason: 'Trusted author+outlet pair: inigo mujika / sports medicine'
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_028
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-08-10T05:45:31.619506Z'
+  activated_at: '2026-08-10T05:45:31.619506Z'
 - id: dur_core_014
   source_kind: core
   authors: Padilla, S., et al.
@@ -4391,6 +4708,162 @@ entries:
   discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_c92467d9a8
+  source_kind: core
+  authors: Hyun DH, Hong YB, Shin HH, Jin EJ, Park JS, Ryu JH
+  year: 2026
+  title: Bioinspired gallol-modified chitosan coating for improved tissue adhesion
+    and in vivo catheter fixation
+  journal_or_outlet: Colloids and surfaces. B, Biointerfaces
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.colsurfb.2026.116029
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Bioinspired gallol-modified chitosan coating for improved tissue adhesion
+      and in vivo catheter fixation
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_c92467d9a8.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_c92467d9a8
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_fe0439a96f
+  source_kind: core
+  authors: Liu S, Liu Y, Ren Y, Kong M, Yang T, Li S, Cui P, Jia X, Wang L, Gao S
+  year: 2026
+  title: Breaking the activity-stability trade-off in oxygen reduction via sp-hybridized
+    nitrogen/nanoparticle dual-regulation
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141306
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Breaking the activity-stability trade-off in oxygen reduction via sp-hybridized
+      nitrogen/nanoparticle dual-regulation
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_fe0439a96f.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_fe0439a96f
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
 - id: dur_core_037
   source_kind: core
   authors: Noakes, T. D.
@@ -4492,6 +4965,319 @@ entries:
   discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_f2c3a1c103
+  source_kind: core
+  authors: Wang M, Lai W, Jiang W, Yang H, Chen L, Xu J, Cong S, Wang C, Wang Z, Zhao
+    Z
+  year: 2026
+  title: Confined Solid-State Polyiodide Deposition Enables Durable Electrochromic
+    Smart Windows
+  journal_or_outlet: Advanced materials (Deerfield Beach, Fla.)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/adma.74530
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Confined Solid-State Polyiodide Deposition Enables Durable Electrochromic
+      Smart Windows
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_f2c3a1c103.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_f2c3a1c103
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_e3d4bc9b1d
+  source_kind: core
+  authors: Ye G, Wan L, Zhao J
+  year: 2026
+  title: Construction of nickel manganese phosphide@iron cobalt nickel sulfide heterostructure
+    via interfacial synergy for durable supercapacitors
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141257
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Construction of nickel manganese phosphide@iron cobalt nickel sulfide heterostructure
+      via interfacial synergy for durable supercapacitors
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_e3d4bc9b1d.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_e3d4bc9b1d
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_c36afd9874
+  source_kind: core
+  authors: Saad AHM, Kamarudin NHA, Leow ATC, Mohamed MS, Ali MSM
+  year: 2026
+  title: Experimental and computational analysis of LUCA lipase stability in methanol
+    for biodiesel production from waste cooking oil
+  journal_or_outlet: International journal of biological macromolecules
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.ijbiomac.2026.153924
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Experimental and computational analysis of LUCA lipase stability in methanol
+      for biodiesel production from waste cooking oil
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_c36afd9874.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_c36afd9874
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_b00f3f06d2
+  source_kind: core
+  authors: Ji Y, Fan G, Zhao S, Peng M, Ma C, Wang F, Yang M, Du J, Chen A
+  year: 2026
+  title: Fabrication of Mo─N Modified Mesoporous Carbon-Coated Carbon Nanotubes via
+    Dual-Template Strategy for Enhanced Electrocatalytic Hydrogen Evolution
+  journal_or_outlet: Chemistry (Weinheim an der Bergstrasse, Germany)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/chem.71548
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Fabrication of Mo─N Modified Mesoporous Carbon-Coated Carbon Nanotubes
+      via Dual-Template Strategy for Enhanced Electrocatalytic Hydrogen Evolution
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_b00f3f06d2.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_b00f3f06d2
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_0b37c55c77
   source_kind: core
   authors: Jin Y, Jiao B, Huang J, Feng H, Den C, Ren N, Li M, Su R, Qian D, Ding
@@ -4569,6 +5355,163 @@ entries:
   record_fingerprint: dur_auto_2026_0b37c55c77
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_bbb775f560
+  source_kind: core
+  authors: Wang M, Jia H, Zhang C, Wang N, Liu P, Pei D, Qu Q
+  year: 2026
+  title: Gas-Shearing Microfluidic Fabrication of Alginate/Chitosan Hydrogel Microreactors
+    for Genipin-Mediated Dual-Mode Lipase Immobilization
+  journal_or_outlet: Macromolecular bioscience
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/mabi.70238
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Gas-Shearing Microfluidic Fabrication of Alginate/Chitosan Hydrogel Microreactors
+      for Genipin-Mediated Dual-Mode Lipase Immobilization
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_bbb775f560.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_bbb775f560
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_b5539b9d5e
+  source_kind: core
+  authors: Jonathan N, Moreira RPL, de Souza NCS, Filgueiras AC, Dos S Junior GA,
+    Pinheiro PF
+  year: 2026
+  title: Hydrochar Produced from Orange Peel Essential Oil Extraction Residues as
+    a Support for Nanoparticles in Hydrogen Evolution Catalysis from NaBH(4)
+  journal_or_outlet: ACS omega
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1021/acsomega.6c01972
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Hydrochar Produced from Orange Peel Essential Oil Extraction Residues as
+      a Support for Nanoparticles in Hydrogen Evolution Catalysis from NaBH(4)
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_b5539b9d5e.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_b5539b9d5e
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_11b0a0c0d3
@@ -5039,5 +5982,160 @@ entries:
   record_fingerprint: dur_auto_2026_f3ab89f67f
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_e91a528db8
+  source_kind: core
+  authors: Liu X, Xu M, Lin Q, Yu P, Ye Y, Liu H, Ma D
+  year: 2026
+  title: Strong metal-support interaction boosts the activity and stability of CeO(2)
+    supported Pt nanocatalysts for dichloromethane oxidation
+  journal_or_outlet: Environmental research
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.envres.2026.125395
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Strong metal-support interaction boosts the activity and stability of CeO(2)
+      supported Pt nanocatalysts for dichloromethane oxidation
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_e91a528db8.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_e91a528db8
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_7d706a091f
+  source_kind: core
+  authors: Van Bortel W
+  year: 2026
+  title: 'Vector control for malaria : current tools and emerging challenges'
+  journal_or_outlet: 'Clinical microbiology and infection : the official publication
+    of the European Society of Clinical Microbiology and Infectious Diseases'
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.cmi.2026.07.050
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: 'Vector control for malaria : current tools and emerging challenges'
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_7d706a091f.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_7d706a091f
+  last_verified_at: '2026-08-10'
+  discovered_at: '2026-08-10'
   curated_at: ''
   activated_at: ''

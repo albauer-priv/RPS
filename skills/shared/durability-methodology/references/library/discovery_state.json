@@ -1,22 +1,22 @@
 {
   "version": 1,
-  "last_attempt_at": "2026-07-27T07:51:59.128749Z",
-  "last_success_at": "2026-07-27T07:51:59.128749Z",
-  "last_search_date": "2026-07-27",
+  "last_attempt_at": "2026-08-10T05:44:37.112861Z",
+  "last_success_at": "2026-08-10T05:44:37.112861Z",
+  "last_search_date": "2026-08-10",
   "stats": {
     "queries_run": 7,
-    "candidates_seen": 11,
-    "new_candidates_added": 11,
+    "candidates_seen": 10,
+    "new_candidates_added": 10,
     "duplicates_skipped": 0,
     "unresolved_skipped": 0,
-    "activated_entries": 0,
+    "activated_entries": 2,
     "curated_hold_entries": 0,
     "rejected_entries": 0,
-    "quality_gate_failed": 5,
+    "quality_gate_failed": 3,
     "legacy_backfilled": 1,
     "processed_entries": 5,
     "skipped_unchanged": 20,
-    "skipped_due_to_cap": 33,
+    "skipped_due_to_cap": 32,
     "rate_limited_skipped": 0
   }
 }
