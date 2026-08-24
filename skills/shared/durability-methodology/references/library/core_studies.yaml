@@ -1,7 +1,7 @@
 version: 2
 library_type: core_studies
 curation_schema_version: '1'
-generated_at: '2026-08-17T04:58:29.444459Z'
+generated_at: '2026-08-24T05:03:59.648208Z'
 entries:
 - id: dur_core_026
   source_kind: core
@@ -11,7 +11,7 @@ entries:
     volume'
   journal_or_outlet: Journal of Applied Physiology
   source_type: peer_reviewed
-  study_type: peer_reviewed
+  study_type: other
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/3944049/
   verification_status: verified
   locator_source: pubmed
@@ -20,93 +20,207 @@ entries:
   - blood_volume
   - cardiovascular_response
   - endurance
-  question_or_focus: Examine how detraining changes cardiovascular responses to exercise,
-    with specific attention to the role of blood volume.
-  population_or_scope: Endurance physiology detraining context; useful for blood-volume
-    and deconditioning framing pending fuller local curation.
-  what_was_examined: []
-  core_concepts: []
-  important_findings: []
-  practical_implications: []
+  question_or_focus: Whether the decline in exercise stroke volume after 2–4 weeks
+    of detraining in endurance-trained men is associated with reduced blood volume,
+    and whether cardiovascular function can be restored by expanding blood volume.
+  population_or_scope: Eight endurance-trained men studied before and after 2–4 weeks
+    of inactivity. Cardiovascular responses were assessed during upright cycling at
+    50–60% VO2max; blood-volume expansion was then performed with a 6% dextran solution
+    in saline.
+  what_was_examined:
+  - Blood volume and plasma volume before and after 2–4 weeks of detraining.
+  - Stroke volume, VO2max, heart rate, and total peripheral resistance during upright
+    submaximal cycling.
+  - Whether expanding blood volume in the detrained state restored cardiovascular
+    responses toward trained-state values.
+  core_concepts:
+  - Detraining
+  - Blood volume and plasma volume
+  - Stroke volume
+  - VO2max
+  - Cardiovascular responses during upright exercise
+  - Ventricular filling
+  important_findings:
+  - Blood volume declined by 9%, from 5,177 to 4,692 ml, during upright exercise after
+    detraining.
+  - Plasma volume declined by 12%.
+  - Stroke volume declined by 12% and VO2max declined by 6%.
+  - Heart rate during submaximal exercise increased by 11%, and total peripheral resistance
+    increased by 8%.
+  - After blood volume was expanded to approximately 5,500 ± 200 ml, stroke volume
+    and VO2max in the detrained state increased to within 2–4% of trained values.
+  - Heart rate and total peripheral resistance during submaximal exercise were lowered
+    to near trained values after volume expansion.
+  practical_implications:
+  - For RPS, the abstract provides a physiological rationale for treating short periods
+    of detraining as potentially relevant to cardiovascular exercise responses, rather
+    than assuming that all changes reflect loss of muscular capacity alone.
+  - The abstract-supported implication is that reduced blood volume and associated
+    ventricular filling may contribute to altered submaximal exercise responses after
+    a few weeks of inactivity.
+  - This source may support cautious explanation of why maintaining training continuity
+    can matter for endurance-related cardiovascular function, but it does not establish
+    a specific training, re-entry, hydration, or recovery prescription.
   key_takeaways:
-  - Verified PubMed locator for a detraining and blood-volume exercise-response study.
-  - Candidate core source for deconditioning and cardiovascular-response context pending
-    fuller curation.
-  what_this_does_not_justify: []
+  - The abstract reports that 2–4 weeks of inactivity reduced blood volume and plasma
+    volume in endurance-trained men.
+  - The abstract reports concurrent reductions in stroke volume and VO2max, with increased
+    heart rate and total peripheral resistance during submaximal upright cycling.
+  - The abstract reports that dextran-based plasma-volume expansion reversed these
+    cardiovascular changes toward trained-state values.
+  - The findings indicate that reduced blood volume appears to limit ventricular filling
+    during upright exercise after a few weeks of detraining.
+  what_this_does_not_justify:
+  - It does not justify a specific detraining duration at which performance or durability
+    will decline for cycling, brevet, or ultra athletes.
+  - It does not directly examine prolonged exercise, fatigue resistance, pacing stability,
+    repeatability, or low metabolic strain under long-duration work.
+  - It does not justify a taper protocol or a recommendation to use fluid, plasma-volume
+    expansion, or dextran to preserve performance.
+  - It does not establish that blood-volume changes are the only contributors to detraining-related
+    performance changes.
+  - It does not justify transferring the findings directly to women, older athletes,
+    clinical populations, or athletes with different training backgrounds.
+  - It does not provide evidence for fueling, intensity distribution, progression,
+    or event-specific coaching prescriptions.
   important_limits:
-  - Metadata-only entry added from verified citation/locator; abstract and full-text
-    findings are not yet curated here.
-  - Do not turn the title-level blood-volume framing into exact re-entry prescriptions
-    without deeper curation.
+  - The abstract describes a small sample of eight endurance-trained men.
+  - The intervention and follow-up period involved 2–4 weeks of inactivity, so longer
+    detraining periods are not directly addressed.
+  - Outcomes were measured during laboratory-based upright cycling at 50–60% VO2max
+    and were not assessed during an actual long-duration event.
+  - The blood-volume manipulation used infusion of a 6% dextran solution in saline;
+    this is not equivalent to ordinary hydration or a normal training intervention.
+  - Only abstract-level material was provided, limiting assessment of the full methods,
+    participant characteristics, statistical analyses, and study procedures.
+  - The study examined cardiovascular responses and VO2max, not direct measures of
+    durability, fatigue resistance, pacing, or recovery coherence.
   allowed_uses:
-  - detraining_context
-  - recovery_context
+  - durability_rationale
   authority_limit: acceptable_for_explanation
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: restricted
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Added from user-supplied verified PubMed citation; pending deeper curation.
   summary_card:
-    focus: 'Effects of detraining on cardiovascular responses to exercise: role of
-      blood volume'
-    main_takeaway: Verified PubMed locator for a detraining and blood-volume exercise-response
-      study.
-    main_limit: Metadata-only entry added from verified citation/locator; abstract
-      and full-text findings are not yet curated here.
+    focus: Cardiovascular effects of 2–4 weeks of detraining and the role of blood
+      volume.
+    main_takeaway: The abstract reports that detraining reduced blood and plasma volume
+      alongside lower stroke volume and VO2max; experimentally expanding blood volume
+      restored these responses toward trained-state values.
+    main_limit: The study involved eight endurance-trained men in a short laboratory
+      detraining model and did not directly assess long-duration cycling durability,
+      pacing, fatigue resistance, or practical taper and hydration strategies.
   relevance_assessment:
     overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    relevance_rationale: The abstract provides relevant physiological context for
+      how a few weeks of inactivity may alter cardiovascular responses in endurance-trained
+      men, which can inform cautious durability-related explanation. Its relevance
+      is limited because it does not examine long-duration performance, fatigue resistance,
+      pacing, brevet or ultra outcomes, or training-planning interventions.
     rps_domains_supported:
-    - detraining
-    - blood_volume
-    - cardiovascular_response
+    - durability
     target_audiences_supported:
+    - athlete_education
     - background_knowledge
     best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
-      pending deeper curation.
-    research_question_or_purpose: Examine how detraining changes cardiovascular responses
-      to exercise, with specific attention to the role of blood volume.
-    study_type: peer_reviewed
-    population_or_context: Endurance physiology detraining context; useful for blood-volume
-      and deconditioning framing pending fuller local curation.
-    what_was_actually_examined: Examine how detraining changes cardiovascular responses
-      to exercise, with specific attention to the role of blood volume.
-    core_concepts: []
+    why_this_source_matters_for_rps: This abstract is relevant to RPS as physiological
+      background for understanding how a short period of inactivity may affect cardiovascular
+      exercise responses in endurance-trained athletes. It supports a cautious durability
+      rationale, but not direct evidence about long-duration cycling performance or
+      coaching prescriptions.
+    research_question_or_purpose: The study examined whether the decline in exercise
+      stroke volume after a few weeks of detraining was associated with reduced blood
+      volume, and whether expanding blood volume could restore cardiovascular function
+      toward trained-state values.
+    study_type: Peer-reviewed experimental study; the available source material is
+      abstract-only.
+    population_or_context: Eight endurance-trained men were assessed before and after
+      2–4 weeks of inactivity during upright cycling at 50–60% VO2max. Blood volume
+      was subsequently expanded with a 6% dextran solution in saline.
+    what_was_actually_examined: The abstract reports measurements of blood volume,
+      plasma volume, stroke volume, VO2max, heart rate, and total peripheral resistance.
+      It also reports a blood-volume expansion condition used to assess whether cardiovascular
+      responses in the detrained state could be restored toward trained-state values.
+    core_concepts:
+    - Detraining
+    - Blood volume and plasma volume
+    - Stroke volume
+    - VO2max
+    - Submaximal cardiovascular response
+    - Ventricular filling
     key_takeaways:
-    - Verified PubMed locator for a detraining and blood-volume exercise-response
-      study.
-    - Candidate core source for deconditioning and cardiovascular-response context
-      pending fuller curation.
-    important_findings: []
-    practical_implications_for_rps: []
-    what_this_source_does_not_justify: []
+    - The abstract reports a 9% decline in blood volume and a 12% decline in plasma
+      volume after 2–4 weeks of inactivity.
+    - The abstract reports lower stroke volume and VO2max, with higher heart rate
+      and total peripheral resistance during submaximal upright exercise.
+    - The abstract reports that blood-volume expansion restored stroke volume and
+      VO2max to within 2–4% of trained values and brought heart rate and total peripheral
+      resistance near trained values.
+    - The abstract attributes the cardiovascular decline largely to reduced blood
+      volume that appears to limit ventricular filling during upright exercise.
+    important_findings:
+    - Blood volume decreased from 5,177 to 4,692 ml, a 9% decline.
+    - Plasma volume decreased by 12%.
+    - Stroke volume decreased by 12% and VO2max by 6%.
+    - Submaximal exercise heart rate increased by 11% and total peripheral resistance
+      by 8%.
+    - Following expansion to approximately 5,500 ± 200 ml, stroke volume and VO2max
+      in the detrained state increased to within 2–4% of trained values.
+    - Heart rate and total peripheral resistance during submaximal exercise were lowered
+      to near trained values after volume expansion.
+    practical_implications_for_rps:
+    - The abstract can support explaining that short-term inactivity may influence
+      cardiovascular exercise responses through changes in blood and plasma volume.
+    - The abstract suggests that altered ventricular filling may be one mechanism
+      relevant to post-detraining exercise response.
+    - It should be used as physiological context rather than as a direct basis for
+      prescribing training re-entry, hydration, tapering, or long-duration pacing
+      strategies.
+    what_this_source_does_not_justify:
+    - It does not justify a specific taper, detraining, hydration, or plasma-volume-expansion
+      protocol.
+    - It does not directly establish effects on durability, fatigue resistance, pacing
+      stability, brevet performance, ultra performance, or prolonged exercise.
+    - It does not show that blood-volume reduction is the sole cause of all detraining-related
+      performance changes.
+    - It does not establish transferability to populations or settings not represented
+      in the abstract.
     limits_and_transfer_boundaries:
-    - Metadata-only entry added from verified citation/locator; abstract and full-text
-      findings are not yet curated here.
-    - Do not turn the title-level blood-volume framing into exact re-entry prescriptions
-      without deeper curation.
+    - The sample consisted of eight endurance-trained men.
+    - The inactivity period was limited to 2–4 weeks.
+    - The testing context was laboratory-based upright cycling at 50–60% VO2max rather
+      than a long-duration cycling event.
+    - Dextran infusion is an experimental blood-volume manipulation and should not
+      be treated as ordinary hydration guidance.
+    - Because only the abstract was available, the full methods, participant characteristics,
+      and analytical details cannot be evaluated here.
+    - Direct claims about RPS durability, fatigue resistance, pacing, or coaching
+      action would exceed the reported study outcomes.
     allowed_uses_in_rps:
-    - detraining_context
-    - recovery_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Durability rationale concerning the possible cardiovascular consequences of
+      short-term inactivity.
+    - Physiological background for athlete education about detraining-related changes
+      in blood volume and exercise response.
+    evidence_posture: Abstract-curated; findings and implications are bounded by the
+      provided abstract.
+    source_material_basis: Curated from abstract-level material.
   brief_path: studies/dur_core_026.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: false
   trusted_match_reason: ''
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_026
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-08-24T05:02:13.387993Z'
+  activated_at: '2026-08-24T05:02:13.387993Z'
 - id: dur_core_027
   source_kind: core
   authors: Mujika, I., & Padilla, S.
@@ -1004,7 +1118,7 @@ entries:
     and fructose ingested during prolonged cycling exercise
   journal_or_outlet: British Journal of Nutrition
   source_type: peer_reviewed
-  study_type: peer_reviewed
+  study_type: other
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/15946410/
   verification_status: verified
   locator_source: pubmed
@@ -1013,92 +1127,210 @@ entries:
   - carbohydrate
   - fructose_glucose
   - cyclists
-  question_or_focus: Examine exogenous carbohydrate oxidation during prolonged cycling
-    when ingesting a glucose-fructose mixture.
-  population_or_scope: Prolonged cycling fueling context; useful for multiple-transportable-carbohydrate
-    framing pending fuller local curation.
-  what_was_examined: []
-  core_concepts: []
-  important_findings: []
-  practical_implications: []
+  question_or_focus: Whether ingesting a high-rate mixture of glucose and fructose
+    during prolonged cycling produces higher exogenous carbohydrate oxidation rates
+    than ingesting glucose alone.
+  population_or_scope: Eight trained male cyclists (VO2max 68 ± 1 ml/kg per min) cycling
+    for 150 minutes at 50% of maximal power output (60 ± 1% VO2max) on three occasions
+    while consuming water, 1.2 g/min glucose, or 1.2 g/min glucose plus 1.2 g/min
+    fructose.
+  what_was_examined:
+  - Exogenous carbohydrate oxidation during 150 minutes of cycling exercise.
+  - A glucose solution providing 1.2 g/min glucose compared with a solution providing
+    1.2 g/min glucose plus 1.2 g/min fructose.
+  - Peak exogenous carbohydrate oxidation rates and exogenous carbohydrate oxidation
+    rates during the last 90 minutes of exercise.
+  core_concepts:
+  - Exogenous carbohydrate oxidation
+  - Glucose and fructose ingestion
+  - Prolonged cycling exercise
+  - High-rate carbohydrate ingestion
+  - Multiple-transportable carbohydrate context
+  important_findings:
+  - Eight trained male cyclists completed 150 minutes of cycling at 50% of maximal
+    power output while consuming water, glucose, or glucose plus fructose.
+  - 'Peak exogenous carbohydrate oxidation was higher in the glucose-plus-fructose
+    trial than in the glucose trial: 1.75 (SE 0.11) g/min versus 1.06 (SE 0.05) g/min,
+    with P<0.01.'
+  - 'During the last 90 minutes of exercise, exogenous carbohydrate oxidation was
+    approximately 50% higher with glucose plus fructose than with glucose: 1.49 (SE
+    0.08) g/min versus 0.99 (SE 0.06) g/min, with P<0.05.'
+  - The abstract states that the results demonstrate peak exogenous carbohydrate oxidation
+    of approximately 1.75 g/min when glucose and fructose were ingested at 2.4 g/min
+    during 150 minutes of cycling exercise.
+  practical_implications:
+  - The abstract supports using this study as fueling-specific scientific context
+    for discussing how glucose-plus-fructose mixtures may affect exogenous carbohydrate
+    oxidation during prolonged cycling.
+  - For RPS athlete education or coach discussion, the findings can support an abstract-bounded
+    explanation that carbohydrate type and combined glucose-fructose intake may influence
+    the amount of ingested carbohydrate oxidized during long cycling exercise.
+  - The findings may inform further consideration of carbohydrate formulation for
+    prolonged endurance exercise, but the abstract alone does not establish an individualized
+    fueling prescription.
   key_takeaways:
-  - Verified PubMed locator for a glucose-fructose exogenous-oxidation cycling study.
-  - Candidate core source for multiple-transportable-carbohydrate and fueling-rate
-    context pending fuller curation.
-  what_this_does_not_justify: []
+  - The abstract reports higher peak exogenous carbohydrate oxidation with glucose
+    plus fructose than with glucose alone during prolonged cycling.
+  - The abstract reports approximately 50% higher exogenous carbohydrate oxidation
+    during the last 90 minutes with glucose plus fructose than with glucose alone.
+  - At an intake rate of 2.4 g/min combined glucose and fructose, the abstract reports
+    peak exogenous carbohydrate oxidation of approximately 1.75 g/min.
+  what_this_does_not_justify:
+  - It does not justify a universal recommendation to ingest 2.4 g/min of carbohydrate
+    or any specific glucose-to-fructose ratio for all RPS athletes.
+  - It does not justify claims about improved performance, pacing stability, durability,
+    fatigue resistance, recovery, gastrointestinal tolerance, or health outcomes,
+    because those outcomes are not reported in the abstract.
+  - It does not justify conclusions about brevet or ultra events, masters athletes,
+    female athletes, untrained athletes, or athletes with different physiological
+    characteristics.
+  - It does not justify treating exogenous carbohydrate oxidation as equivalent to
+    performance benefit or reduced metabolic strain.
+  - It does not justify direct coaching imperatives without considering the athlete,
+    event duration, intensity, tolerance, and broader fueling plan.
   important_limits:
-  - Metadata-only entry added from verified citation/locator; abstract and full-text
-    findings are not yet curated here.
-  - Do not turn title-level glucose-fructose oxidation framing into exact hourly-intake
-    prescriptions without deeper curation.
+  - The source material is abstract-only; methods and results beyond the provided
+    abstract cannot be independently evaluated here.
+  - The study included only eight trained male cyclists.
+  - The exercise protocol was 150 minutes at approximately 60% VO2max, which limits
+    direct transfer to longer, more variable, or higher- or lower-intensity RPS events.
+  - The abstract reports oxidation outcomes, not direct performance, pacing, durability,
+    recovery, or gastrointestinal outcomes.
+  - The abstract does not provide enough information to assess allocation, blinding,
+    order effects, or the complete statistical and methodological context.
+  - The findings concern a specific glucose-plus-fructose intake condition and should
+    not be generalized to all carbohydrate mixtures or intake strategies.
   allowed_uses:
-  - fueling_context
-  - carbohydrate_context
+  - fueling_guidance
   authority_limit: acceptable_for_explanation
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: restricted
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Added from user-supplied verified PubMed citation; pending deeper curation.
   summary_card:
-    focus: High rates of exogenous carbohydrate oxidation from a mixture of glucose
-      and fructose ingested during prolonged cycling exercise
-    main_takeaway: Verified PubMed locator for a glucose-fructose exogenous-oxidation
-      cycling study.
-    main_limit: Metadata-only entry added from verified citation/locator; abstract
-      and full-text findings are not yet curated here.
+    focus: Glucose-plus-fructose ingestion and exogenous carbohydrate oxidation during
+      150 minutes of cycling.
+    main_takeaway: The abstract reports higher peak and late-exercise exogenous carbohydrate
+      oxidation with glucose plus fructose than with glucose alone in eight trained
+      male cyclists.
+    main_limit: Abstract-only evidence from a small, all-male trained-cyclist sample
+      and a 150-minute laboratory protocol; oxidation findings do not establish performance
+      or broad RPS transfer.
   relevance_assessment:
     overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    relevance_rationale: This is directly relevant to RPS fueling because the abstract
+      examines glucose-plus-fructose ingestion and exogenous carbohydrate oxidation
+      during prolonged cycling in trained cyclists. Its relevance is constrained by
+      the abstract-only evidence posture, the small sample of trained male cyclists,
+      the 150-minute laboratory protocol, and the fact that oxidation rather than
+      performance, durability, pacing, or recovery was measured.
     rps_domains_supported:
     - fueling
-    - carbohydrate
-    - fructose_glucose
     target_audiences_supported:
+    - coach_chat
+    - athlete_education
     - background_knowledge
     best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
-      pending deeper curation.
-    research_question_or_purpose: Examine exogenous carbohydrate oxidation during
-      prolonged cycling when ingesting a glucose-fructose mixture.
-    study_type: peer_reviewed
-    population_or_context: Prolonged cycling fueling context; useful for multiple-transportable-carbohydrate
-      framing pending fuller local curation.
-    what_was_actually_examined: Examine exogenous carbohydrate oxidation during prolonged
-      cycling when ingesting a glucose-fructose mixture.
-    core_concepts: []
+    why_this_source_matters_for_rps: The source matters for RPS because it provides
+      abstract-level evidence directly examining carbohydrate formulation during prolonged
+      cycling, a relevant context for long-duration endurance fueling. Its contribution
+      is limited to exogenous carbohydrate oxidation and should not be treated as
+      evidence for durability, pacing, performance, or recovery outcomes.
+    research_question_or_purpose: The abstract states that the study investigated
+      whether ingesting a high-rate mixture of glucose and fructose at 2.4 g/min would
+      produce higher exogenous carbohydrate oxidation rates than previously observed
+      and higher than glucose alone.
+    study_type: Abstract-level report of a controlled repeated-exercise cycling study;
+      the supplied material does not provide enough methodological detail to classify
+      it more specifically within the available study-type categories.
+    population_or_context: Eight trained male cyclists with a reported VO2max of 68
+      ± 1 ml/kg per min cycled for 150 minutes at 50% of maximal power output (60
+      ± 1% VO2max) on three occasions. They consumed water, 1.2 g/min glucose, or
+      1.2 g/min glucose plus 1.2 g/min fructose.
+    what_was_actually_examined: The study examined exogenous carbohydrate oxidation
+      during prolonged cycling under water, glucose, and glucose-plus-fructose intake
+      conditions, including peak oxidation rates and rates during the last 90 minutes
+      of exercise.
+    core_concepts:
+    - Exogenous carbohydrate oxidation
+    - Glucose-fructose mixture
+    - Prolonged cycling
+    - High-rate carbohydrate ingestion
+    - Fueling formulation
     key_takeaways:
-    - Verified PubMed locator for a glucose-fructose exogenous-oxidation cycling study.
-    - Candidate core source for multiple-transportable-carbohydrate and fueling-rate
-      context pending fuller curation.
-    important_findings: []
-    practical_implications_for_rps: []
-    what_this_source_does_not_justify: []
+    - The abstract reports that glucose plus fructose produced higher exogenous carbohydrate
+      oxidation than glucose alone.
+    - The abstract reports approximately 50% higher oxidation during the last 90 minutes
+      with glucose plus fructose than with glucose alone.
+    - The abstract reports a peak exogenous carbohydrate oxidation rate of approximately
+      1.75 g/min under the 2.4 g/min combined glucose-plus-fructose intake condition.
+    important_findings:
+    - Peak exogenous carbohydrate oxidation was 1.75 (SE 0.11) g/min with glucose
+      plus fructose and 1.06 (SE 0.05) g/min with glucose alone; the abstract reports
+      P<0.01.
+    - During the last 90 minutes, exogenous carbohydrate oxidation was 1.49 (SE 0.08)
+      g/min with glucose plus fructose and 0.99 (SE 0.06) g/min with glucose alone;
+      the abstract reports P<0.05.
+    - The abstract describes the exercise protocol as 150 minutes of cycling at 50%
+      of maximal power output, corresponding to 60 ± 1% VO2max.
+    practical_implications_for_rps:
+    - The abstract supports discussing glucose-plus-fructose mixtures as a fueling
+      formulation associated with higher exogenous carbohydrate oxidation than glucose
+      alone under the tested cycling conditions.
+    - The source can support athlete education or coach discussion about the distinction
+      between ingested carbohydrate oxidation and demonstrated performance benefit.
+    - Any RPS application should remain individualized and abstract-bounded; the supplied
+      material does not establish a universal intake prescription or event-specific
+      protocol.
+    what_this_source_does_not_justify:
+    - The source does not justify universal carbohydrate targets, a universal glucose-to-fructose
+      ratio, or a requirement to use glucose plus fructose.
+    - The source does not justify claims that the mixture improves performance, pacing,
+      durability, fatigue resistance, recovery, or gastrointestinal outcomes.
+    - The source does not justify direct transfer to ultra-distance or brevet events,
+      masters athletes, women, untrained athletes, or other populations not represented
+      in the abstract.
+    - The source does not justify equating higher exogenous carbohydrate oxidation
+      with better overall fueling effectiveness.
     limits_and_transfer_boundaries:
-    - Metadata-only entry added from verified citation/locator; abstract and full-text
-      findings are not yet curated here.
-    - Do not turn title-level glucose-fructose oxidation framing into exact hourly-intake
-      prescriptions without deeper curation.
+    - Only abstract-level material was supplied, so full methods, participant characteristics,
+      protocol details, and outcome interpretation cannot be assessed here.
+    - The sample was eight trained male cyclists, limiting population transfer.
+    - The protocol lasted 150 minutes at a controlled moderate intensity, limiting
+      direct transfer to longer and more variable RPS events.
+    - The reported outcomes were exogenous carbohydrate oxidation rates; performance,
+      pacing, durability, recovery, and tolerance outcomes were not reported in the
+      supplied abstract.
+    - The tested high-rate intake condition should not be generalized beyond the studied
+      context without additional evidence and individual assessment.
     allowed_uses_in_rps:
-    - fueling_context
-    - carbohydrate_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Fueling-specific scientific support concerning exogenous carbohydrate oxidation
+      during prolonged cycling.
+    - Abstract-bounded athlete education and coach discussion about glucose-plus-fructose
+      formulations.
+    - Context for further fueling evaluation, not as standalone evidence for individualized
+      prescriptions or broader RPS planning.
+    evidence_posture: Abstract curated; the package is based on curated abstract-level
+      material from the verified source record.
+    source_material_basis: Curated from abstract-level material. The supplied package
+      includes the abstract text and a verified PubMed locator; no full text or open-access
+      excerpt was supplied.
   brief_path: studies/dur_core_030.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: false
   trusted_match_reason: ''
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_030
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-08-24T05:02:33.095725Z'
+  activated_at: '2026-08-24T05:02:33.095725Z'
 - id: dur_core_031
   source_kind: core
   authors: Jeukendrup, A. E.
@@ -1656,7 +1888,7 @@ entries:
     Exercise'
   journal_or_outlet: Sports Medicine
   source_type: peer_reviewed
-  study_type: review
+  study_type: narrative_review
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/24791914/
   verification_status: verified
   locator_source: pubmed
@@ -1665,94 +1897,220 @@ entries:
   - carbohydrate
   - personalized_nutrition
   - endurance
-  question_or_focus: Review carbohydrate intake during exercise as a step toward personalized
-    sports nutrition.
-  population_or_scope: Personalized endurance-fueling review context; useful for individualized
-    carbohydrate-intake framing pending fuller local curation.
-  what_was_examined: []
-  core_concepts: []
-  important_findings: []
-  practical_implications: []
+  question_or_focus: The review abstract addresses personalized carbohydrate-intake
+    guidance during endurance exercise, considering exercise duration, intensity,
+    and carbohydrate type.
+  population_or_scope: Endurance exercise and athletes; the abstract discusses exercise
+    lasting approximately 1 hour, prolonged exercise lasting 2–3 hours, and ultra-endurance
+    events. It states that the guidelines apply to most athletes but depend on the
+    type and duration of activity.
+  what_was_examined:
+  - Changes in understanding of the role of carbohydrates during endurance exercise.
+  - Carbohydrate intake guidance according to exercise duration and intensity.
+  - The influence of carbohydrate type and delivery form on recommendations.
+  - Carbohydrate oxidation rates associated with single versus multiple carbohydrate
+    sources.
+  core_concepts:
+  - Personalized carbohydrate-intake guidance.
+  - Exercise duration and intensity as determinants of carbohydrate recommendations.
+  - Mouth rinse or small carbohydrate amounts during exercise of approximately 1 hour.
+  - Approximately 60 g/h for more prolonged exercise lasting 2–3 hours when using
+    a single carbohydrate source.
+  - Approximately 90 g/h for ultra-endurance events when using multiple transportable
+    carbohydrates.
+  - Liquid, semisolid, or solid carbohydrate sources.
+  - Potential downward adjustment when absolute exercise intensity and carbohydrate
+    oxidation rates are low.
+  important_findings:
+  - The review abstract reports that carbohydrate recommendations should account for
+    exercise duration and intensity rather than only total carbohydrate amount.
+  - The review abstract reports that high carbohydrate-ingestion rates for ultra-endurance
+    events should use multiple transportable carbohydrates to allow high oxidation
+    rates and prevent carbohydrate accumulation in the intestine.
+  - The abstract reports that carbohydrate can be delivered in liquid, semisolid,
+    or solid form.
+  - The abstract states that recommendations may need to be adjusted downward when
+    absolute exercise intensity is low and carbohydrate oxidation rates are also low.
+  practical_implications:
+  - For RPS fueling discussions, the abstract supports treating carbohydrate intake
+    during prolonged and ultra-endurance exercise as activity-dependent rather than
+    applying one generic target.
+  - The abstract supports discussing both the amount and type of carbohydrate when
+    translating fueling concepts for long-duration endurance athletes.
+  - The abstract-supported ranges of approximately 60 g/h for 2–3 hours and approximately
+    90 g/h for ultra-endurance events can be presented as review-described guidance,
+    not as binding individual prescriptions.
+  - The abstract supports considering carbohydrate delivery form and individual tolerance
+    when discussing fueling options, while recognizing that the abstract does not
+    provide a detailed personalization protocol.
   key_takeaways:
-  - Verified PubMed locator for a personalized carbohydrate-intake-during-exercise
-    review.
-  - Candidate core source for personalized endurance-fueling context pending fuller
-    curation.
-  what_this_does_not_justify: []
+  - The abstract describes a shift from generic carbohydrate guidance toward recommendations
+    that consider exercise duration, intensity, and carbohydrate type.
+  - For exercise lasting approximately 1 hour, the abstract reports that a mouth rinse
+    or small amounts of carbohydrate can result in a performance benefit.
+  - The abstract reports that a single carbohydrate source can be oxidized at rates
+    up to approximately 60 g/h and identifies this as the recommendation for exercise
+    lasting 2–3 hours.
+  - For ultra-endurance events, the abstract reports a higher recommendation of approximately
+    90 g/h, using multiple transportable carbohydrates.
+  - The abstract states that carbohydrate intake advice is independent of body weight
+    and training status, while remaining dependent on the type and duration of activity.
+  what_this_does_not_justify:
+  - It does not justify treating approximately 60 g/h or 90 g/h as mandatory targets
+    for every athlete or event.
+  - It does not justify concluding that carbohydrate intake independently improves
+    durability, fatigue resistance, pacing stability, or recovery coherence beyond
+    the performance-related statements reported in the abstract.
+  - It does not justify a specific individualized fueling plan, product choice, gastrointestinal-management
+    protocol, or training intervention.
+  - It does not justify applying the recommendations without considering exercise
+    duration, intensity, event type, or athlete response.
+  - It does not justify claims about masters athletes, cycling-specific outcomes,
+    brevet outcomes, or comparative effectiveness of liquid, semisolid, and solid
+    carbohydrate forms.
   important_limits:
-  - Metadata-only entry added from verified citation/locator; abstract and full-text
-    findings are not yet curated here.
-  - Do not convert title-level personalized-nutrition framing into exact individualized
-    dosing rules without deeper curation.
+  - The source material is abstract-only; the review methods, included studies, detailed
+    evidence synthesis, and population-specific results are not available in the provided
+    package.
+  - The abstract reports recommendations and summarized findings but does not provide
+    the underlying study designs, sample sizes, effect estimates, or certainty of
+    evidence.
+  - The abstract does not establish how the recommendations should be individualized
+    beyond duration, intensity, carbohydrate type, body weight, and training-status
+    statements.
+  - Transfer to RPS-specific outcomes such as durability, repeatability, pacing stability,
+    low metabolic strain, or recovery coherence is indirect and should not be treated
+    as directly examined.
+  - The abstract does not provide detailed safety, tolerance, or implementation boundaries
+    for the reported ingestion rates.
   allowed_uses:
-  - fueling_context
-  - personalized_nutrition_context
+  - fueling_guidance
   authority_limit: acceptable_for_explanation
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: open_access
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Added from user-supplied verified citation/locator; pending deeper curation.
   summary_card:
-    focus: 'A Step Towards Personalized Sports Nutrition: Carbohydrate Intake During
-      Exercise'
-    main_takeaway: Verified PubMed locator for a personalized carbohydrate-intake-during-exercise
-      review.
-    main_limit: Metadata-only entry added from verified citation/locator; abstract
-      and full-text findings are not yet curated here.
+    focus: Personalized carbohydrate intake during endurance exercise, with recommendations
+      differentiated by exercise duration, intensity, and carbohydrate type.
+    main_takeaway: The review abstract describes approximately 60 g/h for 2–3 hours
+      using a single carbohydrate source and approximately 90 g/h for ultra-endurance
+      events using multiple transportable carbohydrates, while emphasizing activity-dependent
+      guidance.
+    main_limit: Abstract-only evidence does not provide detailed methods, effect estimates,
+      certainty assessment, or individualized implementation guidance.
   relevance_assessment:
     overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    relevance_rationale: The abstract directly addresses carbohydrate intake during
+      prolonged endurance and ultra-endurance exercise, making it relevant to RPS
+      fueling discussions and potentially useful for brevet and ultra contexts. Its
+      relevance is limited because the package is abstract-only and does not directly
+      examine RPS durability, fatigue resistance, pacing, recovery, cycling-specific
+      outcomes, or individualized implementation.
     rps_domains_supported:
     - fueling
-    - carbohydrate
-    - personalized_nutrition
+    - brevet_ultra
+    - coaching_translation
     target_audiences_supported:
+    - coach_chat
+    - athlete_education
     - background_knowledge
     best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Added from user-supplied verified citation/locator;
-      pending deeper curation.
-    research_question_or_purpose: Review carbohydrate intake during exercise as a
-      step toward personalized sports nutrition.
-    study_type: review
-    population_or_context: Personalized endurance-fueling review context; useful for
-      individualized carbohydrate-intake framing pending fuller local curation.
-    what_was_actually_examined: Review carbohydrate intake during exercise as a step
-      toward personalized sports nutrition.
-    core_concepts: []
+    why_this_source_matters_for_rps: The abstract is relevant to RPS because it addresses
+      fueling during prolonged and ultra-endurance exercise and describes carbohydrate
+      guidance that varies with duration, intensity, and carbohydrate type. This supports
+      fueling-focused explanation and translation, but it does not directly establish
+      effects on RPS durability, pacing stability, fatigue resistance, or recovery
+      coherence.
+    research_question_or_purpose: The review describes how updated understanding of
+      carbohydrate use during endurance exercise can support more specific and personalized
+      carbohydrate-ingestion advice.
+    study_type: Peer-reviewed narrative review; curation is based on the provided
+      abstract only.
+    population_or_context: Endurance athletes and endurance exercise contexts, including
+      approximately 1-hour exercise, 2–3-hour exercise, and ultra-endurance events.
+      The abstract states that the guidance applies to most athletes but depends on
+      the type and duration of activity.
+    what_was_actually_examined: The abstract examines duration- and intensity-sensitive
+      carbohydrate-intake guidance, carbohydrate type, oxidation rates for single
+      and multiple carbohydrate sources, and liquid, semisolid, or solid delivery
+      forms.
+    core_concepts:
+    - Personalized sports nutrition.
+    - Carbohydrate intake during endurance exercise.
+    - Exercise duration and intensity.
+    - Single versus multiple transportable carbohydrates.
+    - Carbohydrate oxidation rates.
+    - Carbohydrate delivery form.
     key_takeaways:
-    - Verified PubMed locator for a personalized carbohydrate-intake-during-exercise
-      review.
-    - Candidate core source for personalized endurance-fueling context pending fuller
-      curation.
-    important_findings: []
-    practical_implications_for_rps: []
-    what_this_source_does_not_justify: []
+    - The abstract describes a move away from generic carbohydrate guidance toward
+      guidance based on exercise duration, intensity, and carbohydrate type.
+    - It reports performance benefits from a mouth rinse or small amounts of carbohydrate
+      during exercise lasting approximately 1 hour.
+    - It describes approximately 60 g/h for 2–3 hours with a single carbohydrate source
+      and approximately 90 g/h for ultra-endurance events with multiple transportable
+      carbohydrates.
+    - It states that recommendations may be lower when absolute exercise intensity
+      and carbohydrate oxidation rates are low.
+    important_findings:
+    - The abstract reports that a single carbohydrate source can be oxidized at rates
+      up to approximately 60 g/h.
+    - For ultra-endurance events, the abstract reports a recommendation of approximately
+      90 g/h and states that multiple transportable carbohydrates are needed at such
+      high ingestion rates to allow high oxidation rates and prevent carbohydrate
+      accumulation in the intestine.
+    - The abstract states that carbohydrate intake advice is independent of body weight
+      and training status, but dependent on the type and duration of activity.
+    practical_implications_for_rps:
+    - The abstract supports activity-dependent fueling discussions for long-duration
+      and ultra-endurance athletes.
+    - The abstract supports considering carbohydrate amount, carbohydrate type, exercise
+      duration, intensity, and delivery form in RPS fueling translation.
+    - The reported intake values should be communicated as abstract-supported review
+      guidance rather than mandatory individual prescriptions.
+    what_this_source_does_not_justify:
+    - It does not justify a universal carbohydrate target for all athletes or events.
+    - It does not directly justify claims about durability, fatigue resistance, pacing
+      stability, recovery coherence, or cycling-specific performance.
+    - It does not provide a complete individualized fueling protocol or establish
+      that any particular product or delivery form is superior.
+    - It does not justify direct transfer to masters athletes, brevet outcomes, or
+      athlete-specific gastrointestinal tolerance without additional evidence.
     limits_and_transfer_boundaries:
-    - Metadata-only entry added from verified citation/locator; abstract and full-text
-      findings are not yet curated here.
-    - Do not convert title-level personalized-nutrition framing into exact individualized
-      dosing rules without deeper curation.
+    - Only abstract-level material was provided, so the underlying review methods
+      and evidence details cannot be assessed here.
+    - No sample sizes, effect estimates, study-level results, or certainty judgments
+      are provided in the abstract.
+    - The abstract provides broad guidance but not a detailed process for individual
+      adjustment beyond the factors it names.
+    - RPS transfer is strongest for fueling education and weaker for direct claims
+      about durability or other long-duration performance constructs.
     allowed_uses_in_rps:
-    - fueling_context
-    - personalized_nutrition_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Fueling guidance framed as abstract-supported review guidance.
+    - Athlete education about why carbohydrate recommendations may vary with exercise
+      duration, intensity, and carbohydrate type.
+    - Coach-chat discussion of carbohydrate options for prolonged and ultra-endurance
+      exercise, without treating the reported values as binding prescriptions.
+    evidence_posture: Abstract-curated; findings and implications are bounded by the
+      provided review abstract.
+    source_material_basis: Curated from abstract-level material supplied in the verified
+      source package. No full text or open-access excerpt was provided.
   brief_path: studies/dur_core_036.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: false
   trusted_match_reason: ''
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_036
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-08-24T05:03:09.205423Z'
+  activated_at: '2026-08-24T05:03:09.205423Z'
 - id: dur_core_021
   source_kind: core
   authors: Rønnestad, B. R., Hansen, J., & Ellefsen, S.
@@ -4629,6 +4987,84 @@ entries:
   discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_7e491678a5
+  source_kind: core
+  authors: Zhang J, Li Y, Guo Z, He Y, Huang Y, Shen X, Wu D
+  year: 2026
+  title: Accelerated electrochemical-chemical turnover on N-modified Co(3)O(4) with
+    crystalline-amorphous interfaces for efficient glycerol electrooxidation
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141351
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Accelerated electrochemical-chemical turnover on N-modified Co(3)O(4) with
+      crystalline-amorphous interfaces for efficient glycerol electrooxidation
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_7e491678a5.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_7e491678a5
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_1f5d27e98e
   source_kind: core
   authors: Zeng X, Liu C, Zhou J, Li N, Zhou Y, Xu X, Zhang M, Feng M, Sun M, Peng
@@ -4706,6 +5142,84 @@ entries:
   record_fingerprint: dur_auto_2026_1f5d27e98e
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_795f428ba3
+  source_kind: core
+  authors: Xu Y, Xiao G, Du Z, Hu Y
+  year: 2026
+  title: Biodegradable and multi-mode processable gelatin bioelastomer enabled by
+    one-pot green synthesis
+  journal_or_outlet: International journal of biological macromolecules
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.ijbiomac.2026.154172
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Biodegradable and multi-mode processable gelatin bioelastomer enabled by
+      one-pot green synthesis
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_795f428ba3.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_795f428ba3
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_c92467d9a8
@@ -5514,6 +6028,163 @@ entries:
   discovered_at: '2026-08-10'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_2d945aeb04
+  source_kind: core
+  authors: Kaczor MW, Brumbaugh JE, Wilhelm J, Bosley C, Schultz T, Schram L, Gallup
+    MC, Stetson RC
+  year: 2026
+  title: Improving First-Attempt Success Rate During Neonatal Intubation in a Tertiary
+    NICU
+  journal_or_outlet: Pediatrics
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1542/peds.2025-074216
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Improving First-Attempt Success Rate During Neonatal Intubation in a Tertiary
+      NICU
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_2d945aeb04.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_2d945aeb04
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_56b5a02420
+  source_kind: core
+  authors: Schmidt MB, Rauch A, Hahnel S, Rosentritt M, Merle C
+  year: 2026
+  title: Influence of Milling Parameters on the In-vitro Performance of Zirconia Molar
+    Crowns
+  journal_or_outlet: The International journal of prosthodontics
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.11607/ijp.9499
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Influence of Milling Parameters on the In-vitro Performance of Zirconia
+      Molar Crowns
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_56b5a02420.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_56b5a02420
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_11b0a0c0d3
   source_kind: core
   authors: Wei Y, Hao R, Hong X, Guo S, Lu D, Li H, Zhao W, Tang Z, Zhou C, Cao W,
@@ -5591,6 +6262,85 @@ entries:
   record_fingerprint: dur_auto_2026_11b0a0c0d3
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_420163d5b9
+  source_kind: core
+  authors: Lv Y, Gao X, Guo B, Li X, Sun C, Wang S, Jing R, Chen J, Pu L, Zhang M,
+    Liu Y, Wang G, Ren Y, Gu T
+  year: 2026
+  title: Intramolecular electronic modulation enabled high-capacity Zn(2+)/H(+) co-insertion
+    in benzoquinone-fused anhydride cathode
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141374
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Intramolecular electronic modulation enabled high-capacity Zn(2+)/H(+)
+      co-insertion in benzoquinone-fused anhydride cathode
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_420163d5b9.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_420163d5b9
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_1d713ba138
@@ -5745,6 +6495,84 @@ entries:
   record_fingerprint: dur_auto_2026_a19e7640e3
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_6aeb46fcde
+  source_kind: core
+  authors: Ding MS, Zhao QY, Xie B, Ren H, Wang X, Ma X, Ling W, Wu XW, Zeng XX
+  year: 2026
+  title: Phase Transition Mediated Solvation Structure Regulation in Quasi-Solid-State
+    Composite Electrolyte for High-Voltage Sodium Batteries
+  journal_or_outlet: Small (Weinheim an der Bergstrasse, Germany)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/smll.75335
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Phase Transition Mediated Solvation Structure Regulation in Quasi-Solid-State
+      Composite Electrolyte for High-Voltage Sodium Batteries
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_6aeb46fcde.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_6aeb46fcde
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_6ff6a8b8f8
@@ -5984,6 +6812,241 @@ entries:
   discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_865d8a2cac
+  source_kind: core
+  authors: Tang PL, Wang YT, Xiao ST, Wu SM, Qu C, Yuan XS, Wang LY, Lu Y, Geng W,
+    Shen L, Ying J, Tian G, Yang XY
+  year: 2026
+  title: Spatially Directed Charge Transfer in Al-Doped SrTiO(3) for Efficient Hydrogen
+    Production From Seawater
+  journal_or_outlet: Chemistry (Weinheim an der Bergstrasse, Germany)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/chem.71602
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Spatially Directed Charge Transfer in Al-Doped SrTiO(3) for Efficient Hydrogen
+      Production From Seawater
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_865d8a2cac.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_865d8a2cac
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_cedf2e5ee2
+  source_kind: core
+  authors: Anconina I, Leirikh T, Golodnitsky D
+  year: 2026
+  title: Stabilizing Na(0.7)MnO(2) Cathodes in PEO-Based Sodium Metal Batteries via
+    Composite Interlayer Design
+  journal_or_outlet: ACS omega
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1021/acsomega.6c06046
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Stabilizing Na(0.7)MnO(2) Cathodes in PEO-Based Sodium Metal Batteries
+      via Composite Interlayer Design
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_cedf2e5ee2.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_cedf2e5ee2
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_5ed9c19487
+  source_kind: core
+  authors: Le VQ, Le PA, Le TKT, Ke WE, Cyu RH, Chu YH, Wei KH, Wu JM, Chueh YL
+  year: 2026
+  title: Strain-Tolerant Heteroepitaxial LiCoO₂/Pt on Mica for Interfacial Engineering
+    for Enhanced Oxygen Evolution Catalysis
+  journal_or_outlet: Nanotechnology
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1088/1361-6528/ae9d23
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Strain-Tolerant Heteroepitaxial LiCoO₂/Pt on Mica for Interfacial Engineering
+      for Enhanced Oxygen Evolution Catalysis
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_5ed9c19487.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_5ed9c19487
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_e91a528db8
   source_kind: core
   authors: Liu X, Xu M, Lin Q, Yu P, Ye Y, Liu H, Ma D
@@ -6060,6 +7123,162 @@ entries:
   record_fingerprint: dur_auto_2026_e91a528db8
   last_verified_at: '2026-08-10'
   discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_ab052a6e5a
+  source_kind: core
+  authors: Akbulut ZF, Guler S
+  year: 2026
+  title: Sustainable Recycled Aggregate Concrete Incorporating Volcanic Ash and Basalt
+    Fibers with Enhanced Mechanical, Durability, and Environmental Performance
+  journal_or_outlet: ACS omega
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1021/acsomega.6c04151
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Sustainable Recycled Aggregate Concrete Incorporating Volcanic Ash and
+      Basalt Fibers with Enhanced Mechanical, Durability, and Environmental Performance
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_ab052a6e5a.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_ab052a6e5a
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_9cb31b91a1
+  source_kind: core
+  authors: Winwood PW, Travis SK, Barnes MJ, Keogh JWL, Pritchard HJ
+  year: 2026
+  title: 'Tapering and Peaking in the Weight Lifting Sports: A Systematic Review of
+    Athletes'' Self-Reported Strategies'
+  journal_or_outlet: Sports medicine (Auckland, N.Z.)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1007/s40279-026-02500-w
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - taper
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: 'Tapering and Peaking in the Weight Lifting Sports: A Systematic Review
+      of Athletes'' Self-Reported Strategies'
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - taper
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_9cb31b91a1.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_9cb31b91a1
+  last_verified_at: '2026-08-24'
+  discovered_at: '2026-08-24'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_7d706a091f
