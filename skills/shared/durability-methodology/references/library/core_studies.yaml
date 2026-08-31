@@ -1,7 +1,7 @@
 version: 2
 library_type: core_studies
 curation_schema_version: '1'
-generated_at: '2026-08-24T05:03:59.648208Z'
+generated_at: '2026-08-31T10:54:46.330641Z'
 entries:
 - id: dur_core_026
   source_kind: core
@@ -2474,7 +2474,7 @@ entries:
     review and future perspectives'
   journal_or_outlet: Sports Medicine
   source_type: peer_reviewed
-  study_type: review
+  study_type: narrative_review
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/26373645/
   verification_status: verified
   locator_source: pubmed
@@ -2483,92 +2483,250 @@ entries:
   - fructose_glucose
   - endurance
   - carbohydrate
-  question_or_focus: Critically review fructose-glucose composite carbohydrate use
-    and future perspectives for endurance performance.
-  population_or_scope: Endurance fueling review context; useful for composite-carbohydrate
-    framing pending fuller local curation.
-  what_was_examined: []
-  core_concepts: []
-  important_findings: []
-  practical_implications: []
+  question_or_focus: The abstract reports a critical review of fructose:glucose or
+    fructose:maltodextrin composite carbohydrates versus glucose or maltodextrin alone
+    for endurance performance, including performance outcomes and proposed metabolic,
+    gastrointestinal, fluid-absorption, and sensory mechanisms.
+  population_or_scope: Fourteen studies with estimates of 2.5–3.0-hour endurance performance,
+    mostly in men and mostly in cycling. The abstract describes ingestion ratios of
+    0.5:1–1.0:1 fructose:glucose or fructose:maltodextrin at carbohydrate ingestion
+    rates of 1.3–2.4 g·min⁻¹, compared with isocaloric glucose or maltodextrin.
+  what_was_examined:
+  - The effect of fructose:glucose or fructose:maltodextrin composite beverages versus
+    glucose or maltodextrin on endurance performance.
+  - Performance estimates from 14 studies involving 2.5–3.0-hour endurance tasks,
+    mostly in male cyclists.
+  - Associations between performance effects and exogenous carbohydrate oxidation,
+    fluid absorption, gastrointestinal distress, and sensory responses.
+  - Different fructose:glucose ratios and carbohydrate ingestion rates.
+  core_concepts:
+  - Fructose–glucose or fructose–maltodextrin composite carbohydrate ingestion.
+  - Exogenous carbohydrate oxidation.
+  - Gastrointestinal comfort and distress.
+  - Fluid absorption.
+  - Endurance performance during approximately 2.5–3.0-hour exercise.
+  - Carbohydrate dose and fructose:glucose ratio.
+  important_findings:
+  - Relative to isocaloric glucose or maltodextrin, ingestion of 0.5:1–1.0:1 fructose:glucose
+    or fructose:maltodextrin beverages at 1.3–2.4 g carbohydrate·min⁻¹ was associated
+    with small to moderate mean-power enhancements of 1–9%, with a 95% confidence
+    interval of 0–19%.
+  - For 0.5:1 composites, the abstract reports larger improvements at ingestion rates
+    of at least 1.7 g·min⁻¹, namely 4–9% with a 95% confidence interval of 2–19%,
+    than at 1.4–1.6 g·min⁻¹, namely 1–3% with a 95% confidence interval of 0–6%.
+  - The abstract states that higher-ingestion-rate effects were associated with increased
+    exogenous carbohydrate oxidation, unilateral fluid absorption, and lower gastrointestinal
+    distress relative to control.
+  - The abstract reports that 0.7:1–1.0:1 fructose:glucose solutions were absorbed
+    fastest.
+  - The abstract reports that, at 1.5–1.8 g·min⁻¹, a 0.8:1 fructose:glucose ratio
+    conveyed the highest exogenous carbohydrate energy and endurance power compared
+    with lower or higher ratios.
+  practical_implications:
+  - For RPS fueling education, the abstract supports explaining that mixed fructose–glucose
+    or fructose–maltodextrin formulations may provide endurance-performance advantages
+    over a single saccharide during approximately 2.5–3.0-hour exercise, particularly
+    at the ingestion rates and ratios examined.
+  - The abstract supports presenting carbohydrate amount and carbohydrate type together
+    when discussing endurance fueling, because the reported effects varied with both
+    ingestion rate and fructose:glucose ratio.
+  - The abstract can inform individualized fueling discussions about gastrointestinal
+    tolerance, exogenous carbohydrate availability, and the distinction between a
+    composite formulation and a single-saccharide formulation.
+  - The abstract does not establish a universal prescription; any RPS application
+    should remain bounded by the reviewed exercise duration, study populations, tested
+    products, ingestion rates, and individual tolerance.
   key_takeaways:
-  - Verified PubMed locator for a fructose-glucose composite-carbohydrate review.
-  - Candidate core source for composite-carbohydrate endurance-fueling context pending
-    fuller curation.
-  what_this_does_not_justify: []
+  - The abstract reports that composite fructose–glucose or fructose–maltodextrin
+    beverages produced small to moderate endurance-power benefits relative to isocaloric
+    glucose or maltodextrin in the reviewed studies.
+  - The abstract describes the largest reported improvements with 0.5:1 composite
+    beverages ingested at rates of at least 1.7 g carbohydrate·min⁻¹, compared with
+    lower ingestion rates.
+  - The abstract reports that 0.7:1–1.0:1 fructose:glucose solutions were absorbed
+    fastest, and that a 0.8:1 ratio at 1.5–1.8 g·min⁻¹ was associated with the highest
+    exogenous carbohydrate energy and endurance power among the ratios compared.
+  - The review abstract concludes that 0.5:1–1.0:1 composite beverages at 1.3–2.4
+    g·min⁻¹ likely benefit 2.5–3.0-hour endurance power versus a single saccharide.
+  what_this_does_not_justify:
+  - It does not justify claiming that composite carbohydrates improve durability,
+    fatigue resistance, pacing stability, recovery, or repeatability as distinct outcomes;
+    the abstract reports endurance-power findings rather than those RPS constructs.
+  - It does not justify a universal carbohydrate target, fructose:glucose ratio, or
+    product recommendation for every athlete or event.
+  - It does not justify assuming that the reported findings apply unchanged to brevet
+    or ultra-endurance events, because the abstract explicitly states that ultra-endurance
+    exercise remains an area requiring further study.
+  - It does not justify assuming that the findings apply to females, competition settings,
+    heat stress, or other food formats, because the abstract identifies these as contexts
+    requiring further research.
+  - It does not justify inferring benefits at carbohydrate ingestion rates below 1.3
+    g·min⁻¹.
+  - It does not justify treating the reported associations with oxidation, fluid absorption,
+    or gastrointestinal distress as proof that those mechanisms caused the performance
+    differences.
   important_limits:
-  - Metadata-only entry added from verified citation/locator; abstract and full-text
-    findings are not yet curated here.
-  - Do not convert title-level composite-carbohydrate framing into precise product
-    formulation rules without deeper curation.
+  - The source material is abstract-only; the review methods, study-level characteristics,
+    risk of bias, and full analysis cannot be independently assessed from the provided
+    material.
+  - The 14 studies were mostly conducted in men and mostly in cycling.
+  - The examined performance context was approximately 2.5–3.0-hour endurance exercise,
+    which limits direct transfer to longer brevet and ultra-endurance events.
+  - The abstract does not provide extractable details about the specific beverage
+    formulations, participant training status, environmental conditions, or individual
+    tolerability procedures beyond the summarized ratios and ingestion rates.
+  - The abstract reports confidence intervals that include zero for the overall 1–9%
+    estimate and for the lower-ingestion-rate 1–3% estimate.
+  - The abstract calls for further ratio and dose-response research, including whether
+    meaningful benefits occur below 1.3 g·min⁻¹.
+  - The abstract identifies competition, females, other food formats, heat stress,
+    and ultra-endurance exercise as contexts in which effects remain to be established.
   allowed_uses:
-  - fueling_context
-  - fructose_glucose_context
+  - fueling_guidance
   authority_limit: acceptable_for_explanation
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: restricted
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Added from user-supplied verified PubMed citation; pending deeper curation.
   summary_card:
-    focus: 'Fructose-glucose composite carbohydrates and endurance performance: critical
-      review and future perspectives'
-    main_takeaway: Verified PubMed locator for a fructose-glucose composite-carbohydrate
-      review.
-    main_limit: Metadata-only entry added from verified citation/locator; abstract
-      and full-text findings are not yet curated here.
+    focus: Fructose–glucose or fructose–maltodextrin composite carbohydrates versus
+      single-saccharide carbohydrate during approximately 2.5–3.0-hour endurance exercise.
+    main_takeaway: The abstract reports that composite carbohydrate beverages at 0.5:1–1.0:1
+      fructose:glucose or fructose:maltodextrin ratios and 1.3–2.4 g carbohydrate·min⁻¹
+      likely improved endurance power versus isocaloric glucose or maltodextrin, with
+      effects associated with greater exogenous carbohydrate oxidation and lower gastrointestinal
+      distress.
+    main_limit: Abstract-only evidence from 14 studies, mostly involving men and cycling;
+      direct transfer to competition, females, heat stress, other food formats, and
+      brevet or ultra-endurance exercise is not established.
   relevance_assessment:
     overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    relevance_rationale: The abstract is directly relevant to endurance fueling and
+      provides quantitative, abstract-level findings on composite carbohydrate ratios,
+      ingestion rates, exogenous carbohydrate oxidation, gastrointestinal distress,
+      and endurance power. Its RPS relevance is limited because the examined outcomes
+      are short-to-moderate-duration endurance-power measures rather than direct measures
+      of durability, fatigue resistance, pacing stability, recovery coherence, or
+      ultra-endurance performance. The abstract-only evidence posture also limits
+      detailed appraisal and transfer.
     rps_domains_supported:
     - fueling
-    - fructose_glucose
-    - endurance
     target_audiences_supported:
+    - coach_chat
+    - athlete_education
     - background_knowledge
     best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
-      pending deeper curation.
-    research_question_or_purpose: Critically review fructose-glucose composite carbohydrate
-      use and future perspectives for endurance performance.
-    study_type: review
-    population_or_context: Endurance fueling review context; useful for composite-carbohydrate
-      framing pending fuller local curation.
-    what_was_actually_examined: Critically review fructose-glucose composite carbohydrate
-      use and future perspectives for endurance performance.
-    core_concepts: []
+    why_this_source_matters_for_rps: The abstract provides directly relevant scientific
+      context for endurance fueling choices involving composite fructose–glucose or
+      fructose–maltodextrin carbohydrates. It may support RPS explanations of how
+      carbohydrate formulation and ingestion rate relate to endurance power, exogenous
+      carbohydrate oxidation, fluid absorption, and gastrointestinal comfort. It does
+      not directly establish RPS durability, pacing, fatigue-resistance, or ultra-endurance
+      outcomes.
+    research_question_or_purpose: The review examined the effect of fructose:glucose
+      or fructose:maltodextrin composites versus glucose or maltodextrin alone on
+      endurance performance and considered mechanistic associations involving carbohydrate
+      metabolism, gastrointestinal responses, fluid absorption, and sensory responses.
+    study_type: Peer-reviewed critical literature review; the provided material is
+      abstract-only and is classified here as a narrative review.
+    population_or_context: Fourteen studies containing estimates of 2.5–3.0-hour endurance
+      performance, mostly in men and mostly in cycling. The abstract covers composite
+      carbohydrate ratios of 0.5:1–1.0:1 and ingestion rates of 1.3–2.4 g carbohydrate·min⁻¹.
+    what_was_actually_examined: The abstract examined endurance-performance comparisons
+      between fructose–glucose or fructose–maltodextrin composite beverages and isocaloric
+      glucose or maltodextrin beverages. It also summarized associations with exogenous
+      carbohydrate oxidation, fluid absorption, gastrointestinal distress, and the
+      effects of different fructose:glucose ratios and carbohydrate ingestion rates.
+    core_concepts:
+    - Composite fructose–glucose or fructose–maltodextrin carbohydrates.
+    - Exogenous carbohydrate oxidation.
+    - Gastrointestinal comfort and distress.
+    - Fluid absorption.
+    - Endurance power.
+    - Carbohydrate ingestion rate and fructose:glucose ratio.
     key_takeaways:
-    - Verified PubMed locator for a fructose-glucose composite-carbohydrate review.
-    - Candidate core source for composite-carbohydrate endurance-fueling context pending
-      fuller curation.
-    important_findings: []
-    practical_implications_for_rps: []
-    what_this_source_does_not_justify: []
+    - The review abstract reports small to moderate endurance-power benefits from
+      composite carbohydrate beverages compared with single-saccharide formulations
+      in the studied context.
+    - The abstract reports that higher ingestion rates within the examined range were
+      associated with larger effects for 0.5:1 composites.
+    - The abstract identifies 0.7:1–1.0:1 solutions as being absorbed fastest and
+      reports a 0.8:1 ratio as associated with the highest exogenous carbohydrate
+      energy and endurance power at 1.5–1.8 g·min⁻¹.
+    - The abstract concludes that 0.5:1–1.0:1 composite beverages at 1.3–2.4 g·min⁻¹
+      likely benefit 2.5–3.0-hour endurance power versus isocaloric single-saccharide
+      beverages.
+    important_findings:
+    - The abstract reports 1–9% mean-power enhancements, with a 95% confidence interval
+      of 0–19%, for 0.5:1–1.0:1 composites ingested at 1.3–2.4 g carbohydrate·min⁻¹
+      versus isocaloric glucose or maltodextrin.
+    - For 0.5:1 composites, the abstract reports 4–9% improvement at at least 1.7
+      g·min⁻¹ versus 1–3% at 1.4–1.6 g·min⁻¹.
+    - The higher-ingestion-rate effects were associated with increased exogenous carbohydrate
+      oxidation, unilateral fluid absorption, and lower gastrointestinal distress
+      relative to control.
+    - The abstract reports fastest absorption for solutions containing a 0.7:1–1.0:1
+      fructose:glucose ratio and the highest exogenous carbohydrate energy and endurance
+      power for a 0.8:1 ratio at 1.5–1.8 g·min⁻¹.
+    practical_implications_for_rps:
+    - RPS can use this abstract to explain why mixed carbohydrate formulations may
+      be considered for approximately 2.5–3.0-hour endurance exercise.
+    - RPS fueling discussions can distinguish the effects reported for composite carbohydrates
+      from those of single-saccharide formulations and can acknowledge the roles of
+      ingestion rate and individual gastrointestinal tolerance.
+    - The findings may inform athlete education and coach discussion, but any applied
+      recommendation should be individualized and should not be presented as a universal
+      prescription.
+    - The abstract does not support direct claims that these formulations improve
+      broader durability or ultra-endurance outcomes.
+    what_this_source_does_not_justify:
+    - It does not justify direct claims about durability, fatigue resistance, pacing
+      stability, recovery coherence, or repeatability.
+    - It does not justify universal ratio, dose, product, or timing prescriptions.
+    - It does not justify direct transfer to females, competition, heat stress, other
+      food formats, or ultra-endurance events.
+    - It does not justify conclusions about ingestion rates below 1.3 g·min⁻¹.
+    - It does not establish that the reported mechanistic associations are causal.
     limits_and_transfer_boundaries:
-    - Metadata-only entry added from verified citation/locator; abstract and full-text
-      findings are not yet curated here.
-    - Do not convert title-level composite-carbohydrate framing into precise product
-      formulation rules without deeper curation.
+    - Only the abstract was provided, so full methods, study-level data, and critical
+      appraisal details are unavailable.
+    - The reviewed evidence was mostly from men and cycling studies.
+    - The performance context was approximately 2.5–3.0 hours rather than clearly
+      longer brevet or ultra-endurance events.
+    - The abstract itself states that effects in competition, females, other food
+      formats, heat stress, and ultra-endurance exercise require further study.
+    - The overall confidence interval and the lower-ingestion-rate confidence interval
+      include zero, which limits certainty about the magnitude and consistency of
+      benefit.
     allowed_uses_in_rps:
-    - fueling_context
-    - fructose_glucose_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Fueling guidance grounded in abstract-level evidence for composite versus single-saccharide
+      carbohydrate during approximately 2.5–3.0-hour endurance exercise.
+    - Athlete education and coach discussion about carbohydrate formulation, ingestion
+      rate, exogenous carbohydrate oxidation, and gastrointestinal tolerance.
+    - Not a standalone source for durability definitions, fatigue-resistance claims,
+      pacing prescriptions, taper decisions, progression decisions, or brevet/ultra
+      transfer.
+    evidence_posture: Abstract-curated; the supplied material contains the PubMed
+      abstract but not the full text.
+    source_material_basis: Curated from abstract-level material supplied in the verified
+      source package. The provided locator is a verified PubMed locator, but no full-text
+      material was supplied.
   brief_path: studies/dur_core_032.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: false
   trusted_match_reason: ''
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_032
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-08-31T10:53:10.272066Z'
+  activated_at: '2026-08-31T10:53:10.272066Z'
 - id: dur_core_022
   source_kind: core
   authors: Rønnestad, B. R., Hansen, J., Vegge, G., Tønnessen, E., & Slettaløkken,
@@ -3261,7 +3419,7 @@ entries:
     Exercise-Induced Muscle Damage in Elite Runners
   journal_or_outlet: Nutrients
   source_type: peer_reviewed
-  study_type: peer_reviewed
+  study_type: rct
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/32403259/
   verification_status: verified
   locator_source: pubmed
@@ -3270,90 +3428,254 @@ entries:
   - carbohydrate
   - gut_training
   - endurance
-  question_or_focus: Examine the effects of 120 g/h carbohydrate intake during a mountain
-    marathon on exercise-induced muscle damage in elite runners.
-  population_or_scope: Elite-runner high-carbohydrate race-fueling context; useful
-    for high-intake endurance-fueling framing pending fuller local curation.
-  what_was_examined: []
-  core_concepts: []
-  important_findings: []
-  practical_implications: []
+  question_or_focus: Abstract-level examination of whether consuming 120 g/h of carbohydrate
+    during a mountain marathon, compared with 90 g/h and 60 g/h, affected internal
+    exercise load and exercise-induced muscle-damage markers in elite runners.
+  population_or_scope: Twenty male elite runners who had previously undertaken nutritional
+    and gut training, competing in a mountain marathon with approximately 4000 m of
+    cumulative slope.
+  what_was_examined:
+  - A randomized trial comparing carbohydrate intake of 120 g/h, 90 g/h, and 60 g/h
+    during a mountain marathon.
+  - Internal exercise load, calculated from rate of perceived exertion during and
+    after the marathon.
+  - 'Exercise-induced muscle-damage markers measured before the race and 24 hours
+    afterward: creatine kinase, lactate dehydrogenase, glutamic oxaloacetic transaminase,
+    urea, and creatinine.'
+  core_concepts:
+  - Carbohydrate intake during ultraendurance exercise.
+  - Internal exercise load assessed using perceived exertion.
+  - Exercise-induced muscle damage assessed with biochemical markers.
+  - Nutritional and gut training preceding high carbohydrate intake.
+  - Comparison of 120 g/h with 90 g/h and 60 g/h during a mountain marathon.
+  important_findings:
+  - 'Internal exercise load was significantly lower in the 120 g/h group than in the
+    60 g/h and 90 g/h groups: 3805 ± 281 AU versus 4688 ± 705 AU and 4692 ± 716 AU,
+    respectively; p = 0.019; η2p = 0.471.'
+  - At 24 hours after the race, the 120 g/h group had significantly lower creatine
+    kinase values than the 60 g/h and 90 g/h groups; p = 0.019; η2p = 0.373.
+  - At 24 hours after the race, the 120 g/h group had significantly lower lactate
+    dehydrogenase values than the 60 g/h and 90 g/h groups; p < 0.001; η2p = 0.615.
+  - At 24 hours after the race, the 120 g/h group had significantly lower glutamic
+    oxaloacetic transaminase values than the 60 g/h and 90 g/h groups; p = 0.003;
+    η2p = 0.500.
+  - The abstract reports a correlation between exercise-induced muscle damage and
+    internal exercise load of R = 0.742; p < 0.001.
+  - The abstract does not report significant differences for urea or creatinine in
+    the provided material.
+  practical_implications:
+  - For RPS fueling discussions involving long-duration or ultraendurance events,
+    the abstract supports considering high carbohydrate intake during exercise as
+    a relevant factor associated with lower internal exercise load and selected post-race
+    muscle-damage markers in this study context.
+  - The abstract-supported findings may inform athlete education about the potential
+    relevance of carbohydrate intake to perceived internal load and post-event recovery
+    markers when the athlete and event context are comparable.
+  - Because participants had previously undertaken nutritional and gut training, the
+    study can support discussion of gut-training context when translating high carbohydrate-intake
+    findings, but it does not establish a universal intake prescription.
+  - The findings may provide applied translation for ultraendurance and brevet-related
+    fueling conversations, while remaining bounded by the study's mountain-marathon
+    running population and abstract-only evidence access.
   key_takeaways:
-  - Verified PubMed locator for a 120 g/h mountain-marathon carbohydrate study.
-  - Candidate core source for high-intake race-fueling context pending fuller curation.
-  what_this_does_not_justify: []
+  - The abstract reports that the 120 g/h carbohydrate group had lower internal exercise
+    load during the mountain marathon than both the 60 g/h and 90 g/h groups.
+  - The abstract reports lower 24-hour creatine kinase, lactate dehydrogenase, and
+    glutamic oxaloacetic transaminase values in the 120 g/h group than in the 60 g/h
+    and 90 g/h groups.
+  - The abstract reports a close correlation between exercise-induced muscle damage
+    and internal exercise load.
+  - The findings are specific to previously gut-trained male elite runners completing
+    a mountain marathon.
+  what_this_does_not_justify:
+  - It does not justify treating 120 g/h as a universally optimal or required carbohydrate
+    intake for all endurance athletes, events, or RPS users.
+  - It does not establish that the same effects occur in cyclists, brevet riders,
+    masters athletes, recreational athletes, or athletes without prior nutritional
+    and gut training.
+  - It does not justify claims about improved performance, because the provided abstract
+    reports internal exercise load and muscle-damage-marker outcomes rather than a
+    performance outcome.
+  - It does not justify a causal claim that reduced exercise-induced muscle-damage
+    markers necessarily produce faster functional recovery or better subsequent training
+    readiness.
+  - It does not justify conclusions about season planning, tapering, progression,
+    or intensity distribution.
+  - It does not justify conclusions about gastrointestinal tolerance, despite the
+    participants' prior nutritional and gut training, because gastrointestinal outcomes
+    are not reported in the provided abstract.
+  - It does not justify conclusions about urea or creatinine because the provided
+    abstract does not report their results.
   important_limits:
-  - Metadata-only entry added from verified citation/locator; abstract and full-text
-    findings are not yet curated here.
-  - Elite-runner and mountain-marathon context may not transfer directly to all RPS
-    athletes without stronger triangulation.
+  - The source material is abstract-only; the full methods, participant characteristics,
+    intervention implementation, adherence, statistical analysis, and complete outcome
+    reporting are not available in the provided package.
+  - The sample comprised only 20 male elite runners.
+  - The event was a mountain marathon with approximately 4000 m of cumulative slope,
+    so transfer to cycling, brevet, flatter events, or different ultraendurance formats
+    is uncertain.
+  - Participants had previously undertaken nutritional and gut training, limiting
+    direct transfer to athletes who have not practiced high carbohydrate intake.
+  - Outcomes were assessed during the event and 24 hours afterward; longer-term recovery,
+    subsequent performance, and training continuity were not reported in the abstract.
+  - The study compared three carbohydrate-intake groups, but the provided abstract
+    does not establish whether intake was individually adjusted, how intake was delivered,
+    or whether all other nutritional factors were controlled.
+  - The study reports associations between carbohydrate intake, internal exercise
+    load, and selected biomarkers; the abstract does not provide enough detail to
+    determine the contribution of pacing, environmental conditions, training status,
+    or other confounders.
+  - The abstract reports lower creatine kinase, lactate dehydrogenase, and glutamic
+    oxaloacetic transaminase values but does not provide their absolute group values
+    in the supplied material.
   allowed_uses:
-  - fueling_context
-  - high_carb_context
+  - fueling_guidance
+  - coaching_translation
   authority_limit: acceptable_for_explanation
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: restricted
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Added from user-supplied verified PubMed citation; pending deeper curation.
   summary_card:
-    focus: Effects of 120 g/h of Carbohydrates Intake during a Mountain Marathon on
-      Exercise-Induced Muscle Damage in Elite Runners
-    main_takeaway: Verified PubMed locator for a 120 g/h mountain-marathon carbohydrate
-      study.
-    main_limit: Metadata-only entry added from verified citation/locator; abstract
-      and full-text findings are not yet curated here.
+    focus: Carbohydrate intake during a mountain marathon and its relationship to
+      internal exercise load and exercise-induced muscle-damage markers.
+    main_takeaway: In the abstract, previously gut-trained male elite runners consuming
+      120 g/h of carbohydrate had lower internal exercise load and lower 24-hour creatine
+      kinase, lactate dehydrogenase, and glutamic oxaloacetic transaminase values
+      than groups consuming 90 g/h or 60 g/h.
+    main_limit: Abstract-only evidence from 20 male elite mountain-marathon runners;
+      it does not establish universal carbohydrate targets or direct transfer to cyclists,
+      brevet riders, masters athletes, or longer-term recovery.
   relevance_assessment:
     overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    relevance_rationale: The abstract directly examines carbohydrate intake during
+      a mountain marathon and reports internal exercise load plus selected post-event
+      muscle-damage markers, making it relevant to RPS fueling, fatigue-resistance,
+      durability, pacing, and ultraendurance translation. Relevance is moderated by
+      the abstract-only evidence posture, the small sample of 20 male elite runners,
+      the running-specific mountain-marathon context, and prior gut training, which
+      constrain transfer to cycling, brevet athletes, masters athletes, and broader
+      planning decisions.
     rps_domains_supported:
+    - durability
+    - fatigue_resistance
+    - pacing
     - fueling
-    - carbohydrate
-    - gut_training
+    - brevet_ultra
+    - coaching_translation
     target_audiences_supported:
+    - coach_chat
+    - athlete_education
     - background_knowledge
-    best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    best_use_mode: applied_translation
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Added from user-supplied verified PubMed citation;
-      pending deeper curation.
-    research_question_or_purpose: Examine the effects of 120 g/h carbohydrate intake
-      during a mountain marathon on exercise-induced muscle damage in elite runners.
-    study_type: peer_reviewed
-    population_or_context: Elite-runner high-carbohydrate race-fueling context; useful
-      for high-intake endurance-fueling framing pending fuller local curation.
-    what_was_actually_examined: Examine the effects of 120 g/h carbohydrate intake
-      during a mountain marathon on exercise-induced muscle damage in elite runners.
-    core_concepts: []
+    why_this_source_matters_for_rps: This source is relevant to RPS because it examines
+      fueling during a prolonged mountain-marathon effort and reports outcomes related
+      to internal exercise load and post-event muscle-damage markers. It can support
+      cautious applied discussion of carbohydrate intake in ultraendurance contexts,
+      while its running-specific sample and abstract-only posture limit direct transfer.
+    research_question_or_purpose: The abstract states that the study compared high
+      carbohydrate intake of 120 g/h with 90 g/h and 60 g/h during a mountain marathon
+      to examine effects on exercise load and exercise-induced muscle-damage markers.
+    study_type: Randomized trial, curated from abstract-level material.
+    population_or_context: Twenty male elite runners with prior nutritional and gut
+      training completed a mountain marathon with approximately 4000 m of cumulative
+      slope. The groups consumed 120 g/h, 90 g/h, or 60 g/h of carbohydrate during
+      the event.
+    what_was_actually_examined: The study examined internal exercise load based on
+      rate of perceived exertion during and after the marathon, together with creatine
+      kinase, lactate dehydrogenase, glutamic oxaloacetic transaminase, urea, and
+      creatinine measured before the race and 24 hours afterward.
+    core_concepts:
+    - Carbohydrate intake during ultraendurance exercise.
+    - Internal exercise load and perceived exertion.
+    - Exercise-induced muscle-damage biomarkers.
+    - Prior nutritional and gut training.
+    - Mountain-marathon context.
     key_takeaways:
-    - Verified PubMed locator for a 120 g/h mountain-marathon carbohydrate study.
-    - Candidate core source for high-intake race-fueling context pending fuller curation.
-    important_findings: []
-    practical_implications_for_rps: []
-    what_this_source_does_not_justify: []
+    - The abstract reports lower internal exercise load with 120 g/h than with 90
+      g/h or 60 g/h.
+    - The abstract reports lower 24-hour creatine kinase, lactate dehydrogenase, and
+      glutamic oxaloacetic transaminase values with 120 g/h than with 90 g/h or 60
+      g/h.
+    - The abstract reports a close correlation between exercise-induced muscle damage
+      and internal exercise load.
+    - The findings are bounded to previously gut-trained male elite runners in a mountain-marathon
+      event.
+    important_findings:
+    - Internal exercise load was 3805 ± 281 AU in the 120 g/h group, compared with
+      4688 ± 705 AU in the 60 g/h group and 4692 ± 716 AU in the 90 g/h group; the
+      abstract reports p = 0.019 and η2p = 0.471.
+    - The 120 g/h group had significantly lower creatine kinase 24 hours after the
+      race than the 60 g/h and 90 g/h groups; p = 0.019; η2p = 0.373.
+    - The 120 g/h group had significantly lower lactate dehydrogenase 24 hours after
+      the race than the 60 g/h and 90 g/h groups; p < 0.001; η2p = 0.615.
+    - The 120 g/h group had significantly lower glutamic oxaloacetic transaminase
+      24 hours after the race than the 60 g/h and 90 g/h groups; p = 0.003; η2p =
+      0.500.
+    - Exercise-induced muscle damage and exercise load were correlated at R = 0.742;
+      p < 0.001.
+    - No result for urea or creatinine is reported in the supplied abstract.
+    practical_implications_for_rps:
+    - The abstract supports considering high carbohydrate intake during prolonged
+      ultraendurance exercise as a factor associated with lower internal exercise
+      load and selected post-event muscle-damage markers in a comparable trained population.
+    - The source may be used in athlete education and coach discussions to explain
+      why fueling could be relevant to perceived effort and post-event recovery-marker
+      responses.
+    - The prior gut-training status of participants should be retained when translating
+      the finding; the abstract does not establish that untrained athletes would tolerate
+      or respond similarly.
+    - The source can inform cautious fueling translation for long-duration RPS contexts,
+      but not as a universal prescription.
+    what_this_source_does_not_justify:
+    - It does not justify a universal 120 g/h carbohydrate prescription.
+    - It does not justify direct equivalence between mountain-marathon runners and
+      cyclists, brevet riders, masters athletes, or recreational athletes.
+    - It does not establish improved race performance, faster functional recovery,
+      or improved subsequent training readiness.
+    - It does not provide evidence for tapering, progression, season planning, or
+      intensity-distribution decisions.
+    - It does not report gastrointestinal outcomes or establish that gut training
+      is necessary or sufficient for tolerating the tested intake.
+    - It does not support conclusions about urea or creatinine from the provided abstract.
     limits_and_transfer_boundaries:
-    - Metadata-only entry added from verified citation/locator; abstract and full-text
-      findings are not yet curated here.
-    - Elite-runner and mountain-marathon context may not transfer directly to all
-      RPS athletes without stronger triangulation.
+    - The evidence is abstract-only, so detailed methods and complete results cannot
+      be independently assessed from the supplied material.
+    - The sample was small and restricted to 20 male elite runners.
+    - The event involved mountain running and approximately 4000 m of cumulative slope,
+      limiting transfer to cycling and other endurance formats.
+    - All participants had previously undertaken nutritional and gut training.
+    - The reported follow-up was 24 hours after the race; longer-term recovery and
+      repeatability outcomes are not provided.
+    - The abstract does not provide enough detail to separate the effects of carbohydrate
+      intake from pacing, environmental, training, or other contextual factors.
     allowed_uses_in_rps:
-    - fueling_context
-    - high_carb_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Fueling guidance framed as abstract-supported context rather than a binding
+      intake prescription.
+    - Coaching translation for discussing possible relationships among carbohydrate
+      intake, perceived internal load, and selected post-event biomarkers.
+    - Athlete education about the study's findings and their limits in a trained ultraendurance
+      population.
+    evidence_posture: Abstract-curated; findings and implications are bounded to the
+      supplied abstract.
+    source_material_basis: Curated from abstract-level material supplied in the verified
+      source package. No full text or open-access excerpt was used.
   brief_path: studies/dur_core_033.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: false
   trusted_match_reason: ''
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_033
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-08-31T10:53:54.764494Z'
+  activated_at: '2026-08-31T10:53:54.764494Z'
 - id: dur_core_019
   source_kind: core
   authors: Rønnestad, B. R., et al.
@@ -3599,8 +3921,8 @@ entries:
   brief_path: studies/dur_core_001.md
   brief_status: pending_curation
   activation_status: legacy_active
-  trusted_source_match: false
-  trusted_match_reason: ''
+  trusted_source_match: true
+  trusted_match_reason: 'Trusted author+outlet pair: echo maunder / sports medicine'
   legacy_active: true
   curation_schema_version: '1'
   record_fingerprint: dur_core_001
@@ -4831,6 +5153,84 @@ entries:
   discovered_at: '2026-05-27'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_c4b7d9bd55
+  source_kind: core
+  authors: Patil D, Slejko JF, Savitt JM, Mattingly Ii TJ
+  year: 2026
+  title: A Cost-Effectiveness Analysis for Treatments of Patients with Early Stage
+    Huntington's Disease in the USA
+  journal_or_outlet: PharmacoEconomics - open
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1007/s41669-026-00668-5
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: A Cost-Effectiveness Analysis for Treatments of Patients with Early Stage
+      Huntington's Disease in the USA
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_c4b7d9bd55.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_c4b7d9bd55
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_5d9079ff39
   source_kind: core
   authors: Shao Q, Li W, Ding Y, Kuang T
@@ -5949,6 +6349,84 @@ entries:
   discovered_at: '2026-08-10'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_26ec456f03
+  source_kind: core
+  authors: Yang S, Wang X, Chen D, Luo Z, Cui C, Yu Y, Duan X, Zhang C
+  year: 2026
+  title: Geometry-Controlled Cooperativity at Binuclear Fe(2)-N(6) Sites Enables Selective
+    Fe(IV)═OGeneration for Durable Fenton-Like Oxidation
+  journal_or_outlet: Angewandte Chemie (International ed. in English)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/anie.4830572
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Geometry-Controlled Cooperativity at Binuclear Fe(2)-N(6) Sites Enables
+      Selective Fe(IV)═OGeneration for Durable Fenton-Like Oxidation
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_26ec456f03.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_26ec456f03
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_b5539b9d5e
   source_kind: core
   authors: Jonathan N, Moreira RPL, de Souza NCS, Filgueiras AC, Dos S Junior GA,
@@ -6421,6 +6899,84 @@ entries:
   discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_d437e1d714
+  source_kind: core
+  authors: Shahabuddin M, Moshwan R, Rahman MR, Zulkifli NWM, Liang YY
+  year: 2026
+  title: 'Liquid organic hydrogen carriers for hydrogen storage: advances, challenges,
+    and technoeconomic and sustainability perspectives'
+  journal_or_outlet: RSC advances
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1039/d6ra01860b
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: 'Liquid organic hydrogen carriers for hydrogen storage: advances, challenges,
+      and technoeconomic and sustainability perspectives'
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_d437e1d714.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_d437e1d714
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_a19e7640e3
   source_kind: core
   authors: Zhong Q, Shu C, Pan M, Xu J, Luo Q, Li X
@@ -6495,6 +7051,84 @@ entries:
   record_fingerprint: dur_auto_2026_a19e7640e3
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_85c39a1c69
+  source_kind: core
+  authors: Lenarczyk G, Minssen T, Kesselheim AS
+  year: 2026
+  title: 'Non-approval in the sunlight: FDA''s CRL disclosures, the limits of confidentiality,
+    and lessons from the EMA'
+  journal_or_outlet: Journal of law and the biosciences
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1093/jlb/lsag023
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: 'Non-approval in the sunlight: FDA''s CRL disclosures, the limits of confidentiality,
+      and lessons from the EMA'
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_85c39a1c69.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_85c39a1c69
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_6aeb46fcde
@@ -6812,6 +7446,82 @@ entries:
   discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_9b1e7ef937
+  source_kind: core
+  authors: Zhu H, Ou D, Zhang T, Ye Z, You J, Lv L, Shi Y, Shen Y, Cao J, Zhang K
+  year: 2026
+  title: Scalable Synthesis of Sulfonated TEMPO Catholyte for Stable AORFB
+  journal_or_outlet: ChemSusChem
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/cssc.70993
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Scalable Synthesis of Sulfonated TEMPO Catholyte for Stable AORFB
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_9b1e7ef937.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_9b1e7ef937
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_865d8a2cac
   source_kind: core
   authors: Tang PL, Wang YT, Xiao ST, Wu SM, Qu C, Yuan XS, Wang LY, Lu Y, Geng W,
@@ -6967,6 +7677,164 @@ entries:
   record_fingerprint: dur_auto_2026_cedf2e5ee2
   last_verified_at: '2026-08-24'
   discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_2750340f50
+  source_kind: core
+  authors: Shi Y, Sun D, Huang X, Wang Y, Liu Z, Mao P, Tu J, Wang W, Tang Y, Wang
+    H
+  year: 2026
+  title: Strain-Buffering Layered/Rocksalt Heterostructure Constructed via Oxygen
+    Redox Activation for Durable O3-Type Layered Transition Metal Oxides
+  journal_or_outlet: Angewandte Chemie (International ed. in English)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/anie.7544135
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Strain-Buffering Layered/Rocksalt Heterostructure Constructed via Oxygen
+      Redox Activation for Durable O3-Type Layered Transition Metal Oxides
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_2750340f50.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_2750340f50
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_6e47842759
+  source_kind: core
+  authors: Wang H, Mei Y, Hu X, Sun L, Gao J, Huang J, Zheng Z, Cai D, Tu H, Zhang
+    S, Niu C, Deng W, Zou G, Hou H, Liang C, Hui KN, Ji X
+  year: 2026
+  title: Strain-Retardant Sodium Layered Cathodes Enabled by Conformal Octahedral
+    Matching
+  journal_or_outlet: Angewandte Chemie (International ed. in English)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/anie.4678799
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Strain-Retardant Sodium Layered Cathodes Enabled by Conformal Octahedral
+      Matching
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_6e47842759.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_6e47842759
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_5ed9c19487
@@ -7125,6 +7993,84 @@ entries:
   discovered_at: '2026-08-10'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_7fbcb92458
+  source_kind: core
+  authors: Morales M, Roda V, Husar A
+  year: 2026
+  title: Sustainable [EMIM]OAc-Nanocellulose Ionogels for Flexible High-Performance
+    Supercapacitors
+  journal_or_outlet: ACS omega
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1021/acsomega.6c05240
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Sustainable [EMIM]OAc-Nanocellulose Ionogels for Flexible High-Performance
+      Supercapacitors
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_7fbcb92458.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_7fbcb92458
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_ab052a6e5a
   source_kind: core
   authors: Akbulut ZF, Guler S
@@ -7279,6 +8225,162 @@ entries:
   record_fingerprint: dur_auto_2026_9cb31b91a1
   last_verified_at: '2026-08-24'
   discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_ff4a5d5f9e
+  source_kind: core
+  authors: Liao P, Qiu Y, Li M, Hu R, Wang H, Zhang H, Wu S, Liang Z, Li Y
+  year: 2026
+  title: Targeting CARM1 impairs DNA damage repair and attenuates B-cell acute lymphoblastic
+    leukemia progression
+  journal_or_outlet: Biochimica et biophysica acta. Molecular basis of disease
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.bbadis.2026.168444
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Targeting CARM1 impairs DNA damage repair and attenuates B-cell acute lymphoblastic
+      leukemia progression
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_ff4a5d5f9e.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_ff4a5d5f9e
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_9d8ee1cbdc
+  source_kind: core
+  authors: Tian X, Chen Y, Wu J, Luo J, Liu H, Jin J
+  year: 2026
+  title: Valorizing waste tire rubber in freeze-thaw durable one-part slag-based alkali-activated
+    materials through plasma-induced interfacial activation
+  journal_or_outlet: Journal of hazardous materials
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jhazmat.2026.143429
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Valorizing waste tire rubber in freeze-thaw durable one-part slag-based
+      alkali-activated materials through plasma-induced interfacial activation
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_9d8ee1cbdc.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_9d8ee1cbdc
+  last_verified_at: '2026-08-31'
+  discovered_at: '2026-08-31'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_7d706a091f
