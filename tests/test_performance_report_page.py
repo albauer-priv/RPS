@@ -132,10 +132,12 @@ def test_create_performance_report_does_not_require_phase_artefacts(monkeypatch,
     assert result["ok"] is True
     assert captured["kwargs"]["tasks"] == [AgentTask.CREATE_DES_ANALYSIS_REPORT]
     user_input = captured["kwargs"]["user_input"]
-    assert "ACTIVITIES_ACTUAL version_key 2026-15" in user_input
-    assert "ACTIVITIES_TREND version_key 2026-15" in user_input
+    assert "activities_actual_version: 2026-15" in user_input
+    assert "activities_trend_version: 2026-15" in user_input
     assert "**Deterministic Report Evidence Context**" in user_input
+    assert "**Resolved Activity Context**" in user_input
     assert "diagnostic_only: True" in user_input
+    assert "no workspace tools are available" in user_input
 
 
 
@@ -327,8 +329,8 @@ def test_create_performance_report_backfills_target_week_activity_versions(monke
 
     assert result["ok"] is True
     user_input = captured["kwargs"]["user_input"]
-    assert "ACTIVITIES_ACTUAL version_key 2026-14" in user_input
-    assert "ACTIVITIES_TREND version_key 2026-14" in user_input
+    assert "activities_actual_version: 2026-14" in user_input
+    assert "activities_trend_version: 2026-14" in user_input
 
 
 

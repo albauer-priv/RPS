@@ -790,14 +790,13 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         ]
     }
 
-    # report_context_read still declares tools: report_planning is not part of the
-    # deterministic-injection tool-redundancy cleanup applied to season/phase/week.
+    # season_scenarios still declares tools: scenario generation is not part of the
+    # deterministic-injection tool-redundancy cleanup applied to season/phase/week planning.
     assert _task_tools_for_blueprint(
-        tasks["report_context_read"], tool_map
+        tasks["season_scenarios"], tool_map
     ) == [
         tool_map["workspace_get_input"],
         tool_map["workspace_get_latest"],
-        tool_map["workspace_get_version"],
     ]
     assert _task_tools_for_blueprint(tasks["week_plan"], tool_map) == []
     # season_macrocycle_draft has no tools: all of its inputs are pre-injected as text
@@ -811,11 +810,11 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
     task = _build_crewai_task(
         task_cls=FakeTask,
         bundle=bundle,
-        task_blueprint=tasks["report_context_read"],
+        task_blueprint=tasks["season_scenarios"],
         agent=object(),
         description="test",
         runtime=SimpleNamespace(workspace_root=Path(".")),
-        crew_name="report_planning",
+        crew_name="season_planning",
         athlete_id="i150546",
         run_id="run-1",
         tools=tool_map,
@@ -824,9 +823,8 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
     assert task.kwargs["tools"] == [
         tool_map["workspace_get_input"],
         tool_map["workspace_get_latest"],
-        tool_map["workspace_get_version"],
     ]
-    assert task.kwargs["name"] == "report_context_read"
+    assert task.kwargs["name"] == "season_scenarios"
     assert callable(task.kwargs["callback"])
 
 def test_build_crewai_task_tools_override_takes_precedence() -> None:

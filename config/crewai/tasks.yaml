@@ -625,16 +625,6 @@ tasks:
     description: Create or revise the week-plan artifact envelope for the selected ISO week using only already-approved strict project-subset workout text; do not serialize prose workouts. Writer runs only after Pass 3 self-audit passed and Review approved. If review classified a Pass 1 or Pass 2 return finding, do not run writer recovery.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
 
-  report_context_read:
-    agent: performance_context_specialist
-    kind: internal_reasoning
-    output: planning_draft
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
-      - workspace_get_version
-    description: Summarize selected report-week context and diagnostic inputs.
-    expected_output: A structured advisory context draft.
   des_diagnostic_draft:
     agent: des_diagnostic_specialist
     kind: internal_reasoning
@@ -646,7 +636,6 @@ tasks:
     kind: internal_reasoning
     output: report_review_decision
     context:
-      - report_context_read
       - des_diagnostic_draft
     description: Review advisory DES diagnostics and decide approve, reject, or bounded rework.
     expected_output: A structured report review decision.

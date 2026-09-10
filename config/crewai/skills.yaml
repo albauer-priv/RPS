@@ -215,8 +215,6 @@ agents:
 
   performance_analysis:
     skill: skills/report/analysis-methodology
-  performance_context_specialist:
-    skill: skills/report/context-analysis
   des_diagnostic_specialist:
     skill: skills/report/analysis-methodology
   des_review_manager:

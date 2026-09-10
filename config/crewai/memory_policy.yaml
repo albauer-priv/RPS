@@ -133,9 +133,6 @@ agents:
   phase_artifact_writer:
     scope_template: "/athlete/{athlete_id}/planning/phase/nonbinding/writer"
     mode: read_only
-  performance_context_specialist:
-    scope_template: "/athlete/{athlete_id}/advisory/report/context"
-    mode: scope
   des_diagnostic_specialist:
     scope_template: "/athlete/{athlete_id}/advisory/report/analyst"
     mode: scope

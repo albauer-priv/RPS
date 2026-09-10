@@ -450,13 +450,6 @@ agents:
     runtime_status: foundation_only
     output_mode: artifact_envelope
     prompt_agent: performance_analysis
-  performance_context_specialist:
-    display_name: Performance Context Specialist
-    role: Advisory context reader
-    goal: Summarize the selected report-week evidence and context before diagnostic interpretation.
-    runtime_status: foundation_only
-    output_mode: planning_draft
-    prompt_agent: performance_analysis
   des_diagnostic_specialist:
     display_name: DES Diagnostic Specialist
     role: Durability diagnostics specialist

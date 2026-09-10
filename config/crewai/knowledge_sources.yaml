@@ -118,7 +118,6 @@ agents:
   phase_artifact_writer: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}
   phase_feed_forward_manager: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   performance_analysis: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
-  performance_context_specialist: {bundles: [factual_interfaces], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   des_diagnostic_specialist: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   des_review_manager: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   report_artifact_writer: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}

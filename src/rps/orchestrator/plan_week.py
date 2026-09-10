@@ -35,8 +35,10 @@ from rps.orchestrator.planning_evidence import (
     resolve_previous_week_activity_versions,
 )
 from rps.orchestrator.resolved_context import (
+    build_resolved_activity_context_block,
     build_resolved_athlete_context_block,
     build_resolved_kpi_context_block,
+    build_resolved_phase_context_block,
     build_resolved_report_evidence_block,
 )
 from rps.orchestrator.workout_export import run_workout_export
@@ -459,6 +461,7 @@ def create_performance_report(
     runtime = runtime_for("performance_analysis")
     workspace = Workspace.for_athlete(athlete_id, root=runtime.workspace_root)
     season_range = None
+    season_plan: object = None
     if workspace.latest_exists(ArtifactType.SEASON_PLAN):
         season_plan = workspace.get_latest(ArtifactType.SEASON_PLAN)
         if isinstance(season_plan, dict):
@@ -564,6 +567,24 @@ def create_performance_report(
                 missing_context_inputs=[],
             )
         )
+        # des_diagnostic_draft has no workspace tools, so the completed-week evidence, KPI
+        # bands, and phase context it needs are resolved here and injected as text (the
+        # deterministic report-evidence block above only carries version keys, not content).
+        report_phase_info = (
+            resolve_season_plan_phase_info(season_plan, report_week)
+            if isinstance(season_plan, dict)
+            else None
+        )
+        resolved_activity_block = build_resolved_activity_context_block(
+            workspace.store,
+            athlete_id,
+            target_week=report_week,
+            activities_actual_version=resolved_week_versions[ArtifactType.ACTIVITIES_ACTUAL],
+            activities_trend_version=resolved_week_versions[ArtifactType.ACTIVITIES_TREND],
+        )
+        resolved_kpi_block = build_resolved_kpi_context_block(workspace.store, athlete_id)
+        resolved_phase_block = build_resolved_phase_context_block(report_week, report_phase_info)
+        report_context_block = injected_block + resolved_activity_block + resolved_kpi_block + resolved_phase_block
         stream_chunks: list[str] = []
         def _on_reasoning_chunk(delta: str) -> None:
             stream_chunks.append(delta)
@@ -578,12 +599,10 @@ def create_performance_report(
             user_input=(
                 f"Create des_analysis_report for ISO week {report_label} "
                 f"(planning week reference). "
-                "Use workspace_get_version for target-week activity artefacts before any latest fallback. "
-                f"Load ACTIVITIES_ACTUAL version_key {resolved_week_versions[ArtifactType.ACTIVITIES_ACTUAL]} "
-                f"and ACTIVITIES_TREND version_key {resolved_week_versions[ArtifactType.ACTIVITIES_TREND]} "
-                f"for ISO week {report_label}. "
-                "Read KPI profile, season plan, and phase context from workspace. "
-                f"{injected_block}"
+                "Completed-week activity evidence, trend context, KPI bands, and phase context "
+                "are already provided below as injected context; no workspace tools are available "
+                "or needed for this task. "
+                f"{report_context_block}"
             ),
             run_id=f"{run_id_prefix}_{report_label}",
             model_override=model_resolver(spec.name) if model_resolver else None,
