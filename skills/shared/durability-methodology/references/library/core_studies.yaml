@@ -1,7 +1,7 @@
 version: 2
 library_type: core_studies
 curation_schema_version: '1'
-generated_at: '2026-09-07T09:21:44.738963Z'
+generated_at: '2026-09-14T09:54:23.694140Z'
 entries:
 - id: dur_core_026
   source_kind: core
@@ -3807,7 +3807,7 @@ entries:
     Athletes
   journal_or_outlet: Sports Medicine
   source_type: review
-  study_type: review
+  study_type: narrative_review
   reference_locator: https://pubmed.ncbi.nlm.nih.gov/33886100/
   verification_status: verified
   locator_source: pubmed
@@ -3815,121 +3815,206 @@ entries:
   - durability
   - fatigue_resistance
   - repeatability
-  question_or_focus: Clarify what durability means in endurance sport and why fresh
-    physiological profiling misses an important performance dimension.
-  population_or_scope: Conceptual Sports Medicine review across endurance sport, used
-    here primarily for cycling and long-duration planning interpretation.
-  what_was_examined: []
+  question_or_focus: How should durability—the onset and magnitude of deterioration
+    in physiological-profiling characteristics during prolonged exercise—be incorporated
+    into the physiological profiling of endurance athletes?
+  population_or_scope: Endurance athletes and applied exercise physiologists conducting
+    physiological profiling, with relevance to prolonged training sessions and competitions.
+  what_was_examined:
+  - The review examines how physiological attributes measured in well-rested endurance
+    athletes change over time during prolonged exercise.
+  - It considers the implications of these shifts for intensity regulation during
+    prolonged training sessions or competitions, quantifying training adaptations,
+    training-load programming and monitoring, and prediction of exercise performance.
+  - It proposes development of physiological-profiling models that account for changes
+    during prolonged exercise and quantify individual athlete durability.
   core_concepts:
-  - Durability is the ability to preserve performance and physiological control as
-    work accumulates over time.
-  - Late-session performance should be interpreted relative to energetic preload,
-    not as if the athlete were fresh.
-  - Fresh peak markers such as VO2max, FTP, or threshold values do not fully describe
-    how well an athlete resists prolonged fatigue.
+  - Durability is defined as the time of onset and magnitude of deterioration in physiological-profiling
+    characteristics over time during prolonged exercise.
+  - Physiological attributes assessed in a rested state are not necessarily static
+    during prolonged exercise.
+  - Durability is presented as an additional dimension of endurance-athlete physiological
+    profiling.
+  - Routine physiological-profiling models may fail to account for changes that occur
+    during prolonged exercise.
   important_findings:
-  - Argues that endurance profiling should include pre-fatigued assessment, not only
-    rested testing.
-  - Explains that the same fresh physiological profile can produce different late-session
-    outcomes once workload accumulates.
-  - Connects durability with pacing stability, drift behavior, and resistance to multi-system
-    decline over long sessions.
+  - The review abstract describes literature and field data indicating that physiological-profiling
+    attributes change over time during prolonged exercise.
+  - The abstract defines durability as the time of onset and magnitude of deterioration
+    in physiological-profiling characteristics during prolonged exercise.
+  - The abstract states that current routine physiological-profiling models do not
+    account for these shifts.
+  - The abstract reports implications for intensity regulation during prolonged training
+    or competition, quantification of training adaptations, training-load programming
+    and monitoring, and prediction of exercise performance.
   practical_implications:
-  - Use durability as a season/phase planning lens when the athlete targets long events,
-    not only as a retrospective metric.
-  - Do not infer long-event readiness from fresh FTP/VO2max values alone.
-  - Interpret late-session fade, drift, and execution stability as meaningful planning
-    signals.
+  - For RPS, the abstract supports treating durability as a relevant profiling concept
+    for long-duration endurance athletes rather than relying only on rested physiological
+    measurements.
+  - The abstract supports considering whether physiological characteristics change
+    during prolonged work when interpreting intensity regulation, training adaptation,
+    training-load programming and monitoring, or performance prediction.
+  - Any RPS use should remain conceptual and source-bounded because the available
+    material does not provide detailed testing protocols, thresholds, or individualized
+    decision rules.
   key_takeaways:
-  - Defines durability as performance preservation under prolonged work.
-  - Separates durability from fresh peak metrics.
-  - Frames durability as a distinct profiling target, not a side-note.
-  what_this_does_not_justify: []
+  - The review abstract reports that physiological characteristics measured in well-rested
+    athletes can change during prolonged exercise.
+  - The abstract argues that ignoring these changes can affect the accuracy of intensity
+    regulation, training-adaptation assessment, training-load programming and monitoring,
+    and exercise-performance prediction.
+  - The review proposes that profiling models should account for shifts during prolonged
+    exercise and quantify individual athlete durability.
+  what_this_does_not_justify:
+  - It does not justify a specific durability test, testing duration, workload, threshold,
+    or measurement protocol.
+  - It does not justify specific training prescriptions, pacing targets, intensity
+    zones, fueling strategies, taper protocols, or progression rates.
+  - It does not establish that one particular physiological variable is the definitive
+    measure of durability.
+  - It does not provide athlete-specific or sport-specific outcomes for cycling, brevet,
+    ultra, masters, or other subgroups.
+  - It does not establish causal effects of durability-focused profiling on performance
+    or training outcomes.
   important_limits:
-  - Conceptual review; not a direct planning prescription.
-  - Does not provide one universal field test or a fixed numeric durability threshold.
+  - The source material is abstract-only; the full review methods, evidence synthesis,
+    field-data details, and supporting citations are not available in the package.
+  - The abstract does not quantify the magnitude or frequency of the reported physiological
+    shifts.
+  - The abstract does not describe the characteristics, sample sizes, or protocols
+    of the field data referenced.
+  - Transfer to RPS-specific cycling, brevet, ultra, or masters contexts is a relevance-based
+    application, not a directly demonstrated finding in the supplied abstract.
+  - The review proposes directions for future research and applied practice, so proposed
+    applications should not be treated as validated intervention effects.
   allowed_uses:
   - durability_definition
   - durability_rationale
+  - planning_justification
+  - intensity_distribution_context
   authority_limit: justification_only
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: link_only
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: Primary durability framing source for season/phase/week explanations.
   summary_card:
-    focus: The Importance of 'Durability' in the Physiological Profiling of Endurance
-      Athletes
-    main_takeaway: Defines durability as performance preservation under prolonged
-      work.
-    main_limit: Conceptual review; not a direct planning prescription.
+    focus: Durability as a physiological-profiling dimension that captures deterioration
+      during prolonged exercise.
+    main_takeaway: The abstract reports that rested physiological profiling may miss
+      changes that occur during prolonged exercise and argues that profiling models
+      should account for the onset and magnitude of those changes.
+    main_limit: Abstract-only material does not provide detailed methods, measurements,
+      protocols, quantitative findings, or specific coaching prescriptions.
   relevance_assessment:
-    overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
+    overall_relevance: high
+    relevance_rationale: The abstract directly addresses durability in endurance athletes,
+      defines the construct in terms of deterioration during prolonged exercise, and
+      links unaccounted physiological shifts to intensity regulation, training-load
+      programming and monitoring, adaptation assessment, and performance prediction.
+      It is therefore highly relevant to RPS durability and fatigue-resistance framing,
+      while its abstract-only status limits detailed applied translation.
     rps_domains_supported:
     - durability
     - fatigue_resistance
-    - repeatability
+    - intensity_distribution
     target_audiences_supported:
+    - season_planning
+    - phase_planning
+    - coach_chat
+    - athlete_education
     - background_knowledge
     best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    activation_recommendation: activate
   brief_sections:
-    why_this_source_matters_for_rps: Primary durability framing source for season/phase/week
-      explanations.
-    research_question_or_purpose: Clarify what durability means in endurance sport
-      and why fresh physiological profiling misses an important performance dimension.
-    study_type: review
-    population_or_context: Conceptual Sports Medicine review across endurance sport,
-      used here primarily for cycling and long-duration planning interpretation.
-    what_was_actually_examined: Clarify what durability means in endurance sport and
-      why fresh physiological profiling misses an important performance dimension.
+    why_this_source_matters_for_rps: The review abstract directly supports RPS's focus
+      on durability as a distinct endurance-performance dimension that may not be
+      captured by fresh physiological metrics. It is especially relevant for interpreting
+      prolonged-work intensity regulation, training-load programming and monitoring,
+      and performance prediction.
+    research_question_or_purpose: The review asks why routine physiological profiling
+      should account for changes in physiological characteristics during prolonged
+      exercise and proposes directions for quantifying individual athlete durability.
+    study_type: Narrative review with literature discussion and field data referenced
+      in the abstract; curated here from abstract-level material only.
+    population_or_context: Endurance athletes undergoing physiological profiling,
+      particularly in the context of prolonged training sessions and competitions,
+      and the applied exercise physiologists who assess them.
+    what_was_actually_examined: The abstract examines the changing nature of physiological-profiling
+      attributes during prolonged exercise, the consequences of ignoring those changes,
+      and the need for profiling models that quantify the onset and magnitude of deterioration
+      over time.
     core_concepts:
-    - Durability is the ability to preserve performance and physiological control
-      as work accumulates over time.
-    - Late-session performance should be interpreted relative to energetic preload,
-      not as if the athlete were fresh.
-    - Fresh peak markers such as VO2max, FTP, or threshold values do not fully describe
-      how well an athlete resists prolonged fatigue.
+    - Durability during prolonged exercise.
+    - Changes in physiological-profiling characteristics over time.
+    - Limitations of rested-state physiological profiling.
+    - Implications for intensity regulation, training-load programming and monitoring,
+      adaptation assessment, and performance prediction.
     key_takeaways:
-    - Defines durability as performance preservation under prolonged work.
-    - Separates durability from fresh peak metrics.
-    - Frames durability as a distinct profiling target, not a side-note.
+    - The review abstract reports that physiological attributes measured when athletes
+      are well rested can change during prolonged exercise.
+    - The abstract argues that these changes have implications for the interpretation
+      and use of physiological profiling.
+    - The abstract proposes quantifying durability as the time of onset and magnitude
+      of deterioration in physiological-profiling characteristics.
     important_findings:
-    - Argues that endurance profiling should include pre-fatigued assessment, not
-      only rested testing.
-    - Explains that the same fresh physiological profile can produce different late-session
-      outcomes once workload accumulates.
-    - Connects durability with pacing stability, drift behavior, and resistance to
-      multi-system decline over long sessions.
+    - The abstract reports that literature and field data support changes in physiological-profiling
+      attributes during prolonged exercise.
+    - The abstract states that routine profiling models do not account for these shifts.
+    - The abstract links unaccounted shifts with potential inaccuracies in intensity
+      regulation, training-adaptation quantification, training-load programming and
+      monitoring, and exercise-performance prediction.
     practical_implications_for_rps:
-    - Use durability as a season/phase planning lens when the athlete targets long
-      events, not only as a retrospective metric.
-    - Do not infer long-event readiness from fresh FTP/VO2max values alone.
-    - Interpret late-session fade, drift, and execution stability as meaningful planning
-      signals.
-    what_this_source_does_not_justify: []
+    - RPS can use this review abstract to explain why rested-state metrics may not
+      fully represent long-duration performance behavior.
+    - The source supports considering durability when framing prolonged-work intensity
+      regulation and training-load monitoring.
+    - The source does not supply enough detail to prescribe how RPS athletes should
+      test or train durability.
+    what_this_source_does_not_justify:
+    - It does not justify specific durability assessments, workloads, thresholds,
+      or monitoring schedules.
+    - It does not justify direct recommendations for pacing, fueling, tapering, progression,
+      or intensity distribution.
+    - It does not establish sport-specific or subgroup-specific effects for cycling,
+      brevet, ultra, or masters athletes.
+    - It does not demonstrate that durability-focused profiling improves performance
+      or training outcomes.
     limits_and_transfer_boundaries:
-    - Conceptual review; not a direct planning prescription.
-    - Does not provide one universal field test or a fixed numeric durability threshold.
+    - This curation is based only on the supplied abstract, not the full review.
+    - Quantitative findings, study-selection details, field-data protocols, and variable-specific
+      conclusions are unavailable.
+    - RPS transfer is strongest for conceptual durability framing and weaker for prescriptive
+      coaching decisions.
+    - The review's proposed directions for future research and applied practice should
+      be treated as proposals rather than validated interventions.
     allowed_uses_in_rps:
-    - durability_definition
-    - durability_rationale
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Define durability as the onset and magnitude of deterioration in physiological-profiling
+      characteristics during prolonged exercise.
+    - Support the rationale for considering prolonged-exercise changes alongside rested
+      physiological profiling.
+    - Provide context for interpreting intensity regulation and training-load programming
+      or monitoring over prolonged work.
+    - Use as conceptual scientific support in athlete education and coaching discussions,
+      without presenting abstract-level claims as individualized prescriptions.
+    evidence_posture: Abstract-curated; the supplied package contains the verified
+      abstract and no full-text or open-access excerpt.
+    source_material_basis: Curated from abstract-level material supplied in the verified
+      source package. No additional findings, locator data, methods, quantitative
+      results, or sport-specific conclusions are inferred.
   brief_path: studies/dur_core_001.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: active
   trusted_source_match: true
   trusted_match_reason: 'Trusted author+outlet pair: echo maunder / sports medicine'
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_001
   last_verified_at: '2026-05-27'
   discovered_at: '2026-05-27'
-  curated_at: ''
-  activated_at: ''
+  curated_at: '2026-09-14T09:53:38.903999Z'
+  activated_at: '2026-09-14T09:53:38.903999Z'
 - id: dur_core_003
   source_kind: core
   authors: Leo, P., Giorgi, A., Spragg, J., González, B. M., & Mujika, I.
@@ -3938,7 +4023,7 @@ entries:
     road cyclists: a pilot study'
   journal_or_outlet: German Journal of Exercise and Sport Research
   source_type: peer_reviewed
-  study_type: peer_reviewed
+  study_type: other
   reference_locator: https://doi.org/10.1007/s12662-022-00818-x
   verification_status: verified
   locator_source: doi
@@ -3946,116 +4031,171 @@ entries:
   - durability
   - fatigue_resistance
   - progressive_overload
-  question_or_focus: Assess how prior accumulated work and prior intensity affect
-    subsequent power output in elite road cyclists.
-  population_or_scope: Pilot study in elite road cyclists; useful mainly as preload-aware
-    interpretation evidence.
-  what_was_examined: []
+  question_or_focus: The source record concerns the reported impact of prior accumulated
+    work and intensity on subsequent power output in elite road cyclists, but the
+    supplied abstract material does not provide extractable evidence about that study.
+  population_or_scope: The source record identifies elite road cyclists as the intended
+    population. The supplied abstract text is unrelated and concerns hepatitis C care,
+    so the relevant cycling population and study context cannot be verified from the
+    provided source material.
+  what_was_examined:
+  - The source title indicates an intended examination of prior accumulated work and
+    intensity in relation to subsequent power output.
+  - No study methods, protocol, outcomes, or cycling-specific results are extractable
+    from the supplied abstract material.
+  - The supplied abstract text describes an unrelated hepatitis C commentary rather
+    than the cycling study.
   core_concepts:
-  - Prior work changes the meaning of later power output.
-  - Durability interpretation must consider both how much work has been done and how
-    hard that work was.
-  - Late-session performance decline is context-sensitive, not an isolated trait.
+  - Prior accumulated work
+  - Prior exercise intensity
+  - Subsequent power output
+  - Elite road cycling
+  - No cycling-specific concept can be verified from the supplied abstract material.
   important_findings:
-  - Supports the idea that accumulated workload and intensity history both shape what
-    an athlete can do later.
-  - Provides direct rationale for treating pre-fatigue and finish-quality work as
-    meaningful planning variables.
-  - Suggests that late-session decrements should not be evaluated without context
-    on the work that preceded them.
+  - No verified cycling-specific findings are available in the supplied material.
+  - The abstract text provided is for an unrelated hepatitis C publication and does
+    not report the methods or findings of the titled cycling study.
+  - The existing registry summary is not independently supported by the supplied abstract
+    text and is therefore not used as evidence findings.
   practical_implications:
-  - In RPS, use this as support for durability workouts that place meaningful work
-    after prior load rather than in a fresh state.
-  - Do not compare late-session execution across workouts without considering the
-    accumulated cost before the key block.
-  - Useful as conceptual support for pre-fatigue tolerance and finish-under-load design.
+  - For RPS, this package can only flag a potentially relevant source topic for later
+    verification.
+  - No training, pacing, progression, workload, or late-session performance recommendation
+    should be derived from this package.
+  - Any RPS interpretation would require a correctly matched abstract or accessible
+    full text for the cycling study.
   key_takeaways:
-  - Prior accumulated work changes later output.
-  - Supports preload-aware interpretation of late-session performance.
-  - Highlights that not all fatigue exposure is interchangeable.
-  what_this_does_not_justify: []
+  - The supplied package does not contain a usable cycling-specific abstract or full
+    text.
+  - The source record's title indicates a potentially relevant question concerning
+    accumulated work, intensity, and later power output, but this cannot be treated
+    as an empirical finding here.
+  - No quantitative or qualitative finding about durability, fatigue resistance, pacing,
+    or performance decrement is extractable from the provided material.
+  what_this_does_not_justify:
+  - It does not justify the claim that prior accumulated work changes later power
+    output.
+  - It does not justify the claim that prior intensity changes later power output.
+  - It does not justify treating pre-fatigue, finish-quality work, or late-session
+    decrements as established planning variables based on this package.
+  - It does not justify conclusions about durability, fatigue resistance, pacing stability,
+    progressive overload, or long-duration cycling performance.
+  - It does not justify direct coaching guidance or transfer to brevet, ultra, masters,
+    or other endurance populations.
   important_limits:
-  - Pilot study; use for framing, not strict thresholds.
-  - Small-sample elite context limits precision for broad athlete populations.
+  - The package is labeled abstract-only, but the supplied abstract text is unrelated
+    to the titled cycling study.
+  - No cycling-specific methods, sample details, intervention or exposure structure,
+    comparator, outcomes, statistics, or limitations are available.
+  - The source's verification status and DOI do not compensate for the absence of
+    correctly matched extractable study content.
+  - The title and discovery or registry metadata cannot substitute for verified empirical
+    findings.
   allowed_uses:
-  - progression_logic
-  - durability_rationale
+  - background_only
   authority_limit: justification_only
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: link_only
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: ''
   summary_card:
-    focus: 'Impact of prior accumulated work and intensity on power output in elite
-      road cyclists: a pilot study'
-    main_takeaway: Prior accumulated work changes later output.
-    main_limit: Pilot study; use for framing, not strict thresholds.
+    focus: Potential relationship between prior accumulated work, prior intensity,
+      and later power output in elite road cyclists; no correctly matched extractable
+      evidence was supplied.
+    main_takeaway: No cycling-specific finding can be safely extracted because the
+      provided abstract concerns an unrelated hepatitis C publication.
+    main_limit: The study methods, results, and conclusions for the titled cycling
+      paper are unavailable or mismatched.
   relevance_assessment:
-    overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
-    rps_domains_supported:
-    - durability
-    - fatigue_resistance
-    - progressive_overload
+    overall_relevance: low
+    relevance_rationale: The source title appears potentially relevant to RPS durability
+      and fatigue-resistance questions, but the supplied abstract is unrelated to
+      the cycling study and provides no verifiable cycling-specific findings. The
+      package should therefore not be activated for scientific or coaching use until
+      correctly matched source material is obtained.
+    rps_domains_supported: []
     target_audiences_supported:
     - background_knowledge
-    best_use_mode: core_scientific_support
+    best_use_mode: background_only
     activation_recommendation: hold
   brief_sections:
-    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
-      curation.
-    research_question_or_purpose: Assess how prior accumulated work and prior intensity
-      affect subsequent power output in elite road cyclists.
-    study_type: peer_reviewed
-    population_or_context: Pilot study in elite road cyclists; useful mainly as preload-aware
-      interpretation evidence.
-    what_was_actually_examined: Assess how prior accumulated work and prior intensity
-      affect subsequent power output in elite road cyclists.
+    why_this_source_matters_for_rps: The source title indicates a potentially relevant
+      question for RPS concerning how prior work and intensity may relate to subsequent
+      performance. However, the supplied abstract is unrelated, so the source cannot
+      currently support RPS claims about durability, fatigue resistance, pacing, or
+      planning.
+    research_question_or_purpose: The source record indicates an intended examination
+      of the impact of prior accumulated work and intensity on power output in elite
+      road cyclists. The supplied material does not verify the study's actual research
+      question beyond the title-level record.
+    study_type: The source is identified as a peer-reviewed pilot study, but the available
+      material does not provide sufficient methodological detail to classify the design
+      more specifically.
+    population_or_context: The source record identifies elite road cyclists. The supplied
+      abstract text does not provide verifiable population or context information
+      for the cycling study.
+    what_was_actually_examined: The title indicates prior accumulated work, prior
+      intensity, and subsequent power output as the intended subject. No cycling-specific
+      protocol, measures, results, or conclusions are available in the supplied material.
     core_concepts:
-    - Prior work changes the meaning of later power output.
-    - Durability interpretation must consider both how much work has been done and
-      how hard that work was.
-    - Late-session performance decline is context-sensitive, not an isolated trait.
+    - Prior accumulated work
+    - Prior intensity
+    - Subsequent power output
+    - Elite road cycling
+    - Evidence mismatch between the titled source and supplied abstract
     key_takeaways:
-    - Prior accumulated work changes later output.
-    - Supports preload-aware interpretation of late-session performance.
-    - Highlights that not all fatigue exposure is interchangeable.
+    - The source record points to a potentially relevant cycling performance question.
+    - The supplied abstract is unrelated to the titled cycling study.
+    - No study-specific cycling findings can be extracted safely.
+    - The source should remain on hold pending correctly matched abstract or full-text
+      verification.
     important_findings:
-    - Supports the idea that accumulated workload and intensity history both shape
-      what an athlete can do later.
-    - Provides direct rationale for treating pre-fatigue and finish-quality work as
-      meaningful planning variables.
-    - Suggests that late-session decrements should not be evaluated without context
-      on the work that preceded them.
+    - No verified findings from the cycling study are available.
+    - The supplied text reports on hepatitis C care and does not report cycling performance
+      outcomes.
+    - The registry summary is not treated as evidence because it is not supported
+      by the supplied source material.
     practical_implications_for_rps:
-    - In RPS, use this as support for durability workouts that place meaningful work
-      after prior load rather than in a fresh state.
-    - Do not compare late-session execution across workouts without considering the
-      accumulated cost before the key block.
-    - Useful as conceptual support for pre-fatigue tolerance and finish-under-load
-      design.
-    what_this_source_does_not_justify: []
+    - Use only as a verification lead or background placeholder.
+    - Do not use this package to justify workload sequencing, fatigue-resistance training,
+      pacing decisions, progression, or interpretation of late-session performance.
+    - Reassess only after obtaining source material that matches the titled cycling
+      study.
+    what_this_source_does_not_justify:
+    - It does not establish that accumulated workload or prior intensity affects later
+      power output.
+    - It does not establish a durability or fatigue-resistance effect.
+    - It does not support direct coaching prescriptions or sport-specific transfer
+      beyond the unavailable study context.
     limits_and_transfer_boundaries:
-    - Pilot study; use for framing, not strict thresholds.
-    - Small-sample elite context limits precision for broad athlete populations.
+    - The supplied abstract is mismatched to the titled source.
+    - No cycling-specific sample, methods, outcomes, effect estimates, or limitations
+      are available.
+    - Transfer to long-duration cycling, brevet, ultra, masters, or other endurance
+      settings cannot be assessed.
+    - Title-level relevance is insufficient for activation as scientific support.
     allowed_uses_in_rps:
-    - progression_logic
-    - durability_rationale
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Background-only identification of a potentially relevant source topic.
+    - Verification routing for retrieval of a correctly matched abstract or full text.
+    evidence_posture: Abstract-only package with an unrelated supplied abstract; no
+      cycling-specific evidence is activatable.
+    source_material_basis: Curated from the provided package. The source record supplies
+      bibliographic metadata and a title, while the supplied abstract text is for
+      an unrelated hepatitis C publication. No correctly matched cycling-specific
+      abstract, excerpt, or full text was provided.
   brief_path: studies/dur_core_003.md
-  brief_status: pending_curation
-  activation_status: legacy_active
+  brief_status: generated
+  activation_status: curated
   trusted_source_match: false
   trusted_match_reason: ''
-  legacy_active: true
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_003
   last_verified_at: '2026-05-27'
   discovered_at: '2026-05-27'
-  curated_at: ''
+  curated_at: '2026-09-14T09:53:54.794227Z'
   activated_at: ''
 - id: dur_core_002
   source_kind: core
@@ -4065,7 +4205,7 @@ entries:
   title: 'Durability in professional cyclists: a field study'
   journal_or_outlet: International Journal of Sports Physiology and Performance
   source_type: peer_reviewed
-  study_type: peer_reviewed
+  study_type: cross_sectional
   reference_locator: https://doi.org/10.1123/ijspp.2022-0243
   verification_status: verified
   locator_source: doi
@@ -4073,117 +4213,209 @@ entries:
   - durability
   - fatigue_resistance
   - brevet_ultra
-  question_or_focus: Examine durability in real professional-road-cycling conditions
-    rather than only in laboratory settings.
-  population_or_scope: Field study in professional cyclists; most applicable as high-level
-    performance context, not as a direct magnitude transfer to amateurs or masters.
-  what_was_examined: []
+  question_or_focus: The provided abstract examines the prevalence of tramadol use
+    among athletes from 2012 to 2020; it does not provide extractable evidence about
+    durability in professional cyclists.
+  population_or_scope: 'National and international in-competition doping-control urine
+    samples collected in Italy from 2012 to 2020: 60,802 samples in total, including
+    samples from cyclists and athletes in other sports.'
+  what_was_examined:
+  - Tramadol intake identified in in-competition urine samples.
+  - The prevalence of tramadol-positive samples among athletes.
+  - The distribution of tramadol-positive samples between cyclists and athletes in
+    other sports.
+  - The change in tramadol use in cycling compared with other sports over the study
+    period.
+  - Tramadol concentrations above a cutoff of >50 ng/mL, analyzed using gas chromatography
+    coupled with mass spectrometry.
   core_concepts:
-  - Durability can be studied under race-like accumulated work in the field.
-  - Real-world fatigue resistance matters even among athletes with already high fresh
-    physiological capacity.
-  - Field durability assessment complements laboratory profiling.
+  - Tramadol prevalence in athletes.
+  - In-competition doping-control surveillance.
+  - Cycling versus other sports.
+  - Observed temporal association in tramadol use.
+  - The provided abstract does not examine cycling durability, fatigue resistance,
+    accumulated workload, pacing, or late-session performance.
   important_findings:
-  - Shows that late-session performance behavior can separate athletes even in a highly
-    trained cohort.
-  - Supports the idea that durability should be interpreted in the context of accumulated
-    work, not only fresh power values.
-  - Strengthens the case for using event-like or long-ride observations alongside
-    lab testing.
+  - Of 60,802 in-competition urine samples analyzed, 1.2% (n = 759) showed tramadol
+    intake.
+  - Among samples showing tramadol intake, 84.2% (n = 637) came from cyclists and
+    15.8% (n = 122) came from other sports.
+  - For cycling, the abstract reports a strong and significant negative correlation
+    in tramadol use compared with other sports (r = -.738; P = .003).
+  - The abstract concludes that tramadol prevalence in cycling decreased in the later
+    years of the study period.
+  - The provided abstract contains no reported durability outcome, fatigue-resistance
+    outcome, field-performance assessment, or professional-road-cycling workload analysis.
   practical_implications:
-  - For RPS, prefer durability evidence from long rides, rehearsal events, and pre-fatigued
-    execution over fresh tests alone.
-  - Use the paper as support for field-context reasoning, not as a direct source of
-    week-by-week numeric targets.
-  - Treat professional-cycling magnitudes cautiously when planning brevet/masters
-    athletes.
+  - This package should not be used to support RPS claims about durability, fatigue
+    resistance, pacing, brevet or ultra performance, or field-based performance assessment.
+  - The abstract may provide narrow background context on tramadol surveillance in
+    cycling, but it does not justify training, fueling, tapering, progression, or
+    intensity-distribution recommendations.
+  - The apparent mismatch between the supplied title/authors and the abstract's tramadol-surveillance
+    content should be resolved before the source is activated for any RPS evidence
+    use.
   key_takeaways:
-  - Supports field-based durability assessment.
-  - Links real-world fatigue resistance with performance.
-  - Reinforces that durability is visible under actual race workload.
-  what_this_does_not_justify: []
+  - The abstract reports that 1.2% of 60,802 in-competition urine samples showed tramadol
+    intake.
+  - Of the 759 samples showing tramadol intake, 637 samples came from cyclists and
+    122 came from other sports.
+  - The abstract reports a strong and significant negative correlation for tramadol
+    use in cycling compared with other sports over the study period.
+  - The abstract attributes the decrease in tramadol prevalence in cycling to the
+    possible deterrent effect of antidoping regulations and the possibility that tramadol
+    may not have an actual ergogenic effect on performance.
+  - The provided abstract does not substantiate the supplied source title's claimed
+    focus on durability in professional cyclists.
+  what_this_does_not_justify:
+  - It does not justify the supplied registry summary's claims about durability in
+    professional road cycling, late-session performance behavior, accumulated work,
+    or event-like and long-ride observations.
+  - It does not justify claims that durability is visible under actual race workload.
+  - It does not establish that tramadol improves or impairs cycling performance, because
+    the abstract reports prevalence and correlation data rather than a direct performance
+    experiment.
+  - It does not justify causal attribution of the decline in tramadol prevalence to
+    antidoping regulations or lack of ergogenic effect; those explanations are presented
+    as possible reasons in the abstract's conclusion.
+  - It does not justify coaching prescriptions, medication guidance, or anti-doping
+    policy recommendations beyond the reported surveillance findings.
+  - It does not justify transfer to masters athletes, brevet or ultra athletes, training
+    planning, recovery planning, fueling, tapering, or intensity distribution.
   important_limits:
-  - Professional cycling context; do not over-transfer specific magnitudes.
-  - Field data improves ecological validity but limits universal prescription detail.
+  - The source material is abstract-only.
+  - The supplied source metadata identifies a title and author group concerning durability
+    in professional cyclists, but the provided abstract identifies a different title
+    and author group concerning tramadol and cycling; this package is internally inconsistent.
+  - The abstract concerns in-competition urine samples collected in Italy and does
+    not establish representativeness of all cyclists or athletes.
+  - The analysis is observational surveillance of doping-control samples and does
+    not demonstrate causation.
+  - The provided material does not report athlete training status in sufficient detail,
+    race workload, durability testing, fatigue-resistance testing, pacing behavior,
+    or performance outcomes.
+  - The abstract does not provide extractable evidence relevant to the RPS durability
+    domains beyond the fact that cycling samples were included in the surveillance
+    dataset.
   allowed_uses:
-  - durability_definition
-  - field_context
+  - background_only
   authority_limit: justification_only
-  evidence_posture: metadata_only_not_activatable
+  evidence_posture: abstract_curated
   fulltext_status: link_only
   fulltext_local_path: ''
-  source_material_level: metadata_only
-  source_material_basis: metadata_only
+  source_material_level: abstract_only
+  source_material_basis: Curated from abstract-level material.
   notes: ''
   summary_card:
-    focus: 'Durability in professional cyclists: a field study'
-    main_takeaway: Supports field-based durability assessment.
-    main_limit: Professional cycling context; do not over-transfer specific magnitudes.
+    focus: Abstract-level surveillance of tramadol use in athletes, including cyclists,
+      from Italian in-competition doping-control samples collected between 2012 and
+      2020.
+    main_takeaway: The abstract reports tramadol prevalence and a decrease in cycling
+      over time; it does not examine or support conclusions about cycling durability.
+    main_limit: The package is internally inconsistent and provides only an abstract
+      for a tramadol-surveillance study rather than extractable evidence corresponding
+      to the supplied durability-focused source identity.
   relevance_assessment:
-    overall_relevance: medium
-    relevance_rationale: Legacy entry imported before structured relevance curation.
-    rps_domains_supported:
-    - durability
-    - fatigue_resistance
-    - brevet_ultra
+    overall_relevance: reject
+    relevance_rationale: 'The verified package is abstract-only and internally inconsistent:
+      the supplied source identity concerns durability in professional cyclists, while
+      the provided abstract concerns tramadol prevalence in Italian in-competition
+      doping-control samples. The abstract provides no extractable findings on durability,
+      fatigue resistance, pacing, accumulated workload, or long-duration cycling performance,
+      so it should not be activated as RPS evidence for those domains.'
+    rps_domains_supported: []
     target_audiences_supported:
     - background_knowledge
-    best_use_mode: core_scientific_support
-    activation_recommendation: hold
+    best_use_mode: reject
+    activation_recommendation: reject
   brief_sections:
-    why_this_source_matters_for_rps: Legacy evidence entry pending structured brief
-      curation.
-    research_question_or_purpose: Examine durability in real professional-road-cycling
-      conditions rather than only in laboratory settings.
-    study_type: peer_reviewed
-    population_or_context: Field study in professional cyclists; most applicable as
-      high-level performance context, not as a direct magnitude transfer to amateurs
-      or masters.
-    what_was_actually_examined: Examine durability in real professional-road-cycling
-      conditions rather than only in laboratory settings.
+    why_this_source_matters_for_rps: The provided package does not substantiate the
+      durability-focused claims associated with the supplied source identity. Its
+      abstract concerns tramadol surveillance, so it has no activatable support for
+      RPS durability, fatigue resistance, pacing, or brevet/ultra applications.
+    research_question_or_purpose: The abstract states that the purpose was to assess
+      the prevalence of tramadol use among athletes from 2012 to 2020.
+    study_type: Abstract-level observational analysis of in-competition doping-control
+      samples; classified here as cross-sectional.
+    population_or_context: National and international in-competition doping-control
+      urine samples collected in Italy between 2012 and 2020, including 60,802 samples
+      from cyclists and athletes in other sports.
+    what_was_actually_examined: The abstract describes analysis of tramadol in urine
+      samples using gas chromatography coupled with mass spectrometry, with a cutoff
+      concentration greater than 50 ng/mL. It reports prevalence, sport distribution,
+      and the relationship between tramadol use in cycling and other sports over the
+      study period. It does not describe a durability or cycling-performance assessment.
     core_concepts:
-    - Durability can be studied under race-like accumulated work in the field.
-    - Real-world fatigue resistance matters even among athletes with already high
-      fresh physiological capacity.
-    - Field durability assessment complements laboratory profiling.
+    - Tramadol intake surveillance.
+    - In-competition doping-control testing.
+    - Cycling and other-sport comparison.
+    - Observed temporal correlation in tramadol use.
+    - No extractable durability or fatigue-resistance construct in the provided abstract.
     key_takeaways:
-    - Supports field-based durability assessment.
-    - Links real-world fatigue resistance with performance.
-    - Reinforces that durability is visible under actual race workload.
+    - The abstract reports tramadol intake in 1.2% of 60,802 analyzed samples.
+    - 'Most tramadol-positive samples were from cyclists: 637 of 759 samples, or 84.2%.'
+    - The abstract reports a strong and significant negative correlation in tramadol
+      use in cycling compared with other sports.
+    - The abstract's proposed explanations for the decrease include antidoping deterrence
+      and the possibility that tramadol lacks an actual ergogenic effect.
+    - These findings do not correspond to the supplied durability-focused source description.
     important_findings:
-    - Shows that late-session performance behavior can separate athletes even in a
-      highly trained cohort.
-    - Supports the idea that durability should be interpreted in the context of accumulated
-      work, not only fresh power values.
-    - Strengthens the case for using event-like or long-ride observations alongside
-      lab testing.
+    - The abstract reports 759 tramadol-positive samples out of 60,802 samples.
+    - Of the positive samples, 637 came from cyclists and 122 came from other sports.
+    - The reported cycling correlation was r = -.738 with P = .003.
+    - No durability, fatigue-resistance, pacing, accumulated-work, or long-duration
+      performance finding is reported in the provided abstract.
     practical_implications_for_rps:
-    - For RPS, prefer durability evidence from long rides, rehearsal events, and pre-fatigued
-      execution over fresh tests alone.
-    - Use the paper as support for field-context reasoning, not as a direct source
-      of week-by-week numeric targets.
-    - Treat professional-cycling magnitudes cautiously when planning brevet/masters
-      athletes.
-    what_this_source_does_not_justify: []
+    - Do not use this package as scientific support for RPS durability or fatigue-resistance
+      claims.
+    - If retained, it can be held as background-only information about tramadol surveillance
+      in cycling.
+    - The source identity and abstract should be reconciled before any further evidence
+      activation or citation use.
+    - No direct RPS training, fueling, taper, progression, or intensity-distribution
+      implication can be derived from the provided material.
+    what_this_source_does_not_justify:
+    - It does not justify the supplied registry summary about real-world durability
+      assessment or performance under accumulated workload.
+    - It does not justify claims about late-session performance, fatigue resistance,
+      pacing stability, or field-based durability.
+    - It does not establish causal effects of tramadol, antidoping regulations, or
+      tramadol absence on cycling performance.
+    - It does not justify medication, coaching, or training recommendations.
     limits_and_transfer_boundaries:
-    - Professional cycling context; do not over-transfer specific magnitudes.
-    - Field data improves ecological validity but limits universal prescription detail.
+    - Abstract-only evidence limits verification of methods, sample characteristics,
+      analyses, and context.
+    - The supplied metadata and abstract refer to apparently different source identities.
+    - The dataset is limited to in-competition samples collected in Italy.
+    - The study is observational surveillance rather than an intervention or direct
+      performance study.
+    - No transfer to long-duration endurance training, brevet, ultra, masters, or
+      professional cycling durability is supported by the provided material.
     allowed_uses_in_rps:
-    - durability_definition
-    - field_context
-    evidence_posture: metadata_only_not_activatable
-    source_material_basis: metadata_only
+    - Background-only awareness of the abstract's reported tramadol surveillance findings,
+      subject to resolving the source-identity mismatch.
+    - Not suitable for durability definition, durability rationale, planning justification,
+      taper support, fueling guidance, intensity-distribution context, or coaching
+      translation.
+    evidence_posture: Abstract-curated; not activatable for the supplied durability-focused
+      RPS use case.
+    source_material_basis: 'Curated from abstract-level material. The package includes
+      no OA excerpt or full text. The provided abstract concerns “Tramadol and Cycling:
+      Is It the End of a "Painful" Relationship? An Insight From 60,802 Doping-Control
+      Samples From 2012 to 2020,” which does not match the supplied durability-focused
+      title and author metadata.'
   brief_path: studies/dur_core_002.md
-  brief_status: pending_curation
-  activation_status: legacy_active
-  trusted_source_match: false
-  trusted_match_reason: ''
-  legacy_active: true
+  brief_status: generated
+  activation_status: rejected
+  trusted_source_match: true
+  trusted_match_reason: 'Trusted author+outlet pair: paul l valenzuela / international
+    journal of sports physiology and performance'
+  legacy_active: false
   curation_schema_version: '1'
   record_fingerprint: dur_core_002
   last_verified_at: '2026-05-27'
   discovered_at: '2026-05-27'
-  curated_at: ''
+  curated_at: '2026-09-14T09:54:14.331349Z'
   activated_at: ''
 - id: dur_core_005
   source_kind: core
@@ -5465,6 +5697,84 @@ entries:
   discovered_at: '2026-08-24'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_b58ccb1558
+  source_kind: core
+  authors: Cp AH, Das P, Naskar K, Mondal T
+  year: 2026
+  title: Achieving High-Instantaneous Pulse Power in Contact-Separation TENG via Series
+    Capacitive Voltage Control Architecture
+  journal_or_outlet: Advanced science (Weinheim, Baden-Wurttemberg, Germany)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/advs.77535
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Achieving High-Instantaneous Pulse Power in Contact-Separation TENG via
+      Series Capacitive Voltage Control Architecture
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_b58ccb1558.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_b58ccb1558
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_1f5d27e98e
   source_kind: core
   authors: Zeng X, Liu C, Zhou J, Li N, Zhou Y, Xu X, Zhang M, Feng M, Sun M, Peng
@@ -5542,6 +5852,84 @@ entries:
   record_fingerprint: dur_auto_2026_1f5d27e98e
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_6d8ea04571
+  source_kind: core
+  authors: Faizan M, Fatima M, Ali S, Fiaz M, Shahid M
+  year: 2026
+  title: 'Beyond removal efficiency: Evidence-gated coordination design of MOF photocatalysts
+    for contaminant risk reduction'
+  journal_or_outlet: Journal of environmental management
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jenvman.2026.130912
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: 'Beyond removal efficiency: Evidence-gated coordination design of MOF photocatalysts
+      for contaminant risk reduction'
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_6d8ea04571.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_6d8ea04571
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_795f428ba3
@@ -5698,6 +6086,84 @@ entries:
   record_fingerprint: dur_auto_2026_c92467d9a8
   last_verified_at: '2026-08-10'
   discovered_at: '2026-08-10'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_1077d93ba7
+  source_kind: core
+  authors: Zhong W, Tao Y, Du J, Hu J, Fu C, Lu J, Lv Y, Wang H
+  year: 2026
+  title: Biomimetic bilayer design of cellulose-gelatin hydrogels for environmentally
+    stable strain sensing
+  journal_or_outlet: International journal of biological macromolecules
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.ijbiomac.2026.154393
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Biomimetic bilayer design of cellulose-gelatin hydrogels for environmentally
+      stable strain sensing
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_1077d93ba7.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_1077d93ba7
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_fe0439a96f
@@ -6036,6 +6502,243 @@ entries:
   discovered_at: '2026-08-10'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_dd72874794
+  source_kind: core
+  authors: Ouyang M, Yang Z, Wang Z, Liu Z, Jiang H, Wei Q, Cheng N
+  year: 2026
+  title: Copper-mediated structural regulation enables ultrasmall L1(0)-PtCo(0.5)Cu(0.5)
+    ternary intermetallic nanoparticles for enhanced oxygen reduction
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141559
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Copper-mediated structural regulation enables ultrasmall L1(0)-PtCo(0.5)Cu(0.5)
+      ternary intermetallic nanoparticles for enhanced oxygen reduction
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_dd72874794.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_dd72874794
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_82fecf2a0c
+  source_kind: core
+  authors: Mason KS, Kiker MT, Xu Z, Price TC, Sproul E, Mejia EB, Fowler HE, Suslick
+    BA, Stolpen FA, Juba BW, Zhu L, Ko K, Xia Y, Johnson JA, Appelhans LN, Moore JS,
+    Sottos NR, Page ZA, Leguizamon SC
+  year: 2026
+  title: Direct metathesis deconstruction to recycle poly(dicyclopentadiene) composites
+  journal_or_outlet: Science advances
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1126/sciadv.aef4204
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Direct metathesis deconstruction to recycle poly(dicyclopentadiene) composites
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_82fecf2a0c.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_82fecf2a0c
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_3f91afec8b
+  source_kind: core
+  authors: He S, Bei WX, Lu N, Zhao ZY, Ye Y, Chen C, Tang L, Liu L, Lv S, Xiang YQ,
+    Wang L
+  year: 2026
+  title: 'Efficacy and safety of liposomal irinotecan plus nimotuzumab in immune checkpoint
+    inhibitor-refractory recurrent or metastatic nasopharyngeal carcinoma: a single-arm,
+    open-label, phase II trial'
+  journal_or_outlet: EClinicalMedicine
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.eclinm.2026.104170
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: 'Efficacy and safety of liposomal irinotecan plus nimotuzumab in immune
+      checkpoint inhibitor-refractory recurrent or metastatic nasopharyngeal carcinoma:
+      a single-arm, open-label, phase II trial'
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_3f91afec8b.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_3f91afec8b
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_c36afd9874
   source_kind: core
   authors: Saad AHM, Kamarudin NHA, Leow ATC, Mohamed MS, Ali MSM
@@ -6269,6 +6972,84 @@ entries:
   record_fingerprint: dur_auto_2026_0b37c55c77
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_dfcda19a42
+  source_kind: core
+  authors: Zhang Y, Wang Y, Zheng X, Wang G, Jiang J, Iqbal S, Yang X, Liu H, Wu C
+  year: 2026
+  title: Functionalization of separator with two-dimensional anionic nanosheets for
+    interfacial regulation of lithium deposition in lithium metal batteries
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141500
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Functionalization of separator with two-dimensional anionic nanosheets
+      for interfacial regulation of lithium deposition in lithium metal batteries
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_dfcda19a42.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_dfcda19a42
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_bbb775f560
@@ -7053,6 +7834,85 @@ entries:
   discovered_at: '2026-05-28'
   curated_at: ''
   activated_at: ''
+- id: dur_auto_2026_c77632f4c1
+  source_kind: core
+  authors: Li H, Bai Z, Chen X, Wang Y, Li L, Zhao Y, Lin H, Zhang W
+  year: 2026
+  title: Multifunctional polyaniline@Cu(0.95)V(2)O(5)@carbon cloth composite for zinc
+    ion battery-powered wearable sensing system toward Parkinson's auxiliary diagnosis
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141578
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Multifunctional polyaniline@Cu(0.95)V(2)O(5)@carbon cloth composite for
+      zinc ion battery-powered wearable sensing system toward Parkinson's auxiliary
+      diagnosis
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_c77632f4c1.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_c77632f4c1
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
+  curated_at: ''
+  activated_at: ''
 - id: dur_auto_2026_85c39a1c69
   source_kind: core
   authors: Lenarczyk G, Minssen T, Kesselheim AS
@@ -7444,6 +8304,84 @@ entries:
   record_fingerprint: dur_auto_2026_f3ab89f67f
   last_verified_at: '2026-05-28'
   discovered_at: '2026-05-28'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_eb56b758ca
+  source_kind: core
+  authors: Zhao G, Fan H, Yang Q, Zheng T, Zhang D, Wang J, Ding W
+  year: 2026
+  title: 'Resolving Swelling by Swelling: Water-Mediated Interface Regulation for
+    Ultralow-Pt Membrane Electrode Assemblies'
+  journal_or_outlet: Angewandte Chemie (International ed. in English)
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1002/anie.6750379
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: 'Resolving Swelling by Swelling: Water-Mediated Interface Regulation for
+      Ultralow-Pt Membrane Electrode Assemblies'
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_eb56b758ca.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_eb56b758ca
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_9b1e7ef937
@@ -8147,6 +9085,84 @@ entries:
   record_fingerprint: dur_auto_2026_ab052a6e5a
   last_verified_at: '2026-08-24'
   discovered_at: '2026-08-24'
+  curated_at: ''
+  activated_at: ''
+- id: dur_auto_2026_8f48ea8292
+  source_kind: core
+  authors: Gao Z, Chen C, Hao Z, Xi Y, Li HW
+  year: 2026
+  title: Tailoring organic phenazine-carbon anodes for high-performance aqueous rechargeable
+    batteries
+  journal_or_outlet: Journal of colloid and interface science
+  source_type: peer_reviewed
+  study_type: other
+  reference_locator: https://doi.org/10.1016/j.jcis.2026.141553
+  verification_status: verified
+  locator_source: doi
+  topic_tags:
+  - durability
+  - cycling_endurance
+  question_or_focus: Auto-discovered primary-source candidate pending structured curation.
+  population_or_scope: Primary-source discovery candidate.
+  what_was_examined: []
+  core_concepts: []
+  important_findings: []
+  practical_implications: []
+  key_takeaways: []
+  what_this_does_not_justify: []
+  important_limits: []
+  allowed_uses: []
+  authority_limit: background_only
+  evidence_posture: metadata_only_not_activatable
+  fulltext_status: link_only
+  fulltext_local_path: ''
+  source_material_level: metadata_only
+  source_material_basis: Metadata-only package; not activatable without stronger source
+    text.
+  notes: Added by automatic weekly primary-source discovery.
+  summary_card:
+    focus: Tailoring organic phenazine-carbon anodes for high-performance aqueous
+      rechargeable batteries
+    main_takeaway: ''
+    main_limit: ''
+  relevance_assessment:
+    overall_relevance: medium
+    relevance_rationale: Legacy entry imported before structured relevance curation.
+    rps_domains_supported:
+    - durability
+    - cycling_endurance
+    target_audiences_supported:
+    - background_knowledge
+    best_use_mode: core_scientific_support
+    activation_recommendation: hold
+  brief_sections:
+    why_this_source_matters_for_rps: Added by automatic weekly primary-source discovery.
+    research_question_or_purpose: Auto-discovered primary-source candidate pending
+      structured curation.
+    study_type: other
+    population_or_context: Primary-source discovery candidate.
+    what_was_actually_examined: Auto-discovered primary-source candidate pending structured
+      curation.
+    core_concepts: []
+    key_takeaways: []
+    important_findings: []
+    practical_implications_for_rps: []
+    what_this_source_does_not_justify: []
+    limits_and_transfer_boundaries: []
+    allowed_uses_in_rps: []
+    evidence_posture: metadata_only_not_activatable
+    source_material_basis: Metadata-only package; not activatable without stronger
+      source text.
+  brief_path: studies/dur_auto_2026_8f48ea8292.md
+  brief_status: pending_curation
+  activation_status: verified
+  trusted_source_match: false
+  trusted_match_reason: ''
+  legacy_active: false
+  curation_schema_version: '1'
+  record_fingerprint: dur_auto_2026_8f48ea8292
+  last_verified_at: '2026-09-14'
+  discovered_at: '2026-09-14'
   curated_at: ''
   activated_at: ''
 - id: dur_auto_2026_9cb31b91a1
