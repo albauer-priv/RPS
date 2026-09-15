@@ -249,6 +249,65 @@ def preview_move_workout(
     )
 
 
+def preview_swap_workouts(
+    week_plan: JsonMap,
+    *,
+    year: int,
+    week: int,
+    source_day: str,
+    target_day: str,
+) -> WeekPlanEditPreview:
+    """Preview swapping the workouts on two occupied days within the same week."""
+    document = copy.deepcopy(week_plan)
+    agenda_rows, workouts, _agenda_by_workout = _lookup_rows(document)
+
+    src_label, src_iso_text = _resolve_day(source_day)
+    tgt_label, tgt_iso_text = _resolve_day(target_day)
+    if src_label == tgt_label:
+        raise ValueError("source and target day are the same")
+
+    src_row = next((row for row in agenda_rows if str(row.get("day") or "") == src_label), None)
+    tgt_row = next((row for row in agenda_rows if str(row.get("day") or "") == tgt_label), None)
+    if src_row is None:
+        raise ValueError(f"source agenda day not found: {src_label}")
+    if tgt_row is None:
+        raise ValueError(f"target agenda day not found: {tgt_label}")
+
+    src_wid = src_row.get("workout_id")
+    tgt_wid = tgt_row.get("workout_id")
+    if not src_wid:
+        raise ValueError(f"source day {src_label} has no workout; use preview_move_workout to move to an empty day")
+    if not tgt_wid:
+        raise ValueError(f"target day {tgt_label} has no workout; use preview_move_workout to move to an empty day")
+
+    # Swap agenda row payload (workout_id, day_role, planned_duration, planned_kj)
+    _SWAP_KEYS = ("workout_id", "day_role", "planned_duration", "planned_kj")
+    src_snap = {k: src_row.get(k) for k in _SWAP_KEYS}
+    tgt_snap = {k: tgt_row.get(k) for k in _SWAP_KEYS}
+    for k, v in tgt_snap.items():
+        src_row[k] = v
+    for k, v in src_snap.items():
+        tgt_row[k] = v
+
+    # Update workout dates to their new day
+    src_date = _date_for_day(year, week, int(src_iso_text))
+    tgt_date = _date_for_day(year, week, int(tgt_iso_text))
+    src_workout = workouts.get(str(src_wid))
+    tgt_workout = workouts.get(str(tgt_wid))
+    if src_workout is not None:
+        src_workout["date"] = tgt_date
+    if tgt_workout is not None:
+        tgt_workout["date"] = src_date
+
+    src_title = str((src_workout or {}).get("title") or src_wid)
+    tgt_title = str((tgt_workout or {}).get("title") or tgt_wid)
+    return _preview(
+        "swap_workouts",
+        f"Swap '{src_title}' ({src_wid}) on {src_label} {src_date} with '{tgt_title}' ({tgt_wid}) on {tgt_label} {tgt_date}.",
+        document,
+    )
+
+
 def preview_change_start_time(
     week_plan: JsonMap,
     *,
