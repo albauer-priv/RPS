@@ -19,6 +19,7 @@ from streamlit.runtime.scriptrunner import get_script_run_ctx
 from rps.core.config import load_app_settings, load_env_file
 from rps.core.logging import _normalize_level, setup_logging
 from rps.prompts.loader import PromptLoader
+from rps.ui.auth import get_auth_user, logout, require_auth
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange, parse_iso_week_range, range_contains
 
 HH_MM_SS_PARTS = 3
@@ -130,7 +131,11 @@ def iso_week_range_dates(range_spec: IsoWeekRange | None) -> tuple[date, date] |
 def init_ui_state() -> dict:
     """Initialize the shared UI state for the multipage app."""
     state = st.session_state.setdefault("rps_state", {})
-    athlete_id = state.get("athlete_id") or os.getenv("ATHLETE_ID") or "i150546"
+    auth_user = get_auth_user(state)
+    if auth_user:
+        athlete_id = auth_user["athlete_id"]
+    else:
+        athlete_id = state.get("athlete_id") or os.getenv("ATHLETE_ID") or "i150546"
     state["athlete_id"] = athlete_id
     if "iso_year" not in state or "iso_week" not in state:
         iso = date.today().isocalendar()
@@ -156,7 +161,11 @@ def init_ui_state() -> dict:
 def get_athlete_id() -> str:
     """Return the current athlete id, persisting it in session state."""
     state = init_ui_state()
-    athlete_id = state.get("athlete_id") or os.getenv("ATHLETE_ID") or "i150546"
+    auth_user = get_auth_user(state)
+    if auth_user:
+        athlete_id = auth_user["athlete_id"]
+    else:
+        athlete_id = state.get("athlete_id") or os.getenv("ATHLETE_ID") or "i150546"
     state["athlete_id"] = athlete_id
     st.session_state["athlete_id"] = athlete_id
     return athlete_id
@@ -201,10 +210,19 @@ def build_phase_options(phases: list[dict]) -> tuple[list[str], dict[str, dict]]
 def render_global_sidebar() -> dict:
     """Render the global sidebar controls and update session state."""
     state = init_ui_state()
+    require_auth(state)
     workspace_root = Path(os.getenv("ATHLETE_WORKSPACE_ROOT", str(SETTINGS.workspace_root)))
+    auth_user = get_auth_user(state)
     with st.sidebar:
         st.subheader("Global")
-        athlete_id = st.text_input("Athlete ID", value=state["athlete_id"])
+        if auth_user:
+            st.caption(f"\U0001f464 {auth_user['username']} · {auth_user['athlete_id']}")
+            if st.button("Logout", key="_rps_logout"):
+                logout(state)
+                st.rerun()
+            athlete_id = auth_user["athlete_id"]
+        else:
+            athlete_id = st.text_input("Athlete ID", value=state["athlete_id"])
         year = int(
             st.number_input(
                 "ISO Year",

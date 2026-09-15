@@ -1,0 +1,21 @@
+# RPS User Registry example
+#
+# Copy to a location of your choice and set:
+#   RPS_USERS_FILE=/path/to/users.yaml
+#
+# Generate a password hash:
+#   python -m rps.ui.auth hash mypassword
+#
+# When RPS_USERS_FILE is not set, the app runs without authentication
+# (single-user mode, athlete_id from ATHLETE_ID env var or sidebar input).
+
+users:
+  - username: alex
+    password_hash: "sha256:5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"  # "password"
+    athlete_id: "i150546"
+    # llm_api_key: "sk-..."   # optional: overrides RPS_LLM_API_KEY for this user
+    # llm_org_id: "org-..."   # optional: overrides RPS_LLM_ORG_ID for this user
+
+  # - username: coach
+  #   password_hash: "sha256:..."
+  #   athlete_id: "coach_workspace"
