@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-09-15
+
+### Added
+
+- Added bounded agenda-level adjustments to the Workout Editor (`FEAT_workout_editor_agenda_adjustments`). A new `preview_update_agenda_day()` function in `week_plan_edits.py` updates one or more of `planned_kj`, `planned_duration` (HH:MM), and `day_role` on a specific agenda day without a full week re-plan. At least one field is required; negative kj, invalid duration format, and empty day_role are rejected with clear errors. The Coach can invoke it via the new `preview_update_agenda_day` tool (added to the preview toolset). 8 unit tests in `tests/test_workout_editor_agenda_adjustments.py`.
+
 ## [0.22.0] - 2026-09-15
 
 ### Added

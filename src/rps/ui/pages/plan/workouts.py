@@ -21,6 +21,7 @@ from rps.orchestrator.week_plan_edits import (
     preview_change_start_time,
     preview_move_workout,
     preview_swap_workouts,
+    preview_update_agenda_day,
     preview_update_workout_text,
 )
 from rps.orchestrator.week_revision import revise_week_plan
@@ -141,6 +142,21 @@ def _workout_editor_tools(
         preview = preview_swap_workouts(base, year=year, week=week, source_day=source_day, target_day=target_day)
         st.session_state[EDITOR_PENDING_KEY] = json.loads(preview.to_json())
         append_system_log("workouts", f"Workout editor preview created: swap {source_day} <-> {target_day} ({version_key}).")
+        return preview.to_json()
+
+    def _preview_update_agenda_day(
+        day: str,
+        planned_kj: int | None = None,
+        planned_duration: str | None = None,
+        day_role: str | None = None,
+    ) -> str:
+        base = _editor_base_document(store, athlete_id, year, week)
+        preview = preview_update_agenda_day(
+            base, day=day, planned_kj=planned_kj,
+            planned_duration=planned_duration, day_role=day_role,
+        )
+        st.session_state[EDITOR_PENDING_KEY] = json.loads(preview.to_json())
+        append_system_log("workouts", f"Workout editor preview created: agenda update {day} ({version_key}).")
         return preview.to_json()
 
     def _preview_change_start_time(workout_id: str, start: str) -> str:
@@ -265,6 +281,22 @@ def _workout_editor_tools(
             handler=_preview_swap_workouts,
         ),
         CoachTool(
+            name="preview_update_agenda_day",
+            description="Preview updating planned_kj, planned_duration, and/or day_role for one agenda day without re-planning.",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "day": {"type": "string"},
+                    "planned_kj": {"type": ["integer", "null"]},
+                    "planned_duration": {"type": ["string", "null"]},
+                    "day_role": {"type": ["string", "null"]},
+                },
+                "required": ["day"],
+                "additionalProperties": False,
+            },
+            handler=_preview_update_agenda_day,
+        ),
+        CoachTool(
             name="preview_change_start_time",
             description="Preview changing one workout's start time.",
             parameters={
@@ -328,6 +360,7 @@ def _workout_editor_toolsets(tools: list[CoachTool]) -> SpecialistToolsets:
             for name in [
                 "preview_move_workout",
                 "preview_swap_workouts",
+                "preview_update_agenda_day",
                 "preview_change_start_time",
                 "preview_update_workout_text",
             ]

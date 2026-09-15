@@ -20,9 +20,11 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 7) ~~**FEAT_plan_week_testability_and_resolution_refactor**~~ — **done** — `plan_week` decomposition, typed orchestration dataclasses, deterministic context typed resolution, cadence/role fallback tests.
 8) ~~**FEAT_run_progress_ui**~~ — **done** — visual progress bar + elapsed time in Plan Hub while a run is active.
 9) ~~**FEAT_workout_editor_swap_days**~~ — **done** — bounded swap of two occupied workout days via Coach tool.
+10) ~~**FEAT_workout_editor_agenda_adjustments**~~ — **done** — bounded agenda-level edits (planned_kj, planned_duration, day_role) via Coach tool without re-planning.
 
 ## Implemented / In-Progress
 
+- [x] FEAT_workout_editor_agenda_adjustments — bounded agenda-level edits (planned_kj, planned_duration, day_role) for one agenda day: preview_update_agenda_day() in week_plan_edits.py + Coach tool + 8 tests.
 - [x] FEAT_workout_editor_swap_days — bounded swap of two occupied workout days: preview_swap_workouts() in week_plan_edits.py + Coach tool + 5 tests.
 - [x] FEAT_run_progress_ui — visual st.progress() bar + elapsed time + consolidated st.info() status line while a planning run is active (Plan Hub).
 - [x] FEAT_plan_week_testability_and_resolution_refactor — `plan_week` decomposition, typed dataclasses, deterministic context resolution, and cadence/role fallback unit tests (PR1–PR4 complete).
@@ -100,7 +102,7 @@ When resuming work, follow this order so context stays consistent:
 - [ ] Full-run observation follow-up — before fixing the remaining Phase artifact quality gaps, rerun one complete Season→Phase→Week chain in the real runtime and analyze the resulting artefacts for: (a) canonical Season lineage `run_id` quality in Phase `trace_upstream`, (b) empty inherited `selection_rationale`, and (c) duplicated / partially rephrased `PHASE_STRUCTURE.upstream_intent.constraints`. Treat this as a post-run analysis gate, not an immediate code patch.
 - [ ] Manual smoke pass for `Workout Editor` — verify preview/apply flows for move, start-time change, and workout-text replacement against a real athlete week in the UI.
 - [x] FEAT_workout_editor_swap_days — support bounded swap of two occupied workout days instead of move-to-empty-day only.
-- [ ] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.
+- [x] FEAT_workout_editor_agenda_adjustments — support bounded agenda-level edits such as `planned_kj`, `planned_duration`, and selected day-role adjustments without full week re-plan.
 - [ ] Manual active `Coach` smoke pass — verify context read, bounded edit preview/apply, scoped replan preview/apply, report preview/apply, and feed-forward preview/apply against a real athlete week in the UI.
 - [ ] Manual CrewAI-compatible end-to-end smoke pass — run Season, Phase, Week, Coach, and Workout Editor in a CrewAI-capable Python 3.13/container runtime and validate flow persistence, memory/knowledge wiring, and preview/apply paths.
 - [ ] FEAT_mandatory_output_audit_and_structured_output_migration — audit remaining `mandatory_output_*` families and migrate safe artifact/task families to `output_json` / `output_pydantic` plus guardrails; retain prompt-level contracts only where structured outputs remain unsafe.

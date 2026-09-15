@@ -308,6 +308,57 @@ def preview_swap_workouts(
     )
 
 
+def preview_update_agenda_day(
+    week_plan: JsonMap,
+    *,
+    day: str,
+    planned_kj: int | None = None,
+    planned_duration: str | None = None,
+    day_role: str | None = None,
+) -> WeekPlanEditPreview:
+    """Preview updating agenda-level fields (planned_kj, planned_duration, day_role) for one day."""
+    if planned_kj is None and planned_duration is None and day_role is None:
+        raise ValueError("at least one of planned_kj, planned_duration, or day_role must be provided")
+
+    document = copy.deepcopy(week_plan)
+    agenda_rows, _workouts, _agenda_by_workout = _lookup_rows(document)
+
+    day_label, _iso_text = _resolve_day(day)
+    row = next((r for r in agenda_rows if str(r.get("day") or "") == day_label), None)
+    if row is None:
+        raise ValueError(f"agenda day not found: {day_label}")
+
+    if planned_kj is not None:
+        if planned_kj < 0:
+            raise ValueError("planned_kj must be non-negative")
+        row["planned_kj"] = planned_kj
+
+    if planned_duration is not None:
+        if not _TIME_RE.fullmatch(planned_duration.strip()):
+            raise ValueError("planned_duration must be HH:MM")
+        row["planned_duration"] = planned_duration.strip()
+
+    if day_role is not None:
+        if not day_role.strip():
+            raise ValueError("day_role must not be empty")
+        row["day_role"] = day_role.strip().upper()
+
+    changes: list[str] = []
+    if day_role is not None:
+        changes.append(f"day_role → {row['day_role']}")
+    if planned_kj is not None:
+        changes.append(f"planned_kj → {planned_kj}")
+    if planned_duration is not None:
+        changes.append(f"planned_duration → {planned_duration.strip()}")
+    day_date = str(row.get("date") or "")
+    date_label = f" {day_date}" if day_date else ""
+    return _preview(
+        "update_agenda_day",
+        f"Update agenda for {day_label}{date_label}: {', '.join(changes)}.",
+        document,
+    )
+
+
 def preview_change_start_time(
     week_plan: JsonMap,
     *,
