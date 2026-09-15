@@ -1,13 +1,13 @@
 ---
-Version: 1.1
-Status: Draft
-Last-Updated: 2026-07-05
+Version: 1.2
+Status: Implemented
+Last-Updated: 2026-09-15
 Owner: Planner Orchestration
 ---
 # FEAT: Plan Week Testability and Resolution Refactor
 
 * **ID:** FEAT_plan_week_testability_and_resolution_refactor
-* **Status:** Draft
+* **Status:** Implemented
 * **Owner/Area:** Planner Orchestration / Test Infrastructure
 * **Last-Updated:** 2026-07-05
 * **Related:** `src/rps/orchestrator/plan_week.py`, `src/rps/planning/deterministic_context.py`, `tests/test_plan_pages.py`, `tests/test_plan_hub_worker.py`
@@ -326,9 +326,9 @@ This feature now also tracks the agreed follow-up direction for deterministic ru
 
 Update these docs as part of implementation:
 
-* [ ] `doc/overview/feature_backlog.md` — add the refactor item and keep status current
-* [ ] `doc/specs/features/FEAT_plan_week_testability_and_resolution_refactor.md` — keep scope, ADR decision, and implementation audit current
-* [ ] `CHANGELOG.md` — record the refactor when implementation lands
+* [x] `doc/overview/feature_backlog.md` — add the refactor item and keep status current
+* [x] `doc/specs/features/FEAT_plan_week_testability_and_resolution_refactor.md` — keep scope, ADR decision, and implementation audit current
+* [x] `CHANGELOG.md` — record the refactor when implementation lands
 
 ---
 
@@ -340,7 +340,7 @@ Complete this section before closing the feature:
 * [x] Acceptance criteria verified (see below)
 * [x] Verification commands/tests recorded
 * [x] Residual gaps/deferred items recorded
-* [ ] Recommended next step recorded
+* [x] Recommended next step recorded
 
 **Implementation report**
 
@@ -356,7 +356,7 @@ Acceptance criteria status:
 * [x] Shared test helpers exist for previous-week evidence, minimal phase/week context, and report-gate mocking.
 * [x] `tests/test_plan_hub_page.py` (renamed from `test_plan_pages.py`) no longer carries large inline setup blocks for standard prerequisites.
 * [x] `plan_week(...)` uses typed request/resolution dataclasses for main orchestration boundaries.
-* [~] Deterministic phase cadence/role fallback logic has focused unit tests. *(DES report context injection covered; internal `PhaseRefreshPlan` resolution covered; cadence/role fallback direct tests from spec section 8a not yet added.)*
+* [x] Deterministic phase cadence/role fallback logic has focused unit tests. *(All 5 Phase-1 expectations from spec section 8a implemented in `tests/test_deterministic_context.py`.)*
 * [x] Existing `tests/test_plan_hub_page.py` and `tests/test_plan_hub_worker.py` remain green.
 
 Verification commands:
@@ -373,12 +373,11 @@ Stale spec references:
 
 Remaining gaps/risks:
 
-* Cadence/role fallback direct unit tests (spec section 8a, Phase-1 expectations) — not yet added.
-* Pre-existing Streamlit AppTest session-state ordering failures are a separate concern unrelated to this feature.
+* Pre-existing Streamlit AppTest session-state ordering failures are a separate concern unrelated to this feature (pass in isolation).
 
 Recommended next step:
 
-* Add focused cadence/role fallback unit tests as described in spec section 8a (Phase-1 expectations) if further coverage is desired.
+* No outstanding items. Feature fully implemented.
 
 ---
 

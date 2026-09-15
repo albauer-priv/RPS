@@ -17,11 +17,11 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 4) ~~**FEAT_user_management**~~ — **done** — auth/login + per-user athlete ID and optional API key override.
 5) ~~**FEAT_docker_deploy**~~ — **done** — image build + registry + deployment workflow.
 6) ~~**FEAT_posting_receipts_conflict_ux**~~ — **done** — receipts diff + conflict UX.
-7) **[FEAT_plan_week_testability_and_resolution_refactor](/doc/specs/features/FEAT_plan_week_testability_and_resolution_refactor.md)** — refactor `plan_week` test setup, resolver boundaries, and deterministic context typing for maintainability and lower regression risk.  
-   Depends on: none
+7) ~~**FEAT_plan_week_testability_and_resolution_refactor**~~ — **done** — `plan_week` decomposition, typed orchestration dataclasses, deterministic context typed resolution, cadence/role fallback tests.
 
 ## Implemented / In-Progress
 
+- [x] FEAT_plan_week_testability_and_resolution_refactor — `plan_week` decomposition, typed dataclasses, deterministic context resolution, and cadence/role fallback unit tests (PR1–PR4 complete).
 - [x] FEAT_run_scheduler_resilience — stuck-run detection and recovery (stale lock, orphaned active items, stuck-run sweep).
 - [x] FEAT_user_inputs_io — per-input-type JSON export/import on all four modular input editor pages.
 - [x] FEAT_plan_adjustments — input-driven staleness detection and Plan Hub "Plan Adjustment" section with one-click scoped re-run.
