@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   rps:
     image: ghcr.io/albauer-priv/rps:latest
@@ -9,4 +7,9 @@ services:
       - .env
     volumes:
       - ./runtime:/app/runtime
+      # Uncomment the two lines below and set RPS_USERS_FILE to enable opt-in auth:
+      # - ./config:/app/config:ro
+    environment:
+      # RPS_USERS_FILE: /app/config/users.yaml
+      {}
     restart: unless-stopped
