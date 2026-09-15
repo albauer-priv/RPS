@@ -13,6 +13,7 @@ from typing import cast
 logger = logging.getLogger(__name__)
 
 ACTIVE_RUN_STATUSES = {"QUEUED", "RUNNING"}
+STALE_LOCK_AGE_SECONDS: int = 14400  # 4 hours
 JsonMap = dict[str, object]
 JsonList = list[object]
 JsonPayload = JsonMap | JsonList
@@ -336,6 +337,83 @@ def start_background_tracker(
     return BackgroundRunTracker(root=root, athlete_id=athlete_id, run_id=run_id)
 
 
+def _lock_path(root: Path, athlete_id: str) -> Path:
+    return (root / athlete_id / "locks" / f"athlete_{athlete_id}.lock").resolve()
+
+
+def _read_lock_run_id(root: Path, athlete_id: str) -> str | None:
+    """Return the run_id written into the lock file, or None if unreadable."""
+    path = _lock_path(root, athlete_id)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        run_id = data.get("run_id")
+        return run_id if isinstance(run_id, str) and run_id else None
+    except Exception:
+        return None
+
+
+def _lock_is_stale(root: Path, athlete_id: str) -> bool:
+    """Return True when the lock file exists but is safe to discard.
+
+    A lock is stale when the run it guards is already terminal (or missing),
+    or when the lock file is older than STALE_LOCK_AGE_SECONDS.
+    """
+    path = _lock_path(root, athlete_id)
+    if not path.exists():
+        return False
+    try:
+        age = datetime.now(UTC).timestamp() - path.stat().st_mtime
+        if age > STALE_LOCK_AGE_SECONDS:
+            return True
+    except OSError:
+        return True
+    locked_run_id = _read_lock_run_id(root, athlete_id)
+    if not locked_run_id:
+        return True
+    runs = load_runs(root, athlete_id, limit=50)
+    run = next((r for r in runs if r.get("run_id") == locked_run_id), None)
+    if run is None:
+        return True
+    return run.get("status") not in ACTIVE_RUN_STATUSES
+
+
+def _recover_stale_lock(root: Path, athlete_id: str) -> bool:
+    """Clear a stale lock and fail its stuck run.  Returns True if recovery happened."""
+    if not _lock_is_stale(root, athlete_id):
+        return False
+    locked_run_id = _read_lock_run_id(root, athlete_id)
+    path = _lock_path(root, athlete_id)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        logger.warning("Could not remove stale lock for athlete=%s", athlete_id)
+        return False
+    logger.warning("Recovered stale lock for athlete=%s run_id=%s", athlete_id, locked_run_id)
+    if locked_run_id:
+        runs = load_runs(root, athlete_id, limit=50)
+        run = next((r for r in runs if r.get("run_id") == locked_run_id), None)
+        if run and run.get("status") in ACTIVE_RUN_STATUSES:
+            update_run(
+                root,
+                athlete_id,
+                locked_run_id,
+                {
+                    "status": "FAILED",
+                    "finished_at": _utc_iso_now(),
+                },
+            )
+            append_event(
+                root,
+                athlete_id,
+                locked_run_id,
+                {
+                    "type": "RUN_FAILED",
+                    "reason": "Recovered: stale lock detected",
+                },
+            )
+    return True
+
+
 def acquire_athlete_lock(root: Path, athlete_id: str, run_id: str) -> bool:
     """Acquire a per-athlete lock; returns True on success."""
     lock_dir = (root / athlete_id / "locks").resolve()
@@ -346,14 +424,21 @@ def acquire_athlete_lock(root: Path, athlete_id: str, run_id: str) -> bool:
             handle.write(json.dumps({"run_id": run_id, "ts": _utc_iso_now()}, ensure_ascii=False) + "\n")
         return True
     except FileExistsError:
+        if _recover_stale_lock(root, athlete_id):
+            try:
+                with lock_path.open("x", encoding="utf-8") as handle:
+                    handle.write(json.dumps({"run_id": run_id, "ts": _utc_iso_now()}, ensure_ascii=False) + "\n")
+                return True
+            except FileExistsError:
+                pass
         return False
 
 
 def release_athlete_lock(root: Path, athlete_id: str) -> None:
     """Release the per-athlete lock if present."""
-    lock_path = (root / athlete_id / "locks" / f"athlete_{athlete_id}.lock").resolve()
-    if lock_path.exists():
-        lock_path.unlink()
+    path = _lock_path(root, athlete_id)
+    if path.exists():
+        path.unlink()
 
 
 def load_events(root: Path, athlete_id: str, run_id: str, *, limit: int = 200) -> list[RunEvent]:

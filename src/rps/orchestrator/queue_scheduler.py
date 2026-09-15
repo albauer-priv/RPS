@@ -13,7 +13,13 @@ from pathlib import Path
 
 from rps.agents.runtime import AgentRuntime
 from rps.orchestrator.plan_hub_worker import PlanHubWorkerConfig, start_plan_hub_worker_with_stop
-from rps.ui.run_store import load_runs
+from rps.ui.run_store import (
+    _lock_path,
+    _recover_stale_lock,
+    append_event,
+    load_runs,
+    update_run,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +117,77 @@ def _move(path: Path, dest_dir: Path) -> Path:
     return path.replace(dest)
 
 
+def _fail_run(root: Path, athlete_id: str, run_id: str, reason: str) -> None:
+    """Transition a RUNNING/QUEUED run to FAILED with a recovery reason."""
+    from rps.ui.run_store import ACTIVE_RUN_STATUSES
+
+    runs = load_runs(root, athlete_id, limit=50)
+    run = next((r for r in runs if r.get("run_id") == run_id), None)
+    if run and run.get("status") in ACTIVE_RUN_STATUSES:
+        update_run(
+            root,
+            athlete_id,
+            run_id,
+            {
+                "status": "FAILED",
+                "finished_at": datetime.now(UTC).isoformat(),
+            },
+        )
+        append_event(
+            root,
+            athlete_id,
+            run_id,
+            {"type": "RUN_FAILED", "reason": reason},
+        )
+        logger.warning("Recovered stuck run athlete=%s run_id=%s reason=%s", athlete_id, run_id, reason)
+
+
+def _recover_orphaned_active_items(paths: QueuePaths, root: Path) -> None:
+    """Resolve items stranded in active/ after a process crash."""
+    for item_path in paths.active.glob("*.json"):
+        try:
+            item = _read_queue_item(item_path)
+        except Exception as exc:
+            logger.warning("Could not read orphaned active item %s: %s", item_path, exc)
+            _move(item_path, paths.failed)
+            continue
+        athlete_id = _item_str(item, "athlete_id")
+        run_id = _item_str(item, "run_id")
+        if not athlete_id or not run_id:
+            _move(item_path, paths.failed)
+            continue
+        runs = load_runs(root, athlete_id, limit=50)
+        run = next((r for r in runs if r.get("run_id") == run_id), None)
+        status = run.get("status") if isinstance(run, dict) else None
+        if status == "DONE":
+            _move(item_path, paths.done)
+            continue
+        if status in {"FAILED", "CANCELLED"}:
+            _move(item_path, paths.failed)
+            continue
+        # Run is RUNNING/QUEUED or missing — orphaned worker.
+        _fail_run(root, athlete_id, run_id, "Recovered: orphaned queue item on startup")
+        _recover_stale_lock(root, athlete_id)
+        _move(item_path, paths.failed)
+
+
+def _recover_stuck_runs(root: Path) -> None:
+    """Fail RUNNING/QUEUED runs that have a stale lock but no active/ queue item."""
+    locks_root = root
+    # Scan all per-athlete lock files under <root>/<athlete_id>/locks/
+    if not locks_root.exists():
+        return
+    for athlete_dir in locks_root.iterdir():
+        if not athlete_dir.is_dir():
+            continue
+        athlete_id = athlete_dir.name
+        lock = _lock_path(root, athlete_id)
+        if not lock.exists():
+            continue
+        # If this lock is stale, fail its run. _recover_stale_lock checks independently.
+        _recover_stale_lock(root, athlete_id)
+
+
 def start_queue_scheduler(
     *,
     root: Path,
@@ -125,6 +202,15 @@ def start_queue_scheduler(
     """Start a background scheduler that pulls from the queue and runs workers."""
     stop_event = stop_event or threading.Event()
     paths = ensure_queue_dirs(root)
+
+    try:
+        _recover_orphaned_active_items(paths, root)
+    except Exception as exc:
+        logger.warning("Orphan recovery failed (non-fatal): %s", exc)
+    try:
+        _recover_stuck_runs(root)
+    except Exception as exc:
+        logger.warning("Stuck-run recovery failed (non-fatal): %s", exc)
 
     def _loop() -> None:
         logger.info("Queue scheduler started")
