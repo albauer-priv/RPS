@@ -16,6 +16,7 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
+from rps.workspace.input_io import export_input, import_input, suggest_export_filename
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType, Authority
 
@@ -322,3 +323,26 @@ if st.button("Save Events", width="content"):
     _save_events_payload(store, athlete_id, ui_events)
     st.success("Planning events saved.")
     set_status(status_state="done", title="Events", message="Saved planning events input.")
+
+with st.expander("Export / Import", expanded=False):
+    _export_bytes = export_input(store, athlete_id, ArtifactType.PLANNING_EVENTS)
+    if _export_bytes:
+        st.download_button(
+            "Download as JSON",
+            data=_export_bytes,
+            file_name=suggest_export_filename(athlete_id, ArtifactType.PLANNING_EVENTS),
+            mime="application/json",
+        )
+    else:
+        st.caption("No saved input yet — save your data above first.")
+    st.caption("Upload a previously exported JSON file to import this input.")
+    _uploaded = st.file_uploader("Import from file", type=["json"], key="import_planning_events")
+    if _uploaded is not None:
+        if st.button("Save imported input", key="save_import_planning_events"):
+            try:
+                _vk = import_input(store, athlete_id, ArtifactType.PLANNING_EVENTS, _uploaded.getvalue())
+                st.success(f"Imported and saved (version: {_vk}). Review form above.")
+                set_status(status_state="done", title="Events", message="Imported input from file.")
+            except ValueError as exc:
+                st.error(f"Import failed: {exc}")
+                set_status(status_state="error", title="Events", message="Import failed.")

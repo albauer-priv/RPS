@@ -12,8 +12,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 ## Ranked Backlog (with dependencies)
 
 1) ~~**FEAT_run_scheduler_resilience**~~ — **done** — stuck-run detection and recovery.
-2) **FEAT_user_inputs_io** — upload/download inputs (new modular inputs).  
-   Depends on: FEAT_user_inputs_modular
+2) ~~**FEAT_user_inputs_io**~~ — **done** — upload/download per-input-type JSON.
 3) **FEAT_plan_adjustments** — adjust Season/Phase plans when constraints change.  
    Depends on: FEAT_user_inputs_modular, FEAT_user_data_editors
 4) **FEAT_user_management** — auth/login + per-user API keys and athlete ID.  
@@ -28,6 +27,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 ## Implemented / In-Progress
 
 - [x] FEAT_run_scheduler_resilience — stuck-run detection and recovery (stale lock, orphaned active items, stuck-run sweep).
+- [x] FEAT_user_inputs_io — per-input-type JSON export/import on all four modular input editor pages.
 
 - [x] FEAT_parquet_cache — Parquet cache writes in data pipeline.
 - [x] FEAT_parquet_readers — Parquet-first reads in Data & Metrics.

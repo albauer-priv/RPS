@@ -14,6 +14,7 @@ from rps.ui.shared import (
     render_status_panel,
     set_status,
 )
+from rps.workspace.input_io import export_input, import_input, suggest_export_filename
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType, Authority
 
@@ -245,3 +246,26 @@ if st.button("Save Availability", width="content"):
     )
     st.success("Availability saved.")
     set_status(status_state="done", title="Availability", message="Saved availability input.")
+
+with st.expander("Export / Import", expanded=False):
+    _export_bytes = export_input(store, athlete_id, ArtifactType.AVAILABILITY)
+    if _export_bytes:
+        st.download_button(
+            "Download as JSON",
+            data=_export_bytes,
+            file_name=suggest_export_filename(athlete_id, ArtifactType.AVAILABILITY),
+            mime="application/json",
+        )
+    else:
+        st.caption("No saved input yet — save your data above first.")
+    st.caption("Upload a previously exported JSON file to import this input.")
+    _uploaded = st.file_uploader("Import from file", type=["json"], key="import_availability")
+    if _uploaded is not None:
+        if st.button("Save imported input", key="save_import_availability"):
+            try:
+                _vk = import_input(store, athlete_id, ArtifactType.AVAILABILITY, _uploaded.getvalue())
+                st.success(f"Imported and saved (version: {_vk}). Review form above.")
+                set_status(status_state="done", title="Availability", message="Imported input from file.")
+            except ValueError as exc:
+                st.error(f"Import failed: {exc}")
+                set_status(status_state="error", title="Availability", message="Import failed.")
