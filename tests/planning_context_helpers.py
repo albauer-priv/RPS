@@ -10,6 +10,54 @@ from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 
 
+def seed_plan_hub_readiness_inputs(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    version_key: str = "2026-05",
+    selected_scenario_id: str = "A",
+) -> None:
+    """Seed the minimal set of artifacts required for plan-hub readiness checks.
+
+    Writes ATHLETE_PROFILE, PLANNING_EVENTS, LOGISTICS, AVAILABILITY, KPI_PROFILE,
+    WELLNESS, SEASON_SCENARIOS, and SEASON_SCENARIO_SELECTION — the standard inputs
+    that plan-hub readiness tests need in place before exercising any readiness or
+    staleness logic.
+    """
+    store.ensure_workspace(athlete_id)
+    store.latest_path(athlete_id, ArtifactType.ATHLETE_PROFILE).write_text(
+        "{}", encoding="utf-8"
+    )
+    store.latest_path(athlete_id, ArtifactType.PLANNING_EVENTS).write_text(
+        json.dumps({"data": {"events": []}}), encoding="utf-8"
+    )
+    store.latest_path(athlete_id, ArtifactType.LOGISTICS).write_text(
+        json.dumps({"data": {"events": []}}), encoding="utf-8"
+    )
+    write_minimal_availability(store, athlete_id)
+    store.save_document(
+        athlete_id,
+        ArtifactType.KPI_PROFILE,
+        version_key,
+        {"data": {}},
+        producer_agent="test",
+        run_id=f"store_kpi_{version_key}",
+        update_latest=True,
+    )
+    store.save_document(
+        athlete_id,
+        ArtifactType.WELLNESS,
+        version_key,
+        {"data": {}},
+        producer_agent="test",
+        run_id=f"store_wellness_{version_key}",
+        update_latest=True,
+    )
+    write_minimal_scenario_chain(
+        store, athlete_id, version_key=version_key, selected_scenario_id=selected_scenario_id
+    )
+
+
 def seed_previous_week_planning_evidence(
     store: LocalArtifactStore,
     athlete_id: str,

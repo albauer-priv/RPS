@@ -3,12 +3,14 @@ from types import SimpleNamespace
 import pytest
 
 from rps.orchestrator.plan_week import (
+    PhaseRefreshPlan,
     SnapshotPromptBlocks,
     _build_prior_phase_artefacts_block,
     _load_common_latest_payloads,
     _load_exact_range_payload,
     _load_week_version_payload,
     _prepare_snapshot_preflight,
+    _resolve_phase_refresh_plan,
     _resolve_previous_week_report_gate,
     _snapshot_freshness_error,
 )
@@ -254,3 +256,111 @@ def test_resolve_previous_week_report_gate_wraps_tuple_result(monkeypatch: pytes
     assert outcome.des_analysis_payload == {"data": {}}
     assert outcome.report_result == {"ok": True}
     assert outcome.error is None
+
+
+def test_resolve_phase_refresh_plan_all_missing_needs_all() -> None:
+    plan = _resolve_phase_refresh_plan(
+        forced_steps=set(),
+        isolated_phase_force=False,
+        season_plan_mtime=None,
+        phase_guardrails_exists=False,
+        phase_guardrails_mtime=None,
+        phase_structure_exists=False,
+        phase_structure_mtime=None,
+        phase_preview_exists=False,
+        phase_preview_mtime=None,
+    )
+
+    assert plan.needs_phase_guardrails is True
+    assert plan.needs_phase_structure is True
+    assert plan.needs_phase_preview is True
+    assert plan.isolated_phase_force is False
+
+
+def test_resolve_phase_refresh_plan_all_present_no_forced_needs_none() -> None:
+    plan = _resolve_phase_refresh_plan(
+        forced_steps=set(),
+        isolated_phase_force=False,
+        season_plan_mtime=1000.0,
+        phase_guardrails_exists=True,
+        phase_guardrails_mtime=2000.0,
+        phase_structure_exists=True,
+        phase_structure_mtime=2000.0,
+        phase_preview_exists=True,
+        phase_preview_mtime=2000.0,
+    )
+
+    assert plan.needs_phase_guardrails is False
+    assert plan.needs_phase_structure is False
+    assert plan.needs_phase_preview is False
+
+
+def test_resolve_phase_refresh_plan_stale_guardrails_cascades_to_all() -> None:
+    plan = _resolve_phase_refresh_plan(
+        forced_steps=set(),
+        isolated_phase_force=False,
+        season_plan_mtime=3000.0,
+        phase_guardrails_exists=True,
+        phase_guardrails_mtime=1000.0,
+        phase_structure_exists=True,
+        phase_structure_mtime=2000.0,
+        phase_preview_exists=True,
+        phase_preview_mtime=2000.0,
+    )
+
+    assert plan.needs_phase_guardrails is True
+    assert plan.needs_phase_structure is True
+    assert plan.needs_phase_preview is True
+
+
+def test_resolve_phase_refresh_plan_forced_guardrails_only_isolates() -> None:
+    plan = _resolve_phase_refresh_plan(
+        forced_steps={"PHASE_GUARDRAILS"},
+        isolated_phase_force=True,
+        season_plan_mtime=1000.0,
+        phase_guardrails_exists=True,
+        phase_guardrails_mtime=2000.0,
+        phase_structure_exists=True,
+        phase_structure_mtime=2000.0,
+        phase_preview_exists=True,
+        phase_preview_mtime=2000.0,
+    )
+
+    assert plan.needs_phase_guardrails is True
+    assert plan.needs_phase_structure is False
+    assert plan.needs_phase_preview is False
+    assert plan.isolated_phase_force is True
+
+
+def test_resolve_phase_refresh_plan_forced_structure_includes_preview() -> None:
+    plan = _resolve_phase_refresh_plan(
+        forced_steps={"PHASE_STRUCTURE"},
+        isolated_phase_force=True,
+        season_plan_mtime=1000.0,
+        phase_guardrails_exists=True,
+        phase_guardrails_mtime=2000.0,
+        phase_structure_exists=True,
+        phase_structure_mtime=2000.0,
+        phase_preview_exists=True,
+        phase_preview_mtime=2000.0,
+    )
+
+    assert plan.needs_phase_guardrails is False
+    assert plan.needs_phase_structure is True
+    assert plan.needs_phase_preview is True
+
+
+def test_resolve_phase_refresh_plan_returns_phase_refresh_plan_type() -> None:
+    plan = _resolve_phase_refresh_plan(
+        forced_steps=set(),
+        isolated_phase_force=False,
+        season_plan_mtime=None,
+        phase_guardrails_exists=True,
+        phase_guardrails_mtime=1.0,
+        phase_structure_exists=True,
+        phase_structure_mtime=1.0,
+        phase_preview_exists=True,
+        phase_preview_mtime=1.0,
+    )
+
+    assert isinstance(plan, PhaseRefreshPlan)

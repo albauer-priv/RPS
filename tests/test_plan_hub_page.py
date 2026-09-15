@@ -8,10 +8,7 @@ from rps.orchestrator.workout_export import run_workout_export
 from rps.workspace.local_store import LocalArtifactStore
 from rps.workspace.types import ArtifactType
 from tests.planning_context_helpers import (
-    write_minimal_availability as _write_minimal_availability,
-)
-from tests.planning_context_helpers import (
-    write_minimal_scenario_chain as _write_minimal_scenario_chain,
+    seed_plan_hub_readiness_inputs as _seed_plan_hub_readiness_inputs,
 )
 
 MIN_PHASE_SELECTBOX_COUNT = 2
@@ -92,30 +89,7 @@ def test_plan_hub_readiness_requires_latest_files(tmp_path):
 
     object.__setattr__(plan_hub.SETTINGS, "workspace_root", tmp_path)
     store = LocalArtifactStore(root=tmp_path)
-    store.ensure_workspace("test_athlete")
-    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
-    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
-    store.latest_path("test_athlete", ArtifactType.LOGISTICS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
-    _write_minimal_availability(store, "test_athlete")
-    store.save_document(
-        "test_athlete",
-        ArtifactType.KPI_PROFILE,
-        "2026-05",
-        {"data": {}},
-        producer_agent="test",
-        run_id="store_kpi",
-        update_latest=True,
-    )
-    store.save_document(
-        "test_athlete",
-        ArtifactType.WELLNESS,
-        "2026-05",
-        {"data": {}},
-        producer_agent="test",
-        run_id="store_wellness",
-        update_latest=True,
-    )
-    _write_minimal_scenario_chain(store, "test_athlete", version_key="2026-05", selected_scenario_id="A")
+    _seed_plan_hub_readiness_inputs(store, "test_athlete", version_key="2026-05")
 
     readiness = plan_hub._compute_readiness("test_athlete", 2026, 5)
     readiness_map = {step.key: step for step in readiness}
@@ -129,30 +103,7 @@ def test_plan_hub_marks_selection_stale_after_new_scenarios(tmp_path):
 
     object.__setattr__(plan_hub.SETTINGS, "workspace_root", tmp_path)
     store = LocalArtifactStore(root=tmp_path)
-    store.ensure_workspace("test_athlete")
-    store.latest_path("test_athlete", ArtifactType.ATHLETE_PROFILE).write_text("{}", encoding="utf-8")
-    store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
-    store.latest_path("test_athlete", ArtifactType.LOGISTICS).write_text(json.dumps({"data": {"events": []}}), encoding="utf-8")
-    _write_minimal_availability(store, "test_athlete")
-    store.save_document(
-        "test_athlete",
-        ArtifactType.KPI_PROFILE,
-        "2026-05",
-        {"data": {}},
-        producer_agent="test",
-        run_id="store_kpi",
-        update_latest=True,
-    )
-    store.save_document(
-        "test_athlete",
-        ArtifactType.WELLNESS,
-        "2026-05",
-        {"data": {}},
-        producer_agent="test",
-        run_id="store_wellness",
-        update_latest=True,
-    )
-    _write_minimal_scenario_chain(store, "test_athlete", version_key="2026-05", selected_scenario_id="A")
+    _seed_plan_hub_readiness_inputs(store, "test_athlete", version_key="2026-05")
     store.save_document(
         "test_athlete",
         ArtifactType.SEASON_SCENARIOS,

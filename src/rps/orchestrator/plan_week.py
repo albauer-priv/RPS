@@ -69,7 +69,7 @@ from rps.workspace.iso_helpers import (
     range_contains,
 )
 from rps.workspace.local_store import LocalArtifactStore
-from rps.workspace.season_plan_service import resolve_season_plan_phase_info
+from rps.workspace.season_plan_service import SeasonPlanPhaseInfo, resolve_season_plan_phase_info
 from rps.workspace.types import ArtifactType
 
 logger = logging.getLogger(__name__)
@@ -718,6 +718,34 @@ class SnapshotPreflightOutcome:
     prompt_blocks: SnapshotPromptBlocks | None = None
 
 
+@dataclass(frozen=True)
+class PhaseBundleOutcome:
+    """Outcome of the phase bundle execution step inside plan_week."""
+
+    additional_steps: list[StepRecord]
+    phase_tasks: list[AgentTask]
+    error: str | None = None
+    isolated_run_complete: bool = False
+
+
+@dataclass(frozen=True)
+class WeekPlanningOutcome:
+    """Outcome of the week planning execution step inside plan_week."""
+
+    additional_steps: list[StepRecord]
+    needs_week_plan: bool
+    week_tasks: list[AgentTask]
+    week_run_ok: bool | None
+    plan_mtime: float | None
+    error: str | None = None
+
+
+def _mtime(path: Path | None) -> float | None:
+    if not path or not path.exists():
+        return None
+    return path.stat().st_mtime
+
+
 def _normalize_force_steps(force_steps: Iterable[str] | None) -> set[str]:
     """Normalize optional forced step ids to uppercase identifiers."""
     if not force_steps:
@@ -928,6 +956,843 @@ def _resolve_previous_week_report_gate(
     )
 
 
+def _resolve_phase_refresh_plan(
+    *,
+    forced_steps: set[str],
+    isolated_phase_force: bool,
+    season_plan_mtime: float | None,
+    phase_guardrails_exists: bool,
+    phase_guardrails_mtime: float | None,
+    phase_structure_exists: bool,
+    phase_structure_mtime: float | None,
+    phase_preview_exists: bool,
+    phase_preview_mtime: float | None,
+) -> PhaseRefreshPlan:
+    """Resolve which phase artefacts need to be regenerated for a target week run."""
+
+    needs_phase_guardrails = (not phase_guardrails_exists) or "PHASE_GUARDRAILS" in forced_steps
+    if season_plan_mtime and phase_guardrails_mtime and season_plan_mtime > phase_guardrails_mtime:
+        needs_phase_guardrails = True
+
+    needs_phase_structure = (not phase_structure_exists) or "PHASE_STRUCTURE" in forced_steps
+    if season_plan_mtime and phase_structure_mtime and season_plan_mtime > phase_structure_mtime:
+        needs_phase_structure = True
+    if phase_guardrails_mtime and phase_structure_mtime and phase_guardrails_mtime > phase_structure_mtime:
+        needs_phase_structure = True
+
+    needs_phase_preview = (not phase_preview_exists) or "PHASE_PREVIEW" in forced_steps
+    if phase_structure_mtime and phase_preview_mtime and phase_structure_mtime > phase_preview_mtime:
+        needs_phase_preview = True
+
+    if forced_steps == {"PHASE_GUARDRAILS"}:
+        needs_phase_structure = False
+        needs_phase_preview = False
+    elif "PHASE_GUARDRAILS" in forced_steps or "PHASE_STRUCTURE" in forced_steps:
+        needs_phase_preview = True
+
+    if needs_phase_guardrails and not isolated_phase_force:
+        needs_phase_structure = True
+        needs_phase_preview = True
+    if needs_phase_structure and not isolated_phase_force:
+        needs_phase_preview = True
+
+    return PhaseRefreshPlan(
+        needs_phase_guardrails=needs_phase_guardrails,
+        needs_phase_structure=needs_phase_structure,
+        needs_phase_preview=needs_phase_preview,
+        forced_steps=frozenset(forced_steps),
+        isolated_phase_force=isolated_phase_force,
+        required_phase_artefacts=tuple(_required_phase_artefacts_for_forced_steps(forced_steps)),
+    )
+
+
+def _run_phase_bundle(
+    *,
+    store: LocalArtifactStore,
+    athlete_id: str,
+    index_query: IndexExactQuery,
+    target: IsoWeek,
+    phase_info: SeasonPlanPhaseInfo,
+    phase_range: IsoWeekRange,
+    phase_range_label: str,
+    target_label: str,
+    phase_name: str,
+    phase_type: str,
+    season_plan: JsonMap,
+    phase_refresh_plan: PhaseRefreshPlan,
+    forced_steps: set[str],
+    isolated_phase_force: bool,
+    runtime_for: Callable[[str], AgentRuntime],
+    run_id: str,
+    model_resolver: Callable[[str], str] | None,
+    temperature_resolver: Callable[[str], float | None] | None,
+    reasoning_effort_resolver: Callable[[str], str | None] | None,
+    reasoning_summary_resolver: Callable[[str], str | None] | None,
+    user_data_block: str,
+    override_line: str,
+    selected_kpi_rate_band: JsonMap | None,
+) -> PhaseBundleOutcome:
+    """Run the phase-architect agent for missing/stale phase artefacts.
+
+    Decides which phase artefacts need creation, runs the agent if any are needed,
+    validates the isolated-run gate, and returns a typed outcome the caller can
+    use to decide whether to continue to week planning or return early.
+    """
+    additional_steps: list[StepRecord] = []
+    phase_tasks: list[AgentTask] = []
+
+    if isolated_phase_force and forced_steps == {"PHASE_GUARDRAILS"}:
+        _log(
+            f"Scoped phase guardrails run requested for range {phase_range_label}; "
+            "PHASE_STRUCTURE and PHASE_PREVIEW will be reused if present and will not be rerun."
+        )
+    elif isolated_phase_force and forced_steps == {"PHASE_STRUCTURE"}:
+        _log(
+            f"Scoped phase structure run requested for range {phase_range_label}; "
+            "PHASE_PREVIEW is included in this scoped run and will be rerun after PHASE_STRUCTURE."
+        )
+    elif isolated_phase_force and forced_steps == {"PHASE_PREVIEW"}:
+        _log(
+            f"Scoped phase preview run requested for range {phase_range_label}; "
+            "only PHASE_PREVIEW will be rerun."
+        )
+    elif isolated_phase_force and forced_steps:
+        _log(
+            f"Scoped phase run requested for range {phase_range_label}; "
+            f"bundled phase artefacts: {', '.join(sorted(forced_steps))}."
+        )
+
+    if not phase_refresh_plan.needs_phase_guardrails:
+        message = f"Found PHASE_GUARDRAILS for phase range {phase_range_label}."
+        _log(message)
+    else:
+        message = f"PHASE_GUARDRAILS missing/stale for phase range {phase_range_label}. Will create."
+        _log(message)
+        phase_tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
+
+    if not phase_refresh_plan.needs_phase_structure:
+        if forced_steps == {"PHASE_GUARDRAILS"}:
+            message = (
+                f"Reusing existing PHASE_STRUCTURE for phase range {phase_range_label}; "
+                "not queued for this scoped run."
+            )
+        else:
+            message = f"Found PHASE_STRUCTURE for phase range {phase_range_label}."
+        _log(message)
+    else:
+        message = f"PHASE_STRUCTURE missing/stale for phase range {phase_range_label}. Will create."
+        _log(message)
+        phase_tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
+
+    if not phase_refresh_plan.needs_phase_preview:
+        if forced_steps == {"PHASE_GUARDRAILS"}:
+            message = (
+                f"Reusing existing PHASE_PREVIEW for phase range {phase_range_label}; "
+                "not queued for this scoped run."
+            )
+        else:
+            message = f"Found PHASE_PREVIEW for phase range {phase_range_label}."
+        _log(message)
+    else:
+        message = f"PHASE_PREVIEW missing/stale for phase range {phase_range_label}. Will create."
+        _log(message)
+        phase_tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
+
+    if phase_tasks:
+        latest_payloads = _load_common_latest_payloads(store, athlete_id)
+        availability_payload = latest_payloads.availability_payload
+        planning_events_payload = latest_payloads.planning_events_payload
+        athlete_profile_payload = latest_payloads.athlete_profile_payload
+        kpi_profile_payload = latest_payloads.kpi_profile_payload
+        logistics_payload = latest_payloads.logistics_payload
+        zone_model_payload = latest_payloads.zone_model_payload
+        wellness_payload = latest_payloads.wellness_payload
+        selection_payload = latest_payloads.selection_payload
+        season_scenarios_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIOS)
+        season_phase_feed_forward_payload = _load_week_version_payload(
+            store,
+            athlete_id,
+            ArtifactType.SEASON_PHASE_FEED_FORWARD,
+            target_label,
+        )
+        phase_report_gate = _resolve_previous_week_report_gate(
+            runtime_for,
+            athlete_id=athlete_id,
+            target_week=target,
+            run_id=run_id,
+            model_resolver=model_resolver,
+            temperature_resolver=temperature_resolver,
+            reasoning_effort_resolver=reasoning_effort_resolver,
+            reasoning_summary_resolver=reasoning_summary_resolver,
+        )
+        if phase_report_gate.report_result and isinstance(phase_report_gate.report_result.get("step"), dict):
+            additional_steps.append(cast(StepRecord, phase_report_gate.report_result["step"]))
+        if phase_report_gate.error or phase_report_gate.evidence_resolution is None:
+            message = phase_report_gate.error or "Phase evidence/report gate failed."
+            _log(message, logging.ERROR)
+            additional_steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
+            return PhaseBundleOutcome(additional_steps=additional_steps, phase_tasks=phase_tasks, error=message)
+        evidence_resolution = phase_report_gate.evidence_resolution
+        des_analysis_payload = phase_report_gate.des_analysis_payload
+        actual_version = evidence_resolution.activities_actual_version
+        trend_version = evidence_resolution.activities_trend_version
+        evidence_payloads = load_evidence_payloads(
+            store,
+            athlete_id,
+            resolution=evidence_resolution,
+            include_report=False,
+        )
+        phase_evidence_alignment_payload = build_evidence_alignment_payload(
+            scope="phase",
+            target_week=target,
+            evidence_week=evidence_resolution.evidence_week,
+            des_analysis_payload=des_analysis_payload or {},
+            activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
+            activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
+        )
+        athlete_state_snapshot = save_athlete_state_snapshot(
+            store,
+            athlete_id,
+            target_week=target,
+            run_id=run_id,
+            athlete_profile_payload=athlete_profile_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            selection_payload=selection_payload or {},
+            availability_payload=availability_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            wellness_payload=wellness_payload or {},
+        )
+        planning_context_snapshot = save_planning_context_snapshot(
+            store,
+            athlete_id,
+            target_week=target,
+            phase_info=phase_info,
+            season_plan_payload=season_plan,
+            phase_range=phase_range,
+            run_id=run_id,
+            availability_payload=availability_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            season_phase_feed_forward_payload=season_phase_feed_forward_payload or {},
+            activities_actual_version=actual_version,
+            activities_trend_version=trend_version,
+            des_analysis_payload=des_analysis_payload or {},
+            des_analysis_version=evidence_resolution.des_analysis_report_version,
+            evidence_alignment_payload=phase_evidence_alignment_payload,
+        )
+        snapshot_preflight = _prepare_snapshot_preflight(
+            athlete_state_snapshot=athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
+            planning_context_snapshot=planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
+            athlete_expected_source_versions=_expected_source_versions(
+                [
+                    ("athlete_profile", athlete_profile_payload),
+                    ("kpi_profile", kpi_profile_payload),
+                    ("season_scenario_selection", selection_payload),
+                    ("availability", availability_payload),
+                    ("planning_events", planning_events_payload),
+                    ("logistics", logistics_payload),
+                    ("zone_model", zone_model_payload),
+                    ("wellness", wellness_payload),
+                ]
+            ),
+            planning_expected_source_versions=_expected_source_versions(
+                [
+                    ("season_plan", season_plan if isinstance(season_plan, dict) else None),
+                    ("availability", availability_payload),
+                    ("planning_events", planning_events_payload),
+                    ("season_phase_feed_forward", season_phase_feed_forward_payload),
+                    ("des_analysis_report", des_analysis_payload),
+                ]
+            )
+            | {
+                key: value
+                for key, value in {
+                    "activities_actual": actual_version,
+                    "activities_trend": trend_version,
+                }.items()
+                if value
+            },
+            athlete_failure_prefix="Phase athlete snapshot freshness failed",
+            planning_failure_prefix="Phase planning snapshot freshness failed",
+        )
+        if snapshot_preflight.error:
+            message = snapshot_preflight.error
+            _log(message, logging.ERROR)
+            additional_steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
+            return PhaseBundleOutcome(additional_steps=additional_steps, phase_tasks=phase_tasks, error=message)
+        snapshot_prompt_blocks = snapshot_preflight.prompt_blocks or _build_snapshot_prompt_blocks(
+            athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
+            planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
+        )
+        athlete_state_snapshot_block = snapshot_prompt_blocks.athlete_state_snapshot_block
+        planning_context_snapshot_block = snapshot_prompt_blocks.planning_context_snapshot_block
+        # Previous-week DES_ANALYSIS_REPORT/ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is
+        # injected below via resolved_activity_block/resolved_report_evidence_block (built
+        # further down once evidence_resolution's versions are available) -- no tool-usage
+        # instruction line is needed here, unlike the week-planning call site below.
+        historical_context_line = ""
+        spec = AGENTS["phase_architect"]
+        phase_task_labels = ", ".join(task.value for task in phase_tasks)
+        selected_structure_context = build_selected_scenario_structure_block(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=None,
+        )
+        selected_scenario_contract = build_selected_scenario_contract_block(
+            season_scenarios_payload=season_scenarios_payload or {},
+            selection_payload=selection_payload or {},
+            selected_scenario_id=None,
+        )
+        phase_slot_context = build_season_phase_slot_block(
+            selected_structure_context=selected_structure_context.payload,
+            target_week=phase_range.start,
+        )
+        phase_execution_seed = build_phase_execution_context(
+            target_week=target,
+            phase_info=phase_info,
+            phase_range=phase_range,
+            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+            phase_slot_context=phase_slot_context.payload,
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            load_capacity_context={},
+        )
+        phase_execution_issues = [
+            str(item)
+            for item in phase_execution_seed.get("blocking_issues") or []
+            if str(item).strip()
+        ]
+        if phase_execution_issues:
+            message = "Phase execution context is incomplete: " + "; ".join(phase_execution_issues)
+            _log(message, logging.ERROR)
+            additional_steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
+            return PhaseBundleOutcome(additional_steps=additional_steps, phase_tasks=phase_tasks, error=message)
+        week_role_raw = phase_execution_seed.get("week_role_by_iso_week")
+        week_role_by_week = {
+            str(key): str(value)
+            for key, value in week_role_raw.items()
+        } if isinstance(week_role_raw, dict) else {}
+        phase_role_by_week = {
+            str(week_key): str(phase_execution_seed.get("phase_role") or "")
+            for week_key in week_role_by_week
+        }
+        load_capacity_context = build_load_capacity_block(
+            target_week=target,
+            phase_range=phase_range,
+            athlete_profile_payload=athlete_profile_payload or {},
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+            wellness_payload=wellness_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            kpi_rate_band=selected_kpi_rate_band,
+            week_role_by_week=week_role_by_week,
+            phase_role_by_week=phase_role_by_week,
+            scenario_cadence=phase_execution_seed.get("scenario_cadence"),
+        )
+        phase_execution_block = render_phase_execution_context_block(
+            build_phase_execution_context(
+                target_week=target,
+                phase_info=phase_info,
+                phase_range=phase_range,
+                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                phase_slot_context=phase_slot_context.payload,
+                availability_payload=availability_payload or {},
+                logistics_payload=logistics_payload or {},
+                planning_events_payload=planning_events_payload or {},
+                load_capacity_context=load_capacity_context.payload,
+            )
+        )
+        # Previous-week ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is already injected via
+        # planning_context_snapshot_block's "activity" prompt block (save_planning_context_snapshot
+        # below passes the same activities_actual_version/activities_trend_version) -- do not
+        # duplicate it here with a second build_resolved_activity_context_block call.
+        resolved_report_evidence_block = build_resolved_report_evidence_block(
+            store,
+            athlete_id,
+            des_analysis_report_version=evidence_resolution.des_analysis_report_version if evidence_resolution else None,
+        )
+        prior_phase_artefacts_block = _build_prior_phase_artefacts_block(
+            store, index_query, athlete_id, phase_range
+        )
+        injected_block = render_context_blocks(
+            [selected_structure_context, selected_scenario_contract, phase_slot_context, load_capacity_context]
+        ) + phase_execution_block + resolved_report_evidence_block + prior_phase_artefacts_block
+        message = (
+            f"Running Phase-Architect Flow for phase range {phase_range_label} "
+            f"covering tasks: {phase_task_labels}."
+        )
+        _log(message)
+        with guardrail_runtime_context(
+            phase_execution_context=build_phase_execution_context(
+                target_week=target,
+                phase_info=phase_info,
+                phase_range=phase_range,
+                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                phase_slot_context=phase_slot_context.payload,
+                availability_payload=availability_payload or {},
+                logistics_payload=logistics_payload or {},
+                planning_events_payload=planning_events_payload or {},
+                load_capacity_context=load_capacity_context.payload,
+            )
+        ):
+            out = run_agent_multi_output(
+                runtime_for(spec.name),
+                agent_name=spec.name,
+                athlete_id=athlete_id,
+                tasks=phase_tasks,
+                user_input=(
+                    f"Create phase artefacts {phase_task_labels} for phase range {phase_range_label} "
+                    f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
+                    "Use this phase range as the iso_week_range for the artefacts. "
+                    "Season plan, deterministic phase authority, previous-week evidence, and any prior "
+                    "artefacts for this exact range are already provided below as injected context; "
+                    "no workspace tools are available or needed for this task. "
+                    f"{athlete_state_snapshot_block}"
+                    f"{planning_context_snapshot_block}"
+                    f"{historical_context_line}"
+                    f"{user_data_block}"
+                    f"{override_line}"
+                    f"{injected_block}"
+                ),
+                run_id=f"{run_id}_phase_bundle",
+                model_override=model_resolver(spec.name) if model_resolver else None,
+                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            )
+        additional_steps.append({"agent": "phase_architect", "tasks": [task.value for task in phase_tasks], "result": out})
+        if out.get("ok") and out.get("produced"):
+            _log("Done.")
+
+    refreshed_index_query = IndexExactQuery(
+        root=store.root,
+        athlete_id=athlete_id,
+    )
+    required_phase_artefacts = list(phase_refresh_plan.required_phase_artefacts)
+    if required_phase_artefacts:
+        phase_steps_ok = all(
+            isinstance((result := step.get("result")), dict) and bool(result.get("ok"))
+            for step in additional_steps
+            if step.get("agent") == "phase_architect"
+        )
+        if not phase_steps_ok:
+            message = f"Scoped phase run failed for range {phase_range_label}."
+            _log(message, logging.ERROR)
+            return PhaseBundleOutcome(additional_steps=additional_steps, phase_tasks=phase_tasks, error=message)
+        missing_required = [
+            artifact_type
+            for artifact_type in required_phase_artefacts
+            if not refreshed_index_query.has_exact_range(artifact_type.value, phase_range)
+        ]
+        if missing_required:
+            missing_labels = ", ".join(artifact_type.value for artifact_type in missing_required)
+            message = (
+                f"Required isolated phase artefacts missing for range {phase_range_label}: "
+                f"{missing_labels}."
+            )
+            _log(message, logging.ERROR)
+            additional_steps.append(
+                {
+                    "agent": "phase_architect",
+                    "tasks": [],
+                    "result": {"ok": False, "error": f"Missing isolated phase artefacts: {missing_labels}"},
+                }
+            )
+            return PhaseBundleOutcome(additional_steps=additional_steps, phase_tasks=phase_tasks, error=message)
+        completed_phase_steps = [task.value.removeprefix("CREATE_") for task in phase_tasks] or sorted(forced_steps)
+        label = "Scoped phase run" if len(completed_phase_steps) > 1 else "Isolated phase run"
+        _log(
+            f"{label} completed for range {phase_range_label} "
+            f"(forced_steps={completed_phase_steps})."
+        )
+        return PhaseBundleOutcome(
+            additional_steps=additional_steps,
+            phase_tasks=phase_tasks,
+            isolated_run_complete=True,
+        )
+
+    return PhaseBundleOutcome(additional_steps=additional_steps, phase_tasks=phase_tasks)
+
+
+def _run_week_planning(
+    *,
+    store: LocalArtifactStore,
+    athlete_id: str,
+    workspace: Workspace,
+    index_query: IndexExactQuery,
+    target: IsoWeek,
+    phase_info: SeasonPlanPhaseInfo,
+    phase_range: IsoWeekRange,
+    phase_range_label: str,
+    target_label: str,
+    season_plan: JsonMap,
+    phase_guardrails_mtime: float | None,
+    phase_structure_mtime: float | None,
+    season_plan_mtime: float | None,
+    phase_refresh_plan: PhaseRefreshPlan,
+    forced_steps: set[str],
+    runtime_for: Callable[[str], AgentRuntime],
+    run_id: str,
+    model_resolver: Callable[[str], str] | None,
+    temperature_resolver: Callable[[str], float | None] | None,
+    reasoning_effort_resolver: Callable[[str], str | None] | None,
+    reasoning_summary_resolver: Callable[[str], str | None] | None,
+    user_data_block: str,
+    override_line: str,
+    selected_kpi_rate_band: JsonMap | None,
+    kpi_block: str,
+) -> WeekPlanningOutcome:
+    """Run the week-planner agent for the target ISO week if needed.
+
+    Validates that required phase artefacts are present, decides whether the week
+    plan needs (re)creation, runs the week-planner agent when needed, and returns
+    a typed outcome the caller can use for the export gate and final result.
+    """
+    additional_steps: list[StepRecord] = []
+
+    if not index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range) or not index_query.has_exact_range(
+        ArtifactType.PHASE_STRUCTURE.value, phase_range
+    ):
+        message = (
+            f"Required phase artefacts missing for range {phase_range_label}. "
+            "Cannot proceed to Week-Planner."
+        )
+        _log(message, logging.ERROR)
+        additional_steps.append(
+            {
+                "agent": "week_planner",
+                "tasks": [],
+                "result": {"ok": False, "error": "Missing phase artefacts"},
+            }
+        )
+        return WeekPlanningOutcome(
+            additional_steps=additional_steps,
+            needs_week_plan=False,
+            week_tasks=[],
+            week_run_ok=None,
+            plan_mtime=None,
+            error=message,
+        )
+
+    week_tasks: list[AgentTask] = []
+    version_key = target_label
+    resolved_key = store.resolve_week_version_key(athlete_id, ArtifactType.WEEK_PLAN, version_key)
+    version_exists = resolved_key is not None
+    plan_path = store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, resolved_key) if resolved_key else None
+    plan_mtime = _mtime(plan_path)
+    needs_week_plan = (not version_exists) or ("WEEK_PLAN" in forced_steps)
+    if season_plan_mtime and plan_mtime and season_plan_mtime > plan_mtime:
+        needs_week_plan = True
+    if phase_guardrails_mtime and plan_mtime and phase_guardrails_mtime > plan_mtime:
+        needs_week_plan = True
+    if phase_structure_mtime and plan_mtime and phase_structure_mtime > plan_mtime:
+        needs_week_plan = True
+    if phase_refresh_plan.needs_phase_guardrails or phase_refresh_plan.needs_phase_structure:
+        needs_week_plan = True
+
+    if not needs_week_plan:
+        message = f"Found WEEK_PLAN for ISO week {target_label}."
+        _log(message)
+    else:
+        if workspace.latest_exists(ArtifactType.WEEK_PLAN):
+            plan = workspace.get_latest(ArtifactType.WEEK_PLAN)
+            if isinstance(plan, dict):
+                plan_week_env = envelope_week(plan)
+                if plan_week_env and (plan_week_env.year == target.year and plan_week_env.week == target.week):
+                    message = (
+                        f"WEEK_PLAN matches ISO week {target_label} but is stale. Will create."
+                    )
+                    _log(message)
+                else:
+                    message = f"WEEK_PLAN does not match ISO week {target_label}. Will create."
+                    _log(message)
+            else:
+                message = f"WEEK_PLAN does not match ISO week {target_label}. Will create."
+                _log(message)
+        else:
+            message = f"WEEK_PLAN NOT FOUND. Will create for ISO week {target_label}."
+            _log(message)
+        week_tasks.append(AgentTask.CREATE_WEEK_PLAN)
+
+    week_run_ok: bool | None = None
+    if week_tasks:
+        latest_payloads = _load_common_latest_payloads(store, athlete_id)
+        availability_payload = latest_payloads.availability_payload
+        planning_events_payload = latest_payloads.planning_events_payload
+        athlete_profile_payload = latest_payloads.athlete_profile_payload
+        kpi_profile_payload = latest_payloads.kpi_profile_payload
+        logistics_payload = latest_payloads.logistics_payload
+        zone_model_payload = latest_payloads.zone_model_payload
+        wellness_payload = latest_payloads.wellness_payload
+        selection_payload = latest_payloads.selection_payload
+        phase_guardrails_payload = _load_exact_range_payload(
+            store,
+            index_query,
+            athlete_id,
+            ArtifactType.PHASE_GUARDRAILS,
+            phase_range,
+        )
+        phase_structure_payload = _load_exact_range_payload(
+            store,
+            index_query,
+            athlete_id,
+            ArtifactType.PHASE_STRUCTURE,
+            phase_range,
+        )
+        phase_feed_forward_payload = _load_week_version_payload(
+            store,
+            athlete_id,
+            ArtifactType.PHASE_FEED_FORWARD,
+            target_label,
+        )
+        week_report_gate = _resolve_previous_week_report_gate(
+            runtime_for,
+            athlete_id=athlete_id,
+            target_week=target,
+            run_id=run_id,
+            model_resolver=model_resolver,
+            temperature_resolver=temperature_resolver,
+            reasoning_effort_resolver=reasoning_effort_resolver,
+            reasoning_summary_resolver=reasoning_summary_resolver,
+        )
+        if week_report_gate.report_result and isinstance(week_report_gate.report_result.get("step"), dict):
+            additional_steps.append(cast(StepRecord, week_report_gate.report_result["step"]))
+        if week_report_gate.error or week_report_gate.evidence_resolution is None:
+            message = week_report_gate.error or "Week evidence/report gate failed."
+            _log(message, logging.ERROR)
+            additional_steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
+            return WeekPlanningOutcome(
+                additional_steps=additional_steps,
+                needs_week_plan=needs_week_plan,
+                week_tasks=week_tasks,
+                week_run_ok=None,
+                plan_mtime=plan_mtime,
+                error=message,
+            )
+        evidence_resolution = week_report_gate.evidence_resolution
+        des_analysis_payload = week_report_gate.des_analysis_payload
+        actual_version = evidence_resolution.activities_actual_version
+        trend_version = evidence_resolution.activities_trend_version
+        evidence_payloads = load_evidence_payloads(
+            store,
+            athlete_id,
+            resolution=evidence_resolution,
+            include_report=False,
+        )
+        week_evidence_alignment_payload = build_evidence_alignment_payload(
+            scope="week",
+            target_week=target,
+            evidence_week=evidence_resolution.evidence_week,
+            des_analysis_payload=des_analysis_payload or {},
+            activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
+            activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
+        )
+        # Previous-week DES_ANALYSIS_REPORT/ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is already
+        # injected below via planning_context_snapshot_block's "activity"/"des_report" prompt
+        # blocks (save_planning_context_snapshot below passes the same versions) -- no tool-usage
+        # instruction line is needed here, matching the phase-architect call site above.
+        historical_context_line = ""
+        athlete_state_snapshot = save_athlete_state_snapshot(
+            store,
+            athlete_id,
+            target_week=target,
+            run_id=run_id,
+            athlete_profile_payload=athlete_profile_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            selection_payload=selection_payload or {},
+            availability_payload=availability_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            wellness_payload=wellness_payload or {},
+        )
+        planning_context_snapshot = save_planning_context_snapshot(
+            store,
+            athlete_id,
+            target_week=target,
+            phase_info=phase_info,
+            season_plan_payload=season_plan,
+            phase_range=phase_range,
+            run_id=run_id,
+            phase_guardrails_payload=phase_guardrails_payload or {},
+            phase_structure_payload=phase_structure_payload or {},
+            availability_payload=availability_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            phase_feed_forward_payload=phase_feed_forward_payload or {},
+            activities_actual_version=actual_version,
+            activities_trend_version=trend_version,
+            des_analysis_payload=des_analysis_payload or {},
+            des_analysis_version=evidence_resolution.des_analysis_report_version,
+            evidence_alignment_payload=week_evidence_alignment_payload,
+        )
+        snapshot_preflight = _prepare_snapshot_preflight(
+            athlete_state_snapshot=athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
+            planning_context_snapshot=planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
+            athlete_expected_source_versions=_expected_source_versions(
+                [
+                    ("athlete_profile", athlete_profile_payload),
+                    ("kpi_profile", kpi_profile_payload),
+                    ("season_scenario_selection", selection_payload),
+                    ("availability", availability_payload),
+                    ("planning_events", planning_events_payload),
+                    ("logistics", logistics_payload),
+                    ("zone_model", zone_model_payload),
+                    ("wellness", wellness_payload),
+                ]
+            ),
+            planning_expected_source_versions=_expected_source_versions(
+                [
+                    ("season_plan", season_plan if isinstance(season_plan, dict) else None),
+                    ("phase_guardrails", phase_guardrails_payload),
+                    ("phase_structure", phase_structure_payload),
+                    ("availability", availability_payload),
+                    ("planning_events", planning_events_payload),
+                    ("phase_feed_forward", phase_feed_forward_payload),
+                    ("des_analysis_report", des_analysis_payload),
+                ]
+            )
+            | {
+                key: value
+                for key, value in {
+                    "activities_actual": actual_version,
+                    "activities_trend": trend_version,
+                }.items()
+                if value
+            },
+            athlete_failure_prefix="Week athlete snapshot freshness failed",
+            planning_failure_prefix="Week planning snapshot freshness failed",
+        )
+        if snapshot_preflight.error:
+            message = snapshot_preflight.error
+            _log(message, logging.ERROR)
+            additional_steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
+            return WeekPlanningOutcome(
+                additional_steps=additional_steps,
+                needs_week_plan=needs_week_plan,
+                week_tasks=week_tasks,
+                week_run_ok=None,
+                plan_mtime=plan_mtime,
+                error=message,
+            )
+        snapshot_prompt_blocks = snapshot_preflight.prompt_blocks or _build_snapshot_prompt_blocks(
+            athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
+            planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
+        )
+        athlete_state_snapshot_block = snapshot_prompt_blocks.athlete_state_snapshot_block
+        planning_context_snapshot_block = snapshot_prompt_blocks.planning_context_snapshot_block
+        spec = AGENTS["week_planner"]
+        message = f"Running Week-Planner for ISO week {target_label}."
+        _log(message)
+        load_capacity_context = build_load_capacity_block(
+            target_week=target,
+            phase_range=phase_range,
+            athlete_profile_payload=athlete_profile_payload or {},
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+            phase_guardrails_payload=phase_guardrails_payload or {},
+            wellness_payload=wellness_payload or {},
+            kpi_profile_payload=kpi_profile_payload or {},
+            kpi_rate_band=selected_kpi_rate_band,
+        )
+        workout_load_method_block = build_workout_load_method_block(
+            athlete_profile_payload=athlete_profile_payload or {},
+            zone_model_payload=zone_model_payload or {},
+            allowed_intensity_domains=load_capacity_context.payload.get("allowed_intensity_domains") or [],
+        )
+        # Whole-phase execution context (cadence family, every week's role/band, deload intent) --
+        # the phase is already persisted in season_plan by the time weeks are planned, so
+        # phase_slot_context ({}) is unnecessary here; build_phase_execution_context falls back
+        # to phase_info.raw for cadence/week-role derivation the same way. This is not covered by
+        # week_calendar_block/planning_context_snapshot_block, which only carry the target week's
+        # slice of phase authority.
+        phase_execution_block = render_phase_execution_context_block(
+            build_phase_execution_context(
+                target_week=target,
+                phase_info=phase_info,
+                phase_range=phase_range,
+                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
+                phase_slot_context={},
+                availability_payload=availability_payload or {},
+                logistics_payload=logistics_payload or {},
+                planning_events_payload=planning_events_payload or {},
+                load_capacity_context=load_capacity_context.payload,
+            )
+        )
+        week_calendar_context = build_week_calendar_context(
+            target_week=target,
+            phase_info=phase_info,
+            phase_range=phase_range,
+            availability_payload=availability_payload or {},
+            logistics_payload=logistics_payload or {},
+            planning_events_payload=planning_events_payload or {},
+            phase_guardrails_payload=phase_guardrails_payload or {},
+            phase_structure_payload=phase_structure_payload or {},
+            load_capacity_context=load_capacity_context.payload,
+        )
+        active_weekly_band = week_calendar_context.get("active_weekly_kj_band")
+        if not isinstance(active_weekly_band, dict) or not active_weekly_band:
+            message = "Week calendar context is incomplete: active weekly load band is missing."
+            _log(message, logging.ERROR)
+            additional_steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
+            return WeekPlanningOutcome(
+                additional_steps=additional_steps,
+                needs_week_plan=needs_week_plan,
+                week_tasks=week_tasks,
+                week_run_ok=None,
+                plan_mtime=plan_mtime,
+                error=message,
+            )
+        week_calendar_block = render_week_calendar_context_block(week_calendar_context)
+        injected_block = (
+            render_context_blocks([load_capacity_context, workout_load_method_block])
+            + week_calendar_block
+            + phase_execution_block
+        )
+        with guardrail_runtime_context(
+            availability_payload=availability_payload or {},
+            target_week=target,
+            week_calendar_context=week_calendar_context,
+        ):
+            out = run_agent_multi_output(
+                runtime_for(spec.name),
+                agent_name=spec.name,
+                athlete_id=athlete_id,
+                tasks=week_tasks,
+                user_input=(
+                    f"Create week_plan for ISO week {target_label} only (Mon-Sun of that week). "
+                    "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
+                    "PHASE_GUARDRAILS and PHASE_STRUCTURE for this exact phase range are already provided below "
+                    "as injected context; no workspace tools are available or needed for this task. "
+                    f"{athlete_state_snapshot_block}"
+                    f"{planning_context_snapshot_block}"
+                    f"{historical_context_line}"
+                    f"{user_data_block}"
+                    f"{kpi_block}"
+                    f"{override_line}"
+                    f"{injected_block}"
+                ),
+                run_id=f"{run_id}_week",
+                model_override=model_resolver(spec.name) if model_resolver else None,
+                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
+            )
+        additional_steps.append({"agent": "week_planner", "tasks": [t.value for t in week_tasks], "result": out})
+        week_run_ok = bool(out.get("ok") and out.get("produced"))
+        if out.get("ok") and out.get("produced"):
+            _log("Done.")
+
+    return WeekPlanningOutcome(
+        additional_steps=additional_steps,
+        needs_week_plan=needs_week_plan,
+        week_tasks=week_tasks,
+        week_run_ok=week_run_ok,
+        plan_mtime=plan_mtime,
+    )
+
+
 def plan_week(
     runtime: AgentRuntime,
     *,
@@ -1061,11 +1926,6 @@ def plan_week(
         athlete_id=athlete_id,
     )
 
-    def _mtime(path) -> float | None:
-        if not path or not path.exists():
-            return None
-        return path.stat().st_mtime
-
     def _latest_range_record(artifact_type: ArtifactType):
         index = index_query._index_manager.load()
         artefacts = index.get("artefacts", {})
@@ -1104,713 +1964,83 @@ def plan_week(
     phase_structure_record, phase_structure_path, phase_structure_mtime = _latest_range_record(ArtifactType.PHASE_STRUCTURE)
     phase_preview_record, phase_preview_path, phase_preview_mtime = _latest_range_record(ArtifactType.PHASE_PREVIEW)
 
-    needs_phase_guardrails = phase_guardrails_path is None or "PHASE_GUARDRAILS" in forced_steps
-    if season_plan_mtime and phase_guardrails_mtime and season_plan_mtime > phase_guardrails_mtime:
-        needs_phase_guardrails = True
-
-    needs_phase_structure = phase_structure_path is None or "PHASE_STRUCTURE" in forced_steps
-    if season_plan_mtime and phase_structure_mtime and season_plan_mtime > phase_structure_mtime:
-        needs_phase_structure = True
-    if phase_guardrails_mtime and phase_structure_mtime and phase_guardrails_mtime > phase_structure_mtime:
-        needs_phase_structure = True
-
-    needs_phase_preview = phase_preview_path is None or "PHASE_PREVIEW" in forced_steps
-    if phase_structure_mtime and phase_preview_mtime and phase_structure_mtime > phase_preview_mtime:
-        needs_phase_preview = True
-
-    if forced_steps == {"PHASE_GUARDRAILS"}:
-        needs_phase_structure = False
-        needs_phase_preview = False
-    elif "PHASE_GUARDRAILS" in forced_steps or "PHASE_STRUCTURE" in forced_steps:
-        needs_phase_preview = True
-
-    if needs_phase_guardrails and not isolated_phase_force:
-        needs_phase_structure = True
-        needs_phase_preview = True
-    if needs_phase_structure and not isolated_phase_force:
-        needs_phase_preview = True
-
-    phase_refresh_plan = PhaseRefreshPlan(
-        needs_phase_guardrails=needs_phase_guardrails,
-        needs_phase_structure=needs_phase_structure,
-        needs_phase_preview=needs_phase_preview,
-        forced_steps=frozenset(forced_steps),
+    phase_refresh_plan = _resolve_phase_refresh_plan(
+        forced_steps=forced_steps,
         isolated_phase_force=isolated_phase_force,
-        required_phase_artefacts=tuple(_required_phase_artefacts_for_forced_steps(forced_steps)),
+        season_plan_mtime=season_plan_mtime,
+        phase_guardrails_exists=phase_guardrails_path is not None,
+        phase_guardrails_mtime=phase_guardrails_mtime,
+        phase_structure_exists=phase_structure_path is not None,
+        phase_structure_mtime=phase_structure_mtime,
+        phase_preview_exists=phase_preview_path is not None,
+        phase_preview_mtime=phase_preview_mtime,
     )
 
-    if isolated_phase_force and forced_steps == {"PHASE_GUARDRAILS"}:
-        _log(
-            f"Scoped phase guardrails run requested for range {phase_range_label}; "
-            "PHASE_STRUCTURE and PHASE_PREVIEW will be reused if present and will not be rerun."
-        )
-    elif isolated_phase_force and forced_steps == {"PHASE_STRUCTURE"}:
-        _log(
-            f"Scoped phase structure run requested for range {phase_range_label}; "
-            "PHASE_PREVIEW is included in this scoped run and will be rerun after PHASE_STRUCTURE."
-        )
-    elif isolated_phase_force and forced_steps == {"PHASE_PREVIEW"}:
-        _log(
-            f"Scoped phase preview run requested for range {phase_range_label}; "
-            "only PHASE_PREVIEW will be rerun."
-        )
-    elif isolated_phase_force and forced_steps:
-        _log(
-            f"Scoped phase run requested for range {phase_range_label}; "
-            f"bundled phase artefacts: {', '.join(sorted(forced_steps))}."
-        )
-
-    phase_tasks: list[AgentTask] = []
-    if not phase_refresh_plan.needs_phase_guardrails:
-        message = f"Found PHASE_GUARDRAILS for phase range {phase_range_label}."
-        _log(message)
-    else:
-        message = f"PHASE_GUARDRAILS missing/stale for phase range {phase_range_label}. Will create."
-        _log(message)
-        phase_tasks.append(AgentTask.CREATE_PHASE_GUARDRAILS)
-
-    if not phase_refresh_plan.needs_phase_structure:
-        if forced_steps == {"PHASE_GUARDRAILS"}:
-            message = (
-                f"Reusing existing PHASE_STRUCTURE for phase range {phase_range_label}; "
-                "not queued for this scoped run."
-            )
-        else:
-            message = f"Found PHASE_STRUCTURE for phase range {phase_range_label}."
-        _log(message)
-    else:
-        message = f"PHASE_STRUCTURE missing/stale for phase range {phase_range_label}. Will create."
-        _log(message)
-        phase_tasks.append(AgentTask.CREATE_PHASE_STRUCTURE)
-
-    if not phase_refresh_plan.needs_phase_preview:
-        if forced_steps == {"PHASE_GUARDRAILS"}:
-            message = (
-                f"Reusing existing PHASE_PREVIEW for phase range {phase_range_label}; "
-                "not queued for this scoped run."
-            )
-        else:
-            message = f"Found PHASE_PREVIEW for phase range {phase_range_label}."
-        _log(message)
-    else:
-        message = f"PHASE_PREVIEW missing/stale for phase range {phase_range_label}. Will create."
-        _log(message)
-        phase_tasks.append(AgentTask.CREATE_PHASE_PREVIEW)
-
-    if phase_tasks:
-        latest_payloads = _load_common_latest_payloads(store, athlete_id)
-        availability_payload = latest_payloads.availability_payload
-        planning_events_payload = latest_payloads.planning_events_payload
-        athlete_profile_payload = latest_payloads.athlete_profile_payload
-        kpi_profile_payload = latest_payloads.kpi_profile_payload
-        logistics_payload = latest_payloads.logistics_payload
-        zone_model_payload = latest_payloads.zone_model_payload
-        wellness_payload = latest_payloads.wellness_payload
-        selection_payload = latest_payloads.selection_payload
-        season_scenarios_payload = store.load_latest_payload(athlete_id, ArtifactType.SEASON_SCENARIOS)
-        season_phase_feed_forward_payload = _load_week_version_payload(
-            store,
-            athlete_id,
-            ArtifactType.SEASON_PHASE_FEED_FORWARD,
-            target_label,
-        )
-        phase_report_gate = _resolve_previous_week_report_gate(
-            runtime_for,
-            athlete_id=athlete_id,
-            target_week=target,
-            run_id=run_id,
-            model_resolver=model_resolver,
-            temperature_resolver=temperature_resolver,
-            reasoning_effort_resolver=reasoning_effort_resolver,
-            reasoning_summary_resolver=reasoning_summary_resolver,
-        )
-        if phase_report_gate.report_result and isinstance(phase_report_gate.report_result.get("step"), dict):
-            steps.append(cast(StepRecord, phase_report_gate.report_result["step"]))
-        if phase_report_gate.error or phase_report_gate.evidence_resolution is None:
-            message = phase_report_gate.error or "Phase evidence/report gate failed."
-            _log(message, logging.ERROR)
-            steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
-            return PlanWeekResult(ok=False, steps=steps)
-        evidence_resolution = phase_report_gate.evidence_resolution
-        des_analysis_payload = phase_report_gate.des_analysis_payload
-        actual_version = evidence_resolution.activities_actual_version
-        trend_version = evidence_resolution.activities_trend_version
-        evidence_payloads = load_evidence_payloads(
-            store,
-            athlete_id,
-            resolution=evidence_resolution,
-            include_report=False,
-        )
-        phase_evidence_alignment_payload = build_evidence_alignment_payload(
-            scope="phase",
-            target_week=target,
-            evidence_week=evidence_resolution.evidence_week,
-            des_analysis_payload=des_analysis_payload or {},
-            activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
-            activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
-        )
-        athlete_state_snapshot = save_athlete_state_snapshot(
-            store,
-            athlete_id,
-            target_week=target,
-            run_id=run_id,
-            athlete_profile_payload=athlete_profile_payload or {},
-            kpi_profile_payload=kpi_profile_payload or {},
-            selection_payload=selection_payload or {},
-            availability_payload=availability_payload or {},
-            planning_events_payload=planning_events_payload or {},
-            logistics_payload=logistics_payload or {},
-            zone_model_payload=zone_model_payload or {},
-            wellness_payload=wellness_payload or {},
-        )
-        planning_context_snapshot = save_planning_context_snapshot(
-            store,
-            athlete_id,
-            target_week=target,
-            phase_info=phase_info,
-            season_plan_payload=season_plan,
-            phase_range=phase_range,
-            run_id=run_id,
-            availability_payload=availability_payload or {},
-            planning_events_payload=planning_events_payload or {},
-            season_phase_feed_forward_payload=season_phase_feed_forward_payload or {},
-            activities_actual_version=actual_version,
-            activities_trend_version=trend_version,
-            des_analysis_payload=des_analysis_payload or {},
-            des_analysis_version=evidence_resolution.des_analysis_report_version,
-            evidence_alignment_payload=phase_evidence_alignment_payload,
-        )
-        snapshot_preflight = _prepare_snapshot_preflight(
-            athlete_state_snapshot=athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
-            planning_context_snapshot=planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
-            athlete_expected_source_versions=_expected_source_versions(
-                [
-                    ("athlete_profile", athlete_profile_payload),
-                    ("kpi_profile", kpi_profile_payload),
-                    ("season_scenario_selection", selection_payload),
-                    ("availability", availability_payload),
-                    ("planning_events", planning_events_payload),
-                    ("logistics", logistics_payload),
-                    ("zone_model", zone_model_payload),
-                    ("wellness", wellness_payload),
-                ]
-            ),
-            planning_expected_source_versions=_expected_source_versions(
-                [
-                    ("season_plan", season_plan if isinstance(season_plan, dict) else None),
-                    ("availability", availability_payload),
-                    ("planning_events", planning_events_payload),
-                    ("season_phase_feed_forward", season_phase_feed_forward_payload),
-                    ("des_analysis_report", des_analysis_payload),
-                ]
-            )
-            | {
-                key: value
-                for key, value in {
-                    "activities_actual": actual_version,
-                    "activities_trend": trend_version,
-                }.items()
-                if value
-            },
-            athlete_failure_prefix="Phase athlete snapshot freshness failed",
-            planning_failure_prefix="Phase planning snapshot freshness failed",
-        )
-        if snapshot_preflight.error:
-            message = snapshot_preflight.error
-            _log(message, logging.ERROR)
-            steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
-            return PlanWeekResult(ok=False, steps=steps)
-        snapshot_prompt_blocks = snapshot_preflight.prompt_blocks or _build_snapshot_prompt_blocks(
-            athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
-            planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
-        )
-        athlete_state_snapshot_block = snapshot_prompt_blocks.athlete_state_snapshot_block
-        planning_context_snapshot_block = snapshot_prompt_blocks.planning_context_snapshot_block
-        # Previous-week DES_ANALYSIS_REPORT/ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is
-        # injected below via resolved_activity_block/resolved_report_evidence_block (built
-        # further down once evidence_resolution's versions are available) -- no tool-usage
-        # instruction line is needed here, unlike the week-planning call site below.
-        historical_context_line = ""
-        spec = AGENTS["phase_architect"]
-        phase_task_labels = ", ".join(task.value for task in phase_tasks)
-        selected_structure_context = build_selected_scenario_structure_block(
-            season_scenarios_payload=season_scenarios_payload or {},
-            selection_payload=selection_payload or {},
-            selected_scenario_id=None,
-        )
-        selected_scenario_contract = build_selected_scenario_contract_block(
-            season_scenarios_payload=season_scenarios_payload or {},
-            selection_payload=selection_payload or {},
-            selected_scenario_id=None,
-        )
-        phase_slot_context = build_season_phase_slot_block(
-            selected_structure_context=selected_structure_context.payload,
-            target_week=phase_range.start,
-        )
-        phase_execution_seed = build_phase_execution_context(
-            target_week=target,
-            phase_info=phase_info,
-            phase_range=phase_range,
-            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
-            phase_slot_context=phase_slot_context.payload,
-            availability_payload=availability_payload or {},
-            logistics_payload=logistics_payload or {},
-            planning_events_payload=planning_events_payload or {},
-            load_capacity_context={},
-        )
-        phase_execution_issues = [
-            str(item)
-            for item in phase_execution_seed.get("blocking_issues") or []
-            if str(item).strip()
-        ]
-        if phase_execution_issues:
-            message = "Phase execution context is incomplete: " + "; ".join(phase_execution_issues)
-            _log(message, logging.ERROR)
-            steps.append({"agent": "phase_architect", "tasks": [], "result": {"ok": False, "error": message}})
-            return PlanWeekResult(ok=False, steps=steps)
-        week_role_raw = phase_execution_seed.get("week_role_by_iso_week")
-        week_role_by_week = {
-            str(key): str(value)
-            for key, value in week_role_raw.items()
-        } if isinstance(week_role_raw, dict) else {}
-        phase_role_by_week = {
-            str(week_key): str(phase_execution_seed.get("phase_role") or "")
-            for week_key in week_role_by_week
-        }
-        load_capacity_context = build_load_capacity_block(
-            target_week=target,
-            phase_range=phase_range,
-            athlete_profile_payload=athlete_profile_payload or {},
-            availability_payload=availability_payload or {},
-            logistics_payload=logistics_payload or {},
-            zone_model_payload=zone_model_payload or {},
-            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
-            wellness_payload=wellness_payload or {},
-            kpi_profile_payload=kpi_profile_payload or {},
-            kpi_rate_band=selected_kpi_rate_band,
-            week_role_by_week=week_role_by_week,
-            phase_role_by_week=phase_role_by_week,
-            scenario_cadence=phase_execution_seed.get("scenario_cadence"),
-        )
-        phase_execution_block = render_phase_execution_context_block(
-            build_phase_execution_context(
-                target_week=target,
-                phase_info=phase_info,
-                phase_range=phase_range,
-                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
-                phase_slot_context=phase_slot_context.payload,
-                availability_payload=availability_payload or {},
-                logistics_payload=logistics_payload or {},
-                planning_events_payload=planning_events_payload or {},
-                load_capacity_context=load_capacity_context.payload,
-            )
-        )
-        # Previous-week ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is already injected via
-        # planning_context_snapshot_block's "activity" prompt block (save_planning_context_snapshot
-        # below passes the same activities_actual_version/activities_trend_version) -- do not
-        # duplicate it here with a second build_resolved_activity_context_block call.
-        resolved_report_evidence_block = build_resolved_report_evidence_block(
-            store,
-            athlete_id,
-            des_analysis_report_version=evidence_resolution.des_analysis_report_version if evidence_resolution else None,
-        )
-        prior_phase_artefacts_block = _build_prior_phase_artefacts_block(
-            store, index_query, athlete_id, phase_range
-        )
-        injected_block = render_context_blocks(
-            [selected_structure_context, selected_scenario_contract, phase_slot_context, load_capacity_context]
-        ) + phase_execution_block + resolved_report_evidence_block + prior_phase_artefacts_block
-        message = (
-            f"Running Phase-Architect Flow for phase range {phase_range_label} "
-            f"covering tasks: {phase_task_labels}."
-        )
-        _log(message)
-        with guardrail_runtime_context(
-            phase_execution_context=build_phase_execution_context(
-                target_week=target,
-                phase_info=phase_info,
-                phase_range=phase_range,
-                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
-                phase_slot_context=phase_slot_context.payload,
-                availability_payload=availability_payload or {},
-                logistics_payload=logistics_payload or {},
-                planning_events_payload=planning_events_payload or {},
-                load_capacity_context=load_capacity_context.payload,
-            )
-        ):
-            out = run_agent_multi_output(
-                runtime_for(spec.name),
-                agent_name=spec.name,
-                athlete_id=athlete_id,
-                tasks=phase_tasks,
-                user_input=(
-                    f"Create phase artefacts {phase_task_labels} for phase range {phase_range_label} "
-                    f"(phase {phase_info.phase_id} {phase_name} {phase_type}) covering ISO week {target_label}. "
-                    "Use this phase range as the iso_week_range for the artefacts. "
-                    "Season plan, deterministic phase authority, previous-week evidence, and any prior "
-                    "artefacts for this exact range are already provided below as injected context; "
-                    "no workspace tools are available or needed for this task. "
-                    f"{athlete_state_snapshot_block}"
-                    f"{planning_context_snapshot_block}"
-                    f"{historical_context_line}"
-                    f"{user_data_block}"
-                    f"{override_line}"
-                    f"{injected_block}"
-                ),
-                run_id=f"{run_id}_phase_bundle",
-                model_override=model_resolver(spec.name) if model_resolver else None,
-                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            )
-        steps.append({"agent": "phase_architect", "tasks": [task.value for task in phase_tasks], "result": out})
-        if out.get("ok") and out.get("produced"):
-            _log("Done.")
-
-    refreshed_index_query = IndexExactQuery(
-        root=workspace.store.root,
+    phase_outcome = _run_phase_bundle(
+        store=store,
         athlete_id=athlete_id,
+        index_query=index_query,
+        target=target,
+        phase_info=phase_info,
+        phase_range=phase_range,
+        phase_range_label=phase_range_label,
+        target_label=target_label,
+        phase_name=phase_name,
+        phase_type=phase_type,
+        season_plan=season_plan,
+        phase_refresh_plan=phase_refresh_plan,
+        forced_steps=forced_steps,
+        isolated_phase_force=isolated_phase_force,
+        runtime_for=runtime_for,
+        run_id=run_id,
+        model_resolver=model_resolver,
+        temperature_resolver=temperature_resolver,
+        reasoning_effort_resolver=reasoning_effort_resolver,
+        reasoning_summary_resolver=reasoning_summary_resolver,
+        user_data_block=user_data_block,
+        override_line=override_line,
+        selected_kpi_rate_band=selected_kpi_rate_band,
     )
-    required_phase_artefacts = list(phase_refresh_plan.required_phase_artefacts)
-    if required_phase_artefacts:
-        phase_steps_ok = all(
-            isinstance((result := step.get("result")), dict) and bool(result.get("ok"))
-            for step in steps
-            if step.get("agent") == "phase_architect"
-        )
-        if not phase_steps_ok:
-            message = f"Scoped phase run failed for range {phase_range_label}."
-            _log(message, logging.ERROR)
-            return PlanWeekResult(ok=False, steps=steps)
-        missing_required = [
-            artifact_type
-            for artifact_type in required_phase_artefacts
-            if not refreshed_index_query.has_exact_range(artifact_type.value, phase_range)
-        ]
-        if missing_required:
-            missing_labels = ", ".join(artifact_type.value for artifact_type in missing_required)
-            message = (
-                f"Required isolated phase artefacts missing for range {phase_range_label}: "
-                f"{missing_labels}."
-            )
-            _log(message, logging.ERROR)
-            steps.append(
-                {
-                    "agent": "phase_architect",
-                    "tasks": [],
-                    "result": {"ok": False, "error": f"Missing isolated phase artefacts: {missing_labels}"},
-                }
-            )
-            return PlanWeekResult(ok=False, steps=steps)
-        completed_phase_steps = [task.value.removeprefix("CREATE_") for task in phase_tasks] or sorted(forced_steps)
-        label = "Scoped phase run" if len(completed_phase_steps) > 1 else "Isolated phase run"
-        _log(
-            f"{label} completed for range {phase_range_label} "
-            f"(forced_steps={completed_phase_steps})."
-        )
+    steps.extend(phase_outcome.additional_steps)
+    if phase_outcome.error is not None:
+        return PlanWeekResult(ok=False, steps=steps)
+    if phase_outcome.isolated_run_complete:
         return PlanWeekResult(ok=True, steps=steps)
 
-    if not refreshed_index_query.has_exact_range(ArtifactType.PHASE_GUARDRAILS.value, phase_range) or not refreshed_index_query.has_exact_range(
-        ArtifactType.PHASE_STRUCTURE.value, phase_range
-    ):
-        message = (
-            f"Required phase artefacts missing for range {phase_range_label}. "
-            "Cannot proceed to Week-Planner."
-        )
-        _log(message, logging.ERROR)
-        steps.append(
-            {
-                "agent": "week_planner",
-                "tasks": [],
-                "result": {"ok": False, "error": "Missing phase artefacts"},
-            }
-        )
+    week_outcome = _run_week_planning(
+        store=store,
+        athlete_id=athlete_id,
+        workspace=workspace,
+        index_query=index_query,
+        target=target,
+        phase_info=phase_info,
+        phase_range=phase_range,
+        phase_range_label=phase_range_label,
+        target_label=target_label,
+        season_plan=season_plan,
+        phase_guardrails_mtime=phase_guardrails_mtime,
+        phase_structure_mtime=phase_structure_mtime,
+        season_plan_mtime=season_plan_mtime,
+        phase_refresh_plan=phase_refresh_plan,
+        forced_steps=forced_steps,
+        runtime_for=runtime_for,
+        run_id=run_id,
+        model_resolver=model_resolver,
+        temperature_resolver=temperature_resolver,
+        reasoning_effort_resolver=reasoning_effort_resolver,
+        reasoning_summary_resolver=reasoning_summary_resolver,
+        user_data_block=user_data_block,
+        override_line=override_line,
+        selected_kpi_rate_band=selected_kpi_rate_band,
+        kpi_block=kpi_block,
+    )
+    steps.extend(week_outcome.additional_steps)
+    if week_outcome.error is not None:
         return PlanWeekResult(ok=False, steps=steps)
-
-    week_tasks: list[AgentTask] = []
-    version_key = target_label
-    resolved_key = store.resolve_week_version_key(athlete_id, ArtifactType.WEEK_PLAN, version_key)
-    version_exists = resolved_key is not None
-    plan_path = store.versioned_path(athlete_id, ArtifactType.WEEK_PLAN, resolved_key) if resolved_key else None
-    plan_mtime = _mtime(plan_path)
-    needs_week_plan = (not version_exists) or ("WEEK_PLAN" in forced_steps)
-    if season_plan_mtime and plan_mtime and season_plan_mtime > plan_mtime:
-        needs_week_plan = True
-    if phase_guardrails_mtime and plan_mtime and phase_guardrails_mtime > plan_mtime:
-        needs_week_plan = True
-    if phase_structure_mtime and plan_mtime and phase_structure_mtime > plan_mtime:
-        needs_week_plan = True
-    if needs_phase_guardrails or needs_phase_structure:
-        needs_week_plan = True
-
-    if not needs_week_plan:
-        message = f"Found WEEK_PLAN for ISO week {target_label}."
-        _log(message)
-    else:
-        if workspace.latest_exists(ArtifactType.WEEK_PLAN):
-            plan = workspace.get_latest(ArtifactType.WEEK_PLAN)
-            if isinstance(plan, dict):
-                plan_week = envelope_week(plan)
-                if plan_week and (plan_week.year == target.year and plan_week.week == target.week):
-                    message = (
-                        f"WEEK_PLAN matches ISO week {target_label} but is stale. Will create."
-                    )
-                    _log(message)
-                else:
-                    message = f"WEEK_PLAN does not match ISO week {target_label}. Will create."
-                    _log(message)
-            else:
-                message = f"WEEK_PLAN does not match ISO week {target_label}. Will create."
-                _log(message)
-        else:
-            message = f"WEEK_PLAN NOT FOUND. Will create for ISO week {target_label}."
-            _log(message)
-        week_tasks.append(AgentTask.CREATE_WEEK_PLAN)
-
-    week_run_ok: bool | None = None
-    if week_tasks:
-        latest_payloads = _load_common_latest_payloads(store, athlete_id)
-        availability_payload = latest_payloads.availability_payload
-        planning_events_payload = latest_payloads.planning_events_payload
-        athlete_profile_payload = latest_payloads.athlete_profile_payload
-        kpi_profile_payload = latest_payloads.kpi_profile_payload
-        logistics_payload = latest_payloads.logistics_payload
-        zone_model_payload = latest_payloads.zone_model_payload
-        wellness_payload = latest_payloads.wellness_payload
-        selection_payload = latest_payloads.selection_payload
-        phase_guardrails_payload = _load_exact_range_payload(
-            store,
-            index_query,
-            athlete_id,
-            ArtifactType.PHASE_GUARDRAILS,
-            phase_range,
-        )
-        phase_structure_payload = _load_exact_range_payload(
-            store,
-            index_query,
-            athlete_id,
-            ArtifactType.PHASE_STRUCTURE,
-            phase_range,
-        )
-        phase_feed_forward_payload = _load_week_version_payload(
-            store,
-            athlete_id,
-            ArtifactType.PHASE_FEED_FORWARD,
-            target_label,
-        )
-        week_report_gate = _resolve_previous_week_report_gate(
-            runtime_for,
-            athlete_id=athlete_id,
-            target_week=target,
-            run_id=run_id,
-            model_resolver=model_resolver,
-            temperature_resolver=temperature_resolver,
-            reasoning_effort_resolver=reasoning_effort_resolver,
-            reasoning_summary_resolver=reasoning_summary_resolver,
-        )
-        if week_report_gate.report_result and isinstance(week_report_gate.report_result.get("step"), dict):
-            steps.append(cast(StepRecord, week_report_gate.report_result["step"]))
-        if week_report_gate.error or week_report_gate.evidence_resolution is None:
-            message = week_report_gate.error or "Week evidence/report gate failed."
-            _log(message, logging.ERROR)
-            steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
-            return PlanWeekResult(ok=False, steps=steps)
-        evidence_resolution = week_report_gate.evidence_resolution
-        des_analysis_payload = week_report_gate.des_analysis_payload
-        actual_version = evidence_resolution.activities_actual_version
-        trend_version = evidence_resolution.activities_trend_version
-        evidence_payloads = load_evidence_payloads(
-            store,
-            athlete_id,
-            resolution=evidence_resolution,
-            include_report=False,
-        )
-        week_evidence_alignment_payload = build_evidence_alignment_payload(
-            scope="week",
-            target_week=target,
-            evidence_week=evidence_resolution.evidence_week,
-            des_analysis_payload=des_analysis_payload or {},
-            activities_actual_payload=_as_map(evidence_payloads.get("activities_actual")),
-            activities_trend_payload=_as_map(evidence_payloads.get("activities_trend")),
-        )
-        # Previous-week DES_ANALYSIS_REPORT/ACTIVITIES_ACTUAL/ACTIVITIES_TREND content is already
-        # injected below via planning_context_snapshot_block's "activity"/"des_report" prompt
-        # blocks (save_planning_context_snapshot below passes the same versions) -- no tool-usage
-        # instruction line is needed here, matching the phase-architect call site above.
-        historical_context_line = ""
-        athlete_state_snapshot = save_athlete_state_snapshot(
-            store,
-            athlete_id,
-            target_week=target,
-            run_id=run_id,
-            athlete_profile_payload=athlete_profile_payload or {},
-            kpi_profile_payload=kpi_profile_payload or {},
-            selection_payload=selection_payload or {},
-            availability_payload=availability_payload or {},
-            planning_events_payload=planning_events_payload or {},
-            logistics_payload=logistics_payload or {},
-            zone_model_payload=zone_model_payload or {},
-            wellness_payload=wellness_payload or {},
-        )
-        planning_context_snapshot = save_planning_context_snapshot(
-            store,
-            athlete_id,
-            target_week=target,
-            phase_info=phase_info,
-            season_plan_payload=season_plan,
-            phase_range=phase_range,
-            run_id=run_id,
-            phase_guardrails_payload=phase_guardrails_payload or {},
-            phase_structure_payload=phase_structure_payload or {},
-            availability_payload=availability_payload or {},
-            planning_events_payload=planning_events_payload or {},
-            phase_feed_forward_payload=phase_feed_forward_payload or {},
-            activities_actual_version=actual_version,
-            activities_trend_version=trend_version,
-            des_analysis_payload=des_analysis_payload or {},
-            des_analysis_version=evidence_resolution.des_analysis_report_version,
-            evidence_alignment_payload=week_evidence_alignment_payload,
-        )
-        snapshot_preflight = _prepare_snapshot_preflight(
-            athlete_state_snapshot=athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
-            planning_context_snapshot=planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
-            athlete_expected_source_versions=_expected_source_versions(
-                [
-                    ("athlete_profile", athlete_profile_payload),
-                    ("kpi_profile", kpi_profile_payload),
-                    ("season_scenario_selection", selection_payload),
-                    ("availability", availability_payload),
-                    ("planning_events", planning_events_payload),
-                    ("logistics", logistics_payload),
-                    ("zone_model", zone_model_payload),
-                    ("wellness", wellness_payload),
-                ]
-            ),
-            planning_expected_source_versions=_expected_source_versions(
-                [
-                    ("season_plan", season_plan if isinstance(season_plan, dict) else None),
-                    ("phase_guardrails", phase_guardrails_payload),
-                    ("phase_structure", phase_structure_payload),
-                    ("availability", availability_payload),
-                    ("planning_events", planning_events_payload),
-                    ("phase_feed_forward", phase_feed_forward_payload),
-                    ("des_analysis_report", des_analysis_payload),
-                ]
-            )
-            | {
-                key: value
-                for key, value in {
-                    "activities_actual": actual_version,
-                    "activities_trend": trend_version,
-                }.items()
-                if value
-            },
-            athlete_failure_prefix="Week athlete snapshot freshness failed",
-            planning_failure_prefix="Week planning snapshot freshness failed",
-        )
-        if snapshot_preflight.error:
-            message = snapshot_preflight.error
-            _log(message, logging.ERROR)
-            steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
-            return PlanWeekResult(ok=False, steps=steps)
-        snapshot_prompt_blocks = snapshot_preflight.prompt_blocks or _build_snapshot_prompt_blocks(
-            athlete_state_snapshot if isinstance(athlete_state_snapshot, dict) else None,
-            planning_context_snapshot if isinstance(planning_context_snapshot, dict) else None,
-        )
-        athlete_state_snapshot_block = snapshot_prompt_blocks.athlete_state_snapshot_block
-        planning_context_snapshot_block = snapshot_prompt_blocks.planning_context_snapshot_block
-        spec = AGENTS["week_planner"]
-        message = f"Running Week-Planner for ISO week {target_label}."
-        _log(message)
-        load_capacity_context = build_load_capacity_block(
-            target_week=target,
-            phase_range=phase_range,
-            athlete_profile_payload=athlete_profile_payload or {},
-            availability_payload=availability_payload or {},
-            logistics_payload=logistics_payload or {},
-            zone_model_payload=zone_model_payload or {},
-            season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
-            phase_guardrails_payload=phase_guardrails_payload or {},
-            wellness_payload=wellness_payload or {},
-            kpi_profile_payload=kpi_profile_payload or {},
-            kpi_rate_band=selected_kpi_rate_band,
-        )
-        workout_load_method_block = build_workout_load_method_block(
-            athlete_profile_payload=athlete_profile_payload or {},
-            zone_model_payload=zone_model_payload or {},
-            allowed_intensity_domains=load_capacity_context.payload.get("allowed_intensity_domains") or [],
-        )
-        # Whole-phase execution context (cadence family, every week's role/band, deload intent) --
-        # the phase is already persisted in season_plan by the time weeks are planned, so
-        # phase_slot_context ({}) is unnecessary here; build_phase_execution_context falls back
-        # to phase_info.raw for cadence/week-role derivation the same way. This is not covered by
-        # week_calendar_block/planning_context_snapshot_block, which only carry the target week's
-        # slice of phase authority.
-        phase_execution_block = render_phase_execution_context_block(
-            build_phase_execution_context(
-                target_week=target,
-                phase_info=phase_info,
-                phase_range=phase_range,
-                season_plan_payload=season_plan if isinstance(season_plan, dict) else {},
-                phase_slot_context={},
-                availability_payload=availability_payload or {},
-                logistics_payload=logistics_payload or {},
-                planning_events_payload=planning_events_payload or {},
-                load_capacity_context=load_capacity_context.payload,
-            )
-        )
-        week_calendar_context = build_week_calendar_context(
-            target_week=target,
-            phase_info=phase_info,
-            phase_range=phase_range,
-            availability_payload=availability_payload or {},
-            logistics_payload=logistics_payload or {},
-            planning_events_payload=planning_events_payload or {},
-            phase_guardrails_payload=phase_guardrails_payload or {},
-            phase_structure_payload=phase_structure_payload or {},
-            load_capacity_context=load_capacity_context.payload,
-        )
-        active_weekly_band = week_calendar_context.get("active_weekly_kj_band")
-        if not isinstance(active_weekly_band, dict) or not active_weekly_band:
-            message = "Week calendar context is incomplete: active weekly load band is missing."
-            _log(message, logging.ERROR)
-            steps.append({"agent": "week_planner", "tasks": [], "result": {"ok": False, "error": message}})
-            return PlanWeekResult(ok=False, steps=steps)
-        week_calendar_block = render_week_calendar_context_block(week_calendar_context)
-        injected_block = (
-            render_context_blocks([load_capacity_context, workout_load_method_block])
-            + week_calendar_block
-            + phase_execution_block
-        )
-        with guardrail_runtime_context(
-            availability_payload=availability_payload or {},
-            target_week=target,
-            week_calendar_context=week_calendar_context,
-        ):
-            out = run_agent_multi_output(
-                runtime_for(spec.name),
-                agent_name=spec.name,
-                athlete_id=athlete_id,
-                tasks=week_tasks,
-                user_input=(
-                    f"Create week_plan for ISO week {target_label} only (Mon-Sun of that week). "
-                    "Do NOT output multiple weeks even if the phase range spans multiple weeks. "
-                    "PHASE_GUARDRAILS and PHASE_STRUCTURE for this exact phase range are already provided below "
-                    "as injected context; no workspace tools are available or needed for this task. "
-                    f"{athlete_state_snapshot_block}"
-                    f"{planning_context_snapshot_block}"
-                    f"{historical_context_line}"
-                    f"{user_data_block}"
-                    f"{kpi_block}"
-                    f"{override_line}"
-                    f"{injected_block}"
-                ),
-                run_id=f"{run_id}_week",
-                model_override=model_resolver(spec.name) if model_resolver else None,
-                temperature_override=temperature_resolver(spec.name) if temperature_resolver else None,
-            )
-        steps.append({"agent": "week_planner", "tasks": [t.value for t in week_tasks], "result": out})
-        week_run_ok = bool(out.get("ok") and out.get("produced"))
-        if out.get("ok") and out.get("produced"):
-            _log("Done.")
+    needs_week_plan = week_outcome.needs_week_plan
+    week_tasks = week_outcome.week_tasks
+    week_run_ok = week_outcome.week_run_ok
+    plan_mtime = week_outcome.plan_mtime
 
     if needs_week_plan and week_tasks and week_run_ok is False:
         _log(
