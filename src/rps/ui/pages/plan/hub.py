@@ -5,7 +5,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import TypedDict, cast
 
@@ -404,6 +404,20 @@ def _parse_iso_datetime(value: str | None) -> datetime | None:
         return datetime.fromisoformat(value)
     except ValueError:
         return None
+
+
+def _format_elapsed(started: str | None, fallback: str | None = None) -> str:
+    raw = started or fallback
+    if not raw:
+        return ""
+    try:
+        start_dt = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        seconds = max(0, int((datetime.now(tz=UTC) - start_dt).total_seconds()))
+        if seconds < 60:
+            return f"{seconds} s"
+        return f"{seconds // 60} min {seconds % 60} s"
+    except ValueError:
+        return ""
 
 
 def _latest_input(inputs_dir: Path, prefix: str) -> Path | None:
@@ -2123,8 +2137,6 @@ if active_run:
             f"{summary.get('steps_failed', 0)} failed · "
             f"{summary.get('artefacts_written', 0)} outputs"
         )
-    if active_run.get("current_step"):
-        st.caption(f"Current step: {active_run.get('current_step')}")
     current_step_id = str(active_run.get("current_step") or "").strip().upper()
     pipeline_total = len(active_steps)
     pipeline_index = 0
@@ -2133,7 +2145,15 @@ if active_run:
         if current_step_id and step_id == current_step_id:
             pipeline_index = idx
             break
-    if pipeline_total and pipeline_index:
+    if run_state and pipeline_total:
+        elapsed = _format_elapsed(
+            _as_str(active_run.get("started_at")),
+            _as_str(active_run.get("created_at")),
+        )
+        frac = pipeline_index / pipeline_total if pipeline_index else 0.0
+        elapsed_label = f"  ·  {elapsed} elapsed" if elapsed else ""
+        st.progress(frac, text=f"{pipeline_index or 0} / {pipeline_total} steps{elapsed_label}")
+    elif pipeline_total and pipeline_index:
         st.caption(f"Pipeline progress: {pipeline_index}/{pipeline_total}")
     runtime_events = load_enriched_run_events(
         SETTINGS.workspace_root,
@@ -2158,8 +2178,16 @@ if active_run:
         runtime_bits.append(f"Agent `{runtime_summary['agent']}`")
     if runtime_summary.get("model"):
         runtime_bits.append(f"Model `{runtime_summary['model']}`")
-    if runtime_bits:
-        st.caption("Runtime detail: " + " · ".join(runtime_bits))
+    if run_state:
+        current_label = _as_str(active_run.get("current_step")) or ""
+        all_bits = ([current_label] if current_label else []) + runtime_bits
+        if all_bits:
+            st.info(" · ".join(all_bits))
+    else:
+        if active_run.get("current_step"):
+            st.caption(f"Current step: {active_run.get('current_step')}")
+        if runtime_bits:
+            st.caption("Runtime detail: " + " · ".join(runtime_bits))
     manual_missing = False
     if any(
         active_step.get("step_id") == "SCENARIO_SELECTION" and active_step.get("Status") == "FAILED"

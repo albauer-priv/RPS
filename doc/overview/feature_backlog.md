@@ -18,9 +18,11 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 5) ~~**FEAT_docker_deploy**~~ — **done** — image build + registry + deployment workflow.
 6) ~~**FEAT_posting_receipts_conflict_ux**~~ — **done** — receipts diff + conflict UX.
 7) ~~**FEAT_plan_week_testability_and_resolution_refactor**~~ — **done** — `plan_week` decomposition, typed orchestration dataclasses, deterministic context typed resolution, cadence/role fallback tests.
+8) ~~**FEAT_run_progress_ui**~~ — **done** — visual progress bar + elapsed time in Plan Hub while a run is active.
 
 ## Implemented / In-Progress
 
+- [x] FEAT_run_progress_ui — visual st.progress() bar + elapsed time + consolidated st.info() status line while a planning run is active (Plan Hub).
 - [x] FEAT_plan_week_testability_and_resolution_refactor — `plan_week` decomposition, typed dataclasses, deterministic context resolution, and cadence/role fallback unit tests (PR1–PR4 complete).
 - [x] FEAT_run_scheduler_resilience — stuck-run detection and recovery (stale lock, orphaned active items, stuck-run sweep).
 - [x] FEAT_user_inputs_io — per-input-type JSON export/import on all four modular input editor pages.
@@ -102,7 +104,7 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_mandatory_output_audit_and_structured_output_migration — audit remaining `mandatory_output_*` families and migrate safe artifact/task families to `output_json` / `output_pydantic` plus guardrails; retain prompt-level contracts only where structured outputs remain unsafe.
 - [ ] FEAT_parquet_rollups — precomputed analytics rollups for long ranges.
 - [ ] FEAT_archival_policy — archive/restore old athlete data.
-- [ ] FEAT_run_progress_ui — progress indicators for long-running planning jobs.
+- [x] FEAT_run_progress_ui — progress indicators for long-running planning jobs.
 - [ ] FEAT_planning_done_notification — optional banner/email/push when planning completes.
 - [ ] FEAT_auto_retry_transient — auto-retry transient failures with clear logs.
 - [ ] FEAT_season_scenarios_tool_read_dedup — reduce redundant `workspace_get_input` / `workspace_get_latest` calls in `season_scenarios`, enforce consistent artifact/input type casing, and prefer one-pass minimal context reads per task run so guardrail retries do not amplify log noise and token/tool cost.
