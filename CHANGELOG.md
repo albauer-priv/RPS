@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Added receipt status panel and conflict resolution UX to the Workouts page (`FEAT_posting_receipts_conflict_ux`). A new `_show_receipt_status_panel()` function in `src/rps/ui/pages/plan/workouts.py` calls the existing `inspect_intervals_receipts()` backend and renders a live receipt status summary above the Actions expander whenever `INTERVALS_WORKOUTS` exists for the selected week. The summary classifies workouts into four states: **posted** (receipt matches current payload — shown as a success count), **updates** (payload changed since last post — expandable table with "Changed since last post" note, will be re-posted on next commit), **conflicts** (invalid receipt JSON — per-row `st.error` block with name, date, reason, and a "Resolve conflict" button that calls `resolve_receipt_conflict()` and reruns), and **unposted** (no receipt yet — expandable table). The panel is hidden when the artifact is missing. 5 new tests in `tests/test_workouts_page.py`, including an AppTest-level `SETTINGS` patch to ensure the module-level singleton reflects the test workspace root.
+
 ## [0.21.0] - 2026-09-15
 
 ### Added

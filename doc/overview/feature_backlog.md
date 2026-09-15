@@ -16,8 +16,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 3) ~~**FEAT_plan_adjustments**~~ — **done** — adjust Season/Phase plans when constraints change.
 4) ~~**FEAT_user_management**~~ — **done** — auth/login + per-user athlete ID and optional API key override.
 5) ~~**FEAT_docker_deploy**~~ — **done** — image build + registry + deployment workflow.
-6) **FEAT_posting_receipts_conflict_ux** — receipts diff + conflict UX.  
-   Depends on: FEAT_posting_receipts_inspection
+6) ~~**FEAT_posting_receipts_conflict_ux**~~ — **done** — receipts diff + conflict UX.
 7) **[FEAT_plan_week_testability_and_resolution_refactor](/doc/specs/features/FEAT_plan_week_testability_and_resolution_refactor.md)** — refactor `plan_week` test setup, resolver boundaries, and deterministic context typing for maintainability and lower regression risk.  
    Depends on: none
 
@@ -26,6 +25,7 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 - [x] FEAT_run_scheduler_resilience — stuck-run detection and recovery (stale lock, orphaned active items, stuck-run sweep).
 - [x] FEAT_user_inputs_io — per-input-type JSON export/import on all four modular input editor pages.
 - [x] FEAT_plan_adjustments — input-driven staleness detection and Plan Hub "Plan Adjustment" section with one-click scoped re-run.
+- [x] FEAT_posting_receipts_conflict_ux — receipt status panel, update/conflict/unposted rows, per-conflict resolve button (Workouts page).
 - [x] FEAT_docker_deploy — dependency drift fix (plotly/altair), .dockerignore improvements, compose cleanup, GHA BuildKit cache, local build helper script.
 - [x] FEAT_user_management — opt-in login gate (RPS_USERS_FILE), YAML user registry, per-user athlete_id, optional per-user API key override.
 

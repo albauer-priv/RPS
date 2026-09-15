@@ -23,7 +23,12 @@ from rps.orchestrator.week_plan_edits import (
     preview_update_workout_text,
 )
 from rps.orchestrator.week_revision import revise_week_plan
-from rps.ui.intervals_post import delete_posted_workouts, post_to_intervals_commit
+from rps.ui.intervals_post import (
+    delete_posted_workouts,
+    inspect_intervals_receipts,
+    post_to_intervals_commit,
+    resolve_receipt_conflict,
+)
 from rps.ui.shared import (
     CAPTURE_LOGGERS,
     SETTINGS,
@@ -317,6 +322,81 @@ def _workout_editor_toolsets(tools: list[CoachTool]) -> SpecialistToolsets:
     )
 
 
+def _show_receipt_status_panel(
+    store: LocalArtifactStore,
+    athlete_id: str,
+    *,
+    year: int,
+    week: int,
+) -> None:
+    status = inspect_intervals_receipts(store, athlete_id, year=year, week=week)
+    if status.error:
+        return
+
+    n_posted = len(status.posted)
+    n_updates = len(status.updates)
+    n_conflicts = len(status.conflicts)
+    n_unposted = len(status.unposted)
+
+    summary = (
+        f"✓ {n_posted} posted    "
+        f"↻ {n_updates} update{'s' if n_updates != 1 else ''}    "
+        f"⚠ {n_conflicts} conflict{'s' if n_conflicts != 1 else ''}    "
+        f"○ {n_unposted} unposted"
+    )
+    version_label = f"{year:04d}-W{week:02d}"
+    st.subheader(f"Receipt Status · {version_label}")
+    if n_conflicts:
+        st.error(summary)
+    elif n_updates or n_unposted:
+        st.info(summary)
+    else:
+        st.success(summary)
+
+    if n_unposted:
+        with st.expander(f"Unposted ({n_unposted})", expanded=False):
+            st.dataframe(
+                [{"Name": r["name"], "Date": r["start_date_local"]} for r in status.unposted],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    if n_updates:
+        with st.expander(f"Changed since last post ({n_updates})", expanded=False):
+            st.dataframe(
+                [
+                    {"Name": r["name"], "Date": r["start_date_local"], "Note": "Payload changed — will be reposted"}
+                    for r in status.updates
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    for row in status.conflicts:
+        with st.container():
+            st.error(
+                f"**Conflict** · {row['name']} · {row['start_date_local']}  \n"
+                f"Reason: {row.get('reason', 'unknown')}"
+            )
+            if st.button(
+                f"Resolve conflict – {row['name']}",
+                key=f"receipt_resolve_{row['uid']}",
+            ):
+                ok = resolve_receipt_conflict(
+                    store,
+                    athlete_id,
+                    year=year,
+                    week=week,
+                    uid=row["uid"],
+                    run_id=f"resolve_{row['uid']}",
+                )
+                if ok:
+                    st.success("Conflict resolved.")
+                else:
+                    st.error("Could not resolve — workout not found in current payload.")
+                st.rerun()
+
+
 state = init_ui_state()
 render_global_sidebar()
 athlete_id = get_athlete_id()
@@ -334,6 +414,8 @@ version_key = f"{year:04d}-{week:02d}"
 editor_context_key = f"{athlete_id}:{version_key}"
 if st.session_state.get(EDITOR_CONTEXT_KEY) != editor_context_key:
     _editor_reset(editor_context_key)
+
+_show_receipt_status_panel(store, athlete_id, year=year, week=week)
 
 with st.expander("Actions", expanded=False):
     with st.form("workouts_actions"):
