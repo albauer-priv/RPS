@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 
 from rps.agents.runtime import AgentRuntime
+from rps.orchestrator.plan_adjustments import get_adjustment_suggestions
 from rps.orchestrator.queue_scheduler import enqueue_run, ensure_queue_dirs, start_queue_scheduler
 from rps.planning.season_selection_binding import resolve_bound_season_selection
 from rps.prompts.loader import PromptLoader
@@ -1219,6 +1220,88 @@ def _build_execution_steps(
     return steps
 
 
+def _show_adjustment_section(
+    athlete_id: str,
+    year: int,
+    week: int,
+    *,
+    scope_lock: bool,
+) -> None:
+    """Render adjustment suggestions when inputs are newer than plan artifacts."""
+    store = LocalArtifactStore(root=SETTINGS.workspace_root)
+    index = _load_index(athlete_id)
+    suggestions = get_adjustment_suggestions(index, store, athlete_id)
+    if not suggestions:
+        return
+
+    st.subheader("Plan Adjustment")
+    st.caption(
+        "One or more inputs were updated after the plan was last generated. "
+        "Run the suggested adjustment to keep the plan in sync."
+    )
+
+    base_week = IsoWeek(year=year, week=week)
+    for suggestion in suggestions:
+        input_ts = suggestion.input_created_at[:10] if suggestion.input_created_at else "—"
+        plan_ts = suggestion.plan_created_at[:10] if suggestion.plan_created_at else "—"
+        label = (
+            f"**{suggestion.input_label}** updated {input_ts} — "
+            f"**{suggestion.plan_label}** last generated {plan_ts}"
+        )
+        col_text, col_btn = st.columns([3, 1])
+        with col_text:
+            st.markdown(label)
+        with col_btn:
+            btn_label = f"Run {suggestion.scope} Adjustment"
+            if st.button(btn_label, key=f"adjust_{suggestion.scope}", disabled=scope_lock):
+                scope = suggestion.scope
+                block_reason = _planning_block_reason(
+                    SETTINGS.workspace_root,
+                    athlete_id,
+                    PLANNING_SCOPE_SUBTYPE.get(scope, "scoped"),
+                )
+                if block_reason:
+                    st.warning(block_reason)
+                    st.stop()
+                if scope in {"Phase"}:
+                    phase_targets = _action_phase_targets(athlete_id, base_week)
+                    if phase_targets:
+                        _, target_week, phase_label = phase_targets[0]
+                    else:
+                        target_week, phase_label = base_week, None
+                    _queue_scoped_run(
+                        athlete_id=athlete_id,
+                        iso_year=target_week.year,
+                        iso_week=target_week.week,
+                        phase_label=phase_label,
+                        scope=scope,
+                        run_id_prefix="plan_hub_adjust",
+                    )
+                elif scope == "Week Plan":
+                    week_targets = _action_week_targets(base_week)
+                    target_week = week_targets[0][1] if week_targets else base_week
+                    phase_label = _phase_label_for_week(athlete_id, target_week)
+                    _queue_scoped_run(
+                        athlete_id=athlete_id,
+                        iso_year=target_week.year,
+                        iso_week=target_week.week,
+                        phase_label=phase_label,
+                        scope=scope,
+                        run_id_prefix="plan_hub_adjust",
+                    )
+                else:
+                    _queue_scoped_run(
+                        athlete_id=athlete_id,
+                        iso_year=year,
+                        iso_week=week,
+                        phase_label=None,
+                        scope=scope,
+                        run_id_prefix="plan_hub_adjust",
+                    )
+                st.info("Adjustment run requested.")
+                st.rerun()
+
+
 def _ensure_worker(
     root: Path,
     athlete_id: str,
@@ -1532,6 +1615,12 @@ if run_state:
     status_message = "Running"
 set_status(status_state=status_state, title="Plan Hub", message=status_message)
 render_status_panel()
+_show_adjustment_section(
+    hub_scope["athlete_id"],
+    hub_scope["iso_year"],
+    hub_scope["iso_week"],
+    scope_lock=scope_lock,
+)
 st.subheader("Readiness")
 st.markdown("`Auto-creates phase artifacts`")
 st.caption("Review required artefacts and resolve missing or stale steps before planning.")
