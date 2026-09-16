@@ -56,6 +56,10 @@ This document:
 **Key sources**
 - Seiler – *Durability: The Fourth Pillar of Endurance Performance* (Fast Talk)
 - Seiler Q&A – Durability & High-Intensity Repeatability
+- **Maunder, Seiler et al. (2021)** – *The Importance of 'Durability' in the Physiological Profiling of Endurance Athletes* (Sports Medicine) [`dur_core_001`]
+
+Maunder et al. (2021) provide the formal academic definition of durability: the time of onset and magnitude of deterioration in physiological-profiling characteristics during prolonged exercise. The review argues that routine rested-state profiling does not capture these shifts and that ignoring them distorts intensity regulation, training-load programming, adaptation assessment, and performance prediction. This is the primary peer-reviewed source for RPS's durability framing.  
+*Authority limit: abstract-only; does not supply testing protocols, thresholds, or individualized training prescriptions.*
 
 Recent field-based evidence further supports durability as an independent performance dimension.  
 Barsumyan et al. (2025) demonstrated that performance after accumulated work explains race outcomes beyond VO₂max, FTP, or critical power, reinforcing durability as a standalone determinant rather than a derivative of peak capacity.
@@ -178,6 +182,31 @@ Peeters et al. (2025) show that durability outcomes depend strongly on preload d
 
 ---
 
+### Carbohydrate Composition & Dosing — Peer-Reviewed Evidence
+
+**Jeukendrup (2014)** — activity-duration framework [`dur_core_036`]
+- ~60 g/h for 2–3 h using a single CHO source; ~90 g/h for ultra-endurance events with multiple transportable carbohydrates
+- Guidance is duration- and activity-dependent; no single rate applies universally
+
+**Jentjens & Jeukendrup (2005)** — fructose-glucose oxidation [`dur_core_030`]
+- Glucose + fructose blends produced higher peak and late-exercise exogenous carbohydrate oxidation than glucose alone in trained male cyclists
+- Mechanistic basis for multi-transport carbohydrate strategies in prolonged events
+
+**Rowlands et al. (2015)** — composite CHO and performance [`dur_core_032`]
+- Fructose:glucose (or fructose:maltodextrin) blends at 0.5:1–1.0:1 ratio and 1.3–2.4 g·min⁻¹ likely improved endurance power versus isocaloric glucose/maltodextrin, linked to higher exogenous CHO oxidation and lower GI distress
+
+**Viribay et al. (2020)** — 120 g/h gut-trained athletes [`dur_core_033`]
+- Gut-trained elite runners consuming 120 g/h had lower internal exercise load and lower 24 h muscle damage markers (CK, LDH, GOT) compared to 90 g/h or 60 g/h groups
+- Supports higher CHO intake rates *only* in athletes with confirmed gut adaptation
+
+**Key implications for RPS**
+- Fueling rate recommendations must be duration-anchored (not flat) and depend on whether the athlete has trained gut absorption
+- Multi-transport CHO blends are the mechanistic basis for rates above 60 g/h
+- Fueling advice is advisory and source-bounded; individual GI tolerance and gut training status determine feasibility
+- *Authority limit: all four entries are abstract-curated only.*
+
+---
+
 ## 5. Durability-Specific Training Methods
 
 ### Hard-Late & Back-to-Back Training
@@ -196,7 +225,25 @@ Mateo-March et al. (2024) demonstrated task-specific durability effects dependin
 
 ---
 
-## 6. Masters Athletes (50+)
+## 6. Training Continuity & Detraining Risk
+
+### Mujika & Padilla — Detraining Dynamics
+
+**Core findings** [`dur_core_027`, `dur_core_028`]
+- Short-term insufficient training (Part I): even brief periods of reduced stimulus can impair cardiorespiratory, metabolic, muscular, and performance adaptations — the rate and magnitude depend on training status
+- Long-term detraining (Part II): prolonged insufficient training further degrades endurance-related adaptations; maintaining intensity while substantially reducing volume limits these losses
+
+**Coyle et al. (1986)** — cardiovascular mechanism [`dur_core_026`]
+- Detraining reduced blood and plasma volume, stroke volume, and VO₂max; experimentally restoring blood volume recovered these responses toward trained-state levels
+- Provides a mechanistic basis for the cardiovascular component of detraining
+
+**Key implications for RPS**
+- Missed training weeks are not neutral — they carry a physiological cost that compounds within the same block
+- This justifies scenario design that explicitly accounts for disruption risk: a scenario with lower recovery margin is not just harder to execute, it carries a higher detraining cost per missed week
+- Maintaining intensity while reducing volume (e.g., a deload week) is preferable to complete inactivity when continuity is at risk
+- *Authority limit: Mujika & Padilla are abstract-curated; Coyle et al. is abstract-curated. Exact rates of adaptation loss are not transferable without full-text detail.*
+
+## 8. Masters Athletes (50+)
 
 **Consensus across authors**
 - Reduced recovery capacity
@@ -209,20 +256,22 @@ Mateo-March et al. (2024) demonstrated task-specific durability effects dependin
 
 ---
 
-## 7. Evidence → Principle Mapping
+## 9. Evidence → Principle Mapping
 
 | Principle (Principles Paper) | Evidence Base |
 |----------------------------|---------------|
-| Durability > Peak Metrics | Seiler, Leo, Larsen |
+| Durability > Peak Metrics | Maunder et al. 2021, Seiler, Leo, Larsen |
 | kJ-first load control | Leo, CTS #200, Larsen |
 | Z2-dominant volume | Seiler, San Millán |
 | Limited VO₂ density | Rønnestad, Seiler, CTS |
 | Hard-late & B2B | Seiler, Leo |
+| Training continuity matters | Mujika & Padilla 2000, Coyle et al. 1986 |
 | Conservative Masters progression | CTS, Seiler |
+| Fueling scales with duration / CHO composition | Jeukendrup 2014, Jentjens & Jeukendrup 2005, Rowlands et al. 2015, Viribay et al. 2020 |
 
 ---
 
-## 8. Interpretation Rules for the Agent
+## 10. Interpretation Rules for the Agent
 
 - Elite studies inform **principles**, not numeric replication
 - Field data and podcasts support **operationalization**, not dogma

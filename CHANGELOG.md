@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.2] - 2026-09-16
+
+### Changed
+
+- Evidence layer (`evidence_layer_durability.md`): integrated the four newly activated study groups into the narrative.
+  - Section 1: added Maunder, Seiler et al. (2021) `dur_core_001` — the formal peer-reviewed definition of durability as deterioration in physiological-profiling characteristics during prolonged exercise — as an explicit key source under the Seiler subsection and as a named entry in the Evidence → Principle mapping.
+  - New Section 6: "Training Continuity & Detraining Risk" — cites Mujika & Padilla (2000) `dur_core_027/028` and Coyle et al. (1986) `dur_core_026` to explain why missed training weeks carry a physiological cost and why maintaining intensity during reduced-volume weeks is preferable to full inactivity.
+  - Section 4 (Fueling): new subsection "Carbohydrate Composition & Dosing" citing Jeukendrup (2014) `dur_core_036`, Jentjens & Jeukendrup (2005) `dur_core_030`, Rowlands et al. (2015) `dur_core_032`, and Viribay et al. (2020) `dur_core_033` with duration-anchored dosing guidance and gut-training prerequisite.
+  - Evidence → Principle mapping updated with new rows for training continuity and CHO fueling.
+
 ## [0.37.1] - 2026-09-16
 
 ### Fixed
