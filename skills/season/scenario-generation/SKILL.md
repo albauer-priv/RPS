@@ -9,69 +9,64 @@ Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
 Field completion contract:
 
-Writing style for all narrative fields: write in plain, direct language as if explaining to the athlete in person. Concrete beats abstract. If a sentence could appear in all three scenarios, it is not good enough.
+Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `allowed_domains`, `season_archetype`) that are already concrete facts. The narrative fields below must translate those facts into plain language. Use the mandatory sentence templates below — fill in the bracketed slots with athlete-specific content. Do not substitute abstract planning prose for the template slots.
 
-Connection between structured and narrative fields: each scenario already has concrete structured fields — `deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `allowed_domains`, `season_archetype`, `recovery_margin`. The narrative fields (`core_idea`, `load_philosophy`, `typical_week_feel`, `key_differences`, etc.) are the plain-language explanation of what those structured values mean in practice. They must reference and reflect the structured fields — not float above them as abstract planning principles. A narrative field that could apply equally to a scenario with `deload_cadence: "2:1"` and one with `deload_cadence: "3:1"` has failed its purpose.
+- `scenario_guidance.recovery_margin` — required sentence pattern: `[high/moderate/lower] — [one concrete sentence describing what disruption this scenario can absorb before it needs to downshift]`
+  - example: `moderate — one disrupted week is absorbable; two in a row require a posture correction before continuing the block`
+- `scenario_guidance.fatigue_exposure` — required sentence pattern: `[low/moderate/high but conditional] — [one concrete sentence describing how fatigue accumulates across the loading block]`
+  - example: `moderate — useful fatigue builds across two loading weeks; the mini-reset week restores quality before the next block starts`
+- `scenario_guidance.specificity_density` — required sentence pattern: `[sparse/controlled/dense] — [one concrete sentence describing when and how event-specific work appears]`
+  - example: `controlled — long-ride duration and event-pace work increase progressively in the second half of the season; early phases stay aerobic`
 
-- `scenario_guidance.recovery_margin` = explicit recovery stance as a non-empty string
-  - define it locally as how much schedule, fatigue, and continuity disruption the scenario can absorb before it should downshift
-  - examples: `high — a missed week or a travel disruption resets cleanly without compromising the block`, `moderate — one disrupted week is absorbable but two in a row require a posture correction`, `lower — the 3:1 loading blocks depend on three consecutive execution weeks; one missed quality week late in a block is costly`
-- `scenario_guidance.fatigue_exposure` = explicit fatigue posture as a non-empty string
-  - examples: `low — the athlete should close most weeks feeling absorbed, not stretched`, `moderate — useful fatigue accumulates across two loading weeks; the mini-reset restores quality`, `high but conditional — three loading weeks produce real fatigue; the deload week is the recovery mechanism, not a bonus`
-- `scenario_guidance.specificity_density` = explicit specificity posture as a non-empty string
-  - examples: `sparse — long rides grow in duration but stay aerobic; event-pace rehearsal appears late in the season`, `controlled — long-ride specificity increases progressively around the spring B/A sequence`, `dense — repeated long rides under accumulated mid-week fatigue; Saturday rides are often started pre-fatigued by design`
-- `name` = short chooser label (2–5 words, distinct across all three)
-- `core_idea` = one sentence that says what this season delivers in plain terms — the outcome, not the process
-  - BAD: `Protect continuity and keep the athlete fresh enough to absorb work reliably across the full horizon.` (process language, vague)
-  - GOOD: `18 short phases, frequent resets — build consistent aerobic durability without deep fatigue accumulation.`
-  - GOOD: `Build steadily over 4-week blocks with a mid-block reload — the reliable path to 600 km readiness.`
-  - GOOD: `Three loading weeks then one full reset — highest event-specific hardness, highest execution demand.`
-- `load_philosophy` = concrete description of how load is structured in this scenario: cadence rhythm, session character, what changes as the season progresses — qualitative, no invented kJ or watt numbers
-  - BAD: `Moderate load with frequent recovery rhythm; prioritize repeatable execution, freshness, and consistency.` (abstract)
-  - GOOD: `2:1 cadence, 3-week phases: two weeks build aerobic base and long-ride duration, one week resets. Session character stays aerobic — endurance and tempo are the main tools; no threshold or VO2MAX work appears. Load grows through longer Saturday rides and more weekly hours, not through intensity escalation. The season builds durability by accumulating many clean aerobic weeks.`
-  - GOOD: `2:1:1 cadence, 4-week phases: two loading weeks, one reload week, one mini-reset. Weekday sessions stay aerobic in week 1; week 2 adds a threshold or sweet-spot session on one weekday. Saturday long rides grow progressively and include event-pace work as the 300/400 km season approaches. The reload week preserves quality without accumulating more fatigue.`
-  - GOOD: `3:1 cadence, 4-week phases: three consecutive loading weeks then one full reset. Both weekday and weekend sessions carry deliberate quality across all three loading weeks. Saturday rides in loading weeks 2–3 are designed to be started with mid-week fatigue already in the legs — this is intentional specificity for long-event pacing, not a scheduling accident. The reset week is the recovery mechanism; there is no informal freshness between blocks.`
-- `risk_profile` = this scenario's specific failure mode in plain language — what goes wrong and why
-  - BAD: `Lowest risk option; best when travel volatility, fatigue sensitivity, or durability uncertainty need more protection.`
-  - GOOD: `Lowest structural risk. If a week is lost to travel or illness, the next 3-week block starts clean. The real risk is under-adaptation: the conservative ceiling may leave the athlete underprepared for 400–600 km specificity if progression is never pushed.`
-  - GOOD: `A recovery slip or two poor weeks in a row erodes the 2:1:1 rhythm. The scenario becomes less useful when the reload week doesn't actually reload — watch TSB and subjective fatigue for signs the reset week isn't recovering quality.`
-  - GOOD: `High execution risk. A disrupted week in weeks 2–3 of a 3:1 block wastes two weeks of loading context. One travel week or illness near the peak of a block can turn planned fatigue into unmanaged fatigue.`
-- `key_differences` = concrete structural comparison: name the cadence, phase count/length, domain breadth, and what those mean in practice
-  - BAD: `Compared with B and C, this scenario keeps week-to-week pressure more controlled and asks for less fatigue exposure.`
-  - GOOD: `A uses 2:1 / 3-week phases → 18 phases, resets every 3 weeks, no THRESHOLD or VO2MAX. B uses 2:1:1 / 4-week phases → 13 phases, THRESHOLD added. C uses 3:1 / 4-week phases → 13 phases, longest loading blocks, THRESHOLD + VO2MAX. A is the most interruptible; C is the least.`
-- `typical_week_feel` = qualitative description of what session types appear during a representative loading week and how the athlete's legs feel across the week — no invented kJ or watt numbers, those come from downstream tasks; describe intensity character, session mix, and the end-of-week feeling
-  - BAD: `Structured but manageable; the athlete should usually finish the week feeling contained rather than stretched.` (says nothing about session type or intensity)
-  - GOOD (Scenario A): `Weekdays are steady endurance or tempo rides — no intervals, no threshold work. The Saturday long ride is purely aerobic, growing longer as the season progresses. The week ends with absorbed fatigue, not accumulating strain; Monday feels fresher than most of Saturday.`
-  - GOOD (Scenario B): `Weekdays are mostly endurance; in loading week 2 a Thursday session adds threshold or sweet-spot quality. Saturday long rides include event-pace segments in the final portion as the season progresses. The athlete carries useful fatigue by Sunday but the mid-week quality session is consistently executable — not a stretch.`
-  - GOOD (Scenario C): `Weekday sessions are deliberately harder than B — both Tuesday and Thursday carry quality in loading weeks. Saturday long rides are started with real mid-week fatigue already present, training pacing discipline under real conditions. The athlete should feel clear productive strain by Sunday, not just tiredness; the deload week is the recovery, not the Sunday rest.`
-- `main_payoff` = the single most concrete gain of this scenario that the others do not deliver as well
-  - BAD: `High consistency and low disruption risk across the season.` (generic, could apply to any)
-  - GOOD: `More uninterrupted training weeks than any other option — a travel week or a sick day costs one 3-week block, not a 4-week one.`
-  - GOOD: `The mid-block reload week means adaptation is never fully delayed — quality weeks stay achievable even when loading weeks are imperfect.`
-  - GOOD: `The highest event-specific durability — repeated long rides under real fatigue develop the exact pacing resilience needed at 400–600 km.`
-- `main_cost` = the single most concrete tradeoff of this scenario compared with the others
-  - BAD: `Less aggressive overload pressure and slower emergence of race-specific hardness.`
-  - GOOD: `Shorter phases and frequent resets limit sustained overload — the athlete may arrive at the 600 km having done more weeks but fewer truly demanding blocks than in B or C.`
-  - GOOD: `Two missed quality weeks in the same four-week block erode more of the season's total loading quality than the same disruption in Scenario A.`
-  - GOOD: `Three consecutive loading weeks require reliable execution every week. One travel week in the third week of a block undoes most of the block's fatigue context.`
+- `core_idea` — MANDATORY TEMPLATE: `[phase_count_expected] phases, [deload_cadence] cadence — [one concrete sentence about what training outcome this season builds toward].`
+  - fill in phase count and cadence from the structured fields; write the outcome in terms the athlete would recognize
+  - example: `18 phases, 2:1 cadence — build consistent aerobic durability through frequent shorter blocks without deep fatigue accumulation.`
+  - example: `13 phases, 2:1:1 cadence — develop event-readiness systematically over 4-week blocks with a mid-block reload to preserve quality.`
+  - example: `13 phases, 3:1 cadence — train event-specific pacing discipline under real accumulated fatigue across three loading weeks before each reset.`
+
+- `load_philosophy` — MANDATORY TEMPLATE: `[deload_cadence] cadence, [phase_length_weeks]-week phases: [describe week 1 session character]. [Describe what changes in loading week 2 if different]. [Describe Saturday long ride character and how it changes across the season]. [One sentence on what drives load progression in this scenario — duration, frequency, or quality].`
+  - example: `2:1 cadence, 3-week phases: both loading weeks are aerobic — endurance and tempo sessions on weekdays, a progressively longer aerobic ride on Saturday. No threshold or interval work appears. Load grows through longer Saturday rides and slightly higher weekly volume, not through intensity escalation.`
+  - example: `2:1:1 cadence, 4-week phases: loading week 1 is aerobic; loading week 2 adds a threshold or sweet-spot session on one weekday. Saturday long rides grow progressively and include event-pace work near the spring B/A sequence. The reload week preserves the quality achieved without adding more fatigue.`
+  - example: `3:1 cadence, 4-week phases: all three loading weeks carry deliberate quality on both weekdays and the weekend. Saturday rides in weeks 2–3 are started with real mid-week fatigue in the legs — intentional specificity, not a scheduling accident. The reset week is the only recovery window per phase.`
+
+- `risk_profile` — MANDATORY TEMPLATE: `[Lowest/Moderate/Highest] structural risk. [One concrete sentence about the specific failure mode for this scenario]. [One sentence on what to watch for].`
+  - example: `Lowest structural risk. A lost week resets into the next 3-week block cleanly. The real failure mode is under-adaptation: frequent resets limit sustained overload and the athlete may arrive underprepared for 400–600 km specificity.`
+  - example: `Moderate structural risk. The scenario weakens when the reload week doesn't actually restore quality — watch subjective fatigue and TSB; if the reload week feels like more loading, adjust before the next block.`
+  - example: `Highest structural risk. A disrupted week in the second or third week of a 3:1 block wastes the accumulated loading context of the entire block. Travel or illness late in a block turns planned fatigue into unmanaged fatigue.`
+
+- `key_differences` — MANDATORY TEMPLATE: `[This scenario's cadence/phase structure vs. the other two, as concrete facts]. [One sentence on what the domain permission means for session character]. [One sentence on which scenario to choose if you want more, and which if you want less].`
+  - example: `A: 2:1 / 3-week → 18 phases, ENDURANCE+TEMPO only. B: 2:1:1 / 4-week → 13 phases, adds THRESHOLD. C: 3:1 / 4-week → 13 phases, adds THRESHOLD+VO2MAX. A resets most often and asks for the least intensity precision; C loads longest and asks for the most execution consistency.`
+
+- `typical_week_feel` — MANDATORY TEMPLATE: `Weekdays are [intensity character: e.g. steady endurance rides / endurance with one quality session in loading week 2 / deliberately hard on both days]. Saturday is [long ride character: e.g. purely aerobic / progressively event-specific / started with mid-week fatigue by design]. The athlete closes most loading weeks feeling [absorbed / carrying useful fatigue / with productive strain].`
+  - fill in the slots based on the scenario's `allowed_domains` and `deload_cadence` — do not paraphrase the template into generic prose
+  - example: `Weekdays are steady endurance or tempo rides — no intervals, no threshold work in any loading week. Saturday is a purely aerobic long ride, growing longer as the season progresses. The athlete closes most loading weeks feeling absorbed, not stretched.`
+  - example: `Weekdays are mostly endurance; loading week 2 adds threshold or sweet-spot quality on one weekday. Saturday long rides become progressively event-specific in the second half of the season. The athlete carries useful fatigue by Sunday but the mid-week quality session remains consistently executable.`
+  - example: `Weekdays are deliberately hard on both days in loading weeks — quality appears on multiple weekday sessions, not just one. Saturday is started with real mid-week fatigue present, training pacing discipline under real conditions. The athlete closes most loading weeks carrying productive strain; the deload week is the recovery, not the Sunday rest.`
+
+- `main_payoff` — one concrete sentence about what this scenario delivers that the other two do not deliver as well; must be false if applied to either of the other two scenarios
+  - example: `More uninterrupted training weeks than any other option — a travel week or a sick day costs one 3-week block, not a 4-week one.`
+  - example: `The reload week inside each block means quality weeks stay achievable even when loading weeks are imperfect — the adaptation rhythm is never fully broken.`
+  - example: `The highest event-specific hardness — repeated long rides under accumulated fatigue build the pacing resilience needed for 400–600 km conditions.`
+
+- `main_cost` — one concrete sentence about the specific tradeoff of this scenario relative to the others; must be false if applied to either of the other two scenarios
+  - example: `Frequent resets limit sustained overload — the athlete may arrive at the 600 km having done more total weeks but fewer truly demanding loading blocks than in B or C.`
+  - example: `Two poor weeks in the same 4-week block cost more than the same disruption in Scenario A, because the reload week cannot fully compensate for two missed loading weeks.`
+  - example: `Three consecutive loading weeks require reliable execution every week — one travel week in the third week of a block undoes most of the block's fatigue context.`
+
 - `what_gets_prioritized` = concrete session types and training qualities that get more emphasis in this scenario
 - `what_gets_de_emphasized` = concrete session types and training qualities that get less emphasis
 - `event_alignment_notes` = how this scenario specifically prepares for the athlete's in-horizon A/B events — future-only, concrete
-- `constraint_summary` = how this scenario's specific structure sits inside the athlete's actual availability — scenario-specific, NOT a static repetition of the availability table
-  - BAD (same for all three): `Monday and Friday remain fixed no-ride days. Typical availability is 14 hours per week.`
-  - GOOD (Scenario A / 2:1 / 3-week): `At 2:1 / 3-week, the frequent reset rhythm means a disrupted week (travel, illness) costs at most one 3-week block before a clean restart — no cascading damage to longer blocks. The narrow domain ceiling (ENDURANCE + TEMPO only, no THRESHOLD) keeps every weekday session low execution-risk within the compressed Tue–Thu windows. The scenario asks for aerobic consistency, not intensity precision.`
-  - GOOD (Scenario B / 2:1:1 / 4-week): `At 2:1:1 / 4-week, the reload week inside each phase means loading weeks can be genuinely demanding without the athlete needing to be fully fresh going in — the reload absorbs residual fatigue. The THRESHOLD permission makes weekday sessions purposeful in loading week 2; the compressed Tue–Thu window is enough for a focused quality session.`
-  - GOOD (Scenario C / 3:1 / 4-week): `Three consecutive loading weeks require the weekend sessions to carry real training value even when weekday fatigue is present. Mon/Fri rest limits recovery within the week — the athlete must start Saturday with mid-week legs, not fresh legs. This is the training stimulus, not a constraint to work around. The planned deload week is the only guaranteed recovery point per phase.`
+- `constraint_summary` — MANDATORY: scenario-specific string array, NOT a repetition of the static availability table; each entry must describe how this scenario's cadence/phase structure interacts with the athlete's actual constraints
+  - entry 1 template: `At [cadence] / [phase_length_weeks]-week, [one concrete implication for how disruptions interact with the block structure].`
+  - entry 2 template: `[Domain permission] means weekday sessions are [execution character: low execution risk / capable of carrying a focused quality session / demanding on multiple days].`
+  - entry 3 (if applicable): `[Indoor/outdoor or logistics constraint and how it specifically affects this scenario's structure].`
+  - example entries for a 2:1 / 3-week / ENDURANCE+TEMPO scenario: `["At 2:1 / 3-week, a disrupted week costs one 3-week block then resets cleanly — no cascading damage to a longer block.", "ENDURANCE+TEMPO only means every weekday session is low execution risk within the compressed Tue–Thu windows; no intensity precision is required.", "Indoor fallback preserves most long-ride aerobic value in winter months without requiring outdoor conditions."]`
+
 - `kpi_guardrail_notes` = pacing and metabolic guardrails specific to this scenario — not generic KPI prose
-- `decision_notes` = why this cadence and posture were chosen
-  - keep it as a structured string array
-  - preferred examples: `This is the control scenario: it emphasizes stability and recoverability.`, `Cadence is intentionally held as 2:1 here to maintain frequent resets; differentiation comes from lower load ambition and lower fatigue exposure.`
-- `assumptions` = what must stay true for the scenario to remain valid
-  - preferred example: `Weekend training remains the primary place for longer work.`
+- `decision_notes` = why this cadence and posture were chosen; structured string array
+- `assumptions` = what must stay true for this scenario to remain valid
 - `unknowns` = what could change scenario choice later
-  - preferred example: `Whether future travel or fatigue will be more disruptive than the recent pattern suggests.`
-- `data.notes` = global scenario-layer clarifications
-  - preferred examples: `Historical or pre-horizon events are out of scope for active scenario event alignment.`, `allowed_domains define eligibility for later assignment only; they do not authorize every domain in every phase.`
+- `data.notes` = global scenario-layer clarifications (future-only event scope, allowed_domains as eligibility not obligation, etc.)
 
 Method:
 1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
