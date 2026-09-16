@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.30.0] - 2026-09-16
+
+### Fixed
+
+- Fixed RUNNING runs blocking athlete queues after a container restart. When the process restarted, locks held by the previous (now-dead) process were not recovered because their age was under the 4-hour stale threshold. Added `_PROCESS_START_TS` in `run_store.py` — the module-import wall-clock timestamp. `_lock_is_stale` now treats any lock whose `mtime` predates the current process as unconditionally stale; this clears pre-restart locks immediately at startup recovery, unblocking queued runs within seconds of the container coming up.
+
 ## [0.29.0] - 2026-09-16
 
 ### Fixed
