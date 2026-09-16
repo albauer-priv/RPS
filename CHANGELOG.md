@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-09-16
+
+### Fixed
+
+- Fixed `RPS version: unknown` in the startup log. The `rps` package was not installed into site-packages (only importable via `PYTHONPATH`), so `importlib.metadata.version("rps")` raised `PackageNotFoundError`. Added `RUN pip install --no-cache-dir --no-deps .` to the Dockerfile after `COPY . .` so the package metadata is registered at image build time. `--no-deps` skips reinstalling the already-installed dependencies, keeping build time short.
+
 ## [0.28.0] - 2026-09-16
 
 ### Added
