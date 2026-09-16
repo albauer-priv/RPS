@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.9] - 2026-09-16
+
+### Removed
+
+- `src/rps/crewai_runtime/telemetry.py`: removed dead `_register_litellm_cache_callback()` function and its registration call. CrewAI 1.15.x dropped LiteLLM as a dependency (now calls OpenAI SDK directly); the LiteLLM `_async_success_callback` hook never fired. OpenAI prefix caching (≥1024 tokens) is still active automatically — it requires no explicit markers and is not reflected in our local telemetry.
+
+### Changed
+
+- `src/rps/crewai_runtime/provider.py`: removed stale comment referencing LiteLLM cache_control injection (LiteLLM no longer in the stack). Anthropic `extra_headers` behaviour unchanged.
+
 ## [0.37.8] - 2026-09-16
 
 ### Changed
