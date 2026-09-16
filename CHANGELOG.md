@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.31.0] - 2026-09-16
+
+### Added
+
+- Planning steps now auto-retry up to 2 times (3 total attempts) on failure before the run is marked FAILED. Each retry waits 30 s, resets the step to PENDING, logs a `WARNING` with the attempt count and reason, and emits a `STEP_RETRY` event visible in the Plan Hub run-events expander. Covers all synchronous planning steps (Season Scenarios, Season Plan, Phase, Week). The total retry budget is controlled by `MAX_STEP_RETRIES = 2` and `STEP_RETRY_DELAY_S = 30` in `plan_hub_worker.py`.
+
 ## [0.30.0] - 2026-09-16
 
 ### Fixed
