@@ -204,6 +204,39 @@ def _recover_stuck_runs(root: Path) -> None:
             )
 
 
+def _recover_orphaned_queued_runs(paths: QueuePaths, root: Path) -> None:
+    """Fail QUEUED/RUNNING runs that have no pending or active queue item.
+
+    These arise when a queue item is moved to failed/ before the worker starts
+    (e.g. empty file read error) but the run record stays QUEUED in the run store,
+    permanently blocking new runs for the same athlete.
+    """
+    if not root.exists():
+        return
+    for athlete_dir in root.iterdir():
+        if not athlete_dir.is_dir():
+            continue
+        athlete_id = athlete_dir.name
+        runs = load_runs(root, athlete_id, limit=50)
+        for run in runs:
+            if run.get("status") not in {"QUEUED", "RUNNING"}:
+                continue
+            run_id = run.get("run_id")
+            if not isinstance(run_id, str) or not run_id:
+                continue
+            pending_item = paths.pending / f"{run_id}.json"
+            active_item = paths.active / f"{run_id}.json"
+            if pending_item.exists() or active_item.exists():
+                continue
+            # No queue item in pending/ or active/ — this run will never execute.
+            _fail_run(root, athlete_id, run_id, "Recovered: no pending or active queue item found")
+            logger.warning(
+                "Recovered orphaned queued run athlete=%s run_id=%s",
+                athlete_id,
+                run_id,
+            )
+
+
 def start_queue_scheduler(
     *,
     root: Path,
@@ -227,6 +260,10 @@ def start_queue_scheduler(
         _recover_stuck_runs(root)
     except Exception as exc:
         logger.warning("Stuck-run recovery failed (non-fatal): %s", exc)
+    try:
+        _recover_orphaned_queued_runs(paths, root)
+    except Exception as exc:
+        logger.warning("Orphaned queued-run recovery failed (non-fatal): %s", exc)
 
     def _loop() -> None:
         logger.info("Queue scheduler started")
@@ -237,6 +274,10 @@ def start_queue_scheduler(
                     _recover_stuck_runs(root)
                 except Exception as exc:
                     logger.warning("Periodic stuck-run recovery failed: %s", exc)
+                try:
+                    _recover_orphaned_queued_runs(paths, root)
+                except Exception as exc:
+                    logger.warning("Periodic orphaned-queued-run recovery failed: %s", exc)
                 last_recovery = time.monotonic()
             for item_path in _list_queue(paths, paths.pending):
                 try:
