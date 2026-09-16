@@ -18,14 +18,14 @@ ORDERING: For each scenario, determine `scenario_guidance` values (`deload_caden
 
 Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `allowed_domains`, `season_archetype`) that are already concrete facts. The narrative fields below must translate those facts into plain language. Use the mandatory sentence templates below — fill in the bracketed slots from `scenario_guidance`. Do not substitute abstract planning prose for the template slots.
 
-- `scenario_guidance.recovery_margin` — required sentence pattern: `[high/moderate/lower] — [one concrete sentence describing what disruption this scenario can absorb before it needs to downshift]`
+- `scenario_guidance.recovery_margin` = explicit recovery stance as a non-empty string — required sentence pattern: `[high/moderate/lower] — [one concrete sentence describing what disruption this scenario can absorb before it needs to downshift]`
   - example: `moderate — one disrupted week is absorbable; two in a row require a posture correction before continuing the block`
-- `scenario_guidance.fatigue_exposure` — required sentence pattern: `[low/moderate/high but conditional] — [one concrete sentence describing how fatigue accumulates across the loading block]`
+- `scenario_guidance.fatigue_exposure` = explicit fatigue posture as a non-empty string — required sentence pattern: `[low/moderate/high but conditional] — [one concrete sentence describing how fatigue accumulates across the loading block]`
   - example: `moderate — useful fatigue builds across two loading weeks; the mini-reset week restores quality before the next block starts`
-- `scenario_guidance.specificity_density` — required sentence pattern: `[sparse/controlled/dense] — [one concrete sentence describing when and how event-specific work appears]`
+- `scenario_guidance.specificity_density` = explicit specificity posture as a non-empty string — required sentence pattern: `[sparse/controlled/dense] — [one concrete sentence describing when and how event-specific work appears]`
   - example: `controlled — long-ride duration and event-pace work increase progressively in the second half of the season; early phases stay aerobic`
 
-- `core_idea` — MANDATORY TEMPLATE: `[phase_count_expected] phases, [deload_cadence] cadence — [one concrete sentence about what training outcome this season builds toward].`
+- `core_idea` = one-sentence scenario promise — MANDATORY TEMPLATE: `[phase_count_expected] phases, [deload_cadence] cadence — [one concrete sentence about what training outcome this season builds toward].`
   - fill in phase count and cadence from the structured fields; write the outcome in terms the athlete would recognize
   - example: `18 phases, 2:1 cadence — build consistent aerobic durability through frequent shorter blocks without deep fatigue accumulation.`
   - example: `13 phases, 2:1:1 cadence — develop event-readiness systematically over 4-week blocks with a mid-block reload to preserve quality.`
@@ -63,12 +63,16 @@ Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `ph
 
 - `what_gets_prioritized` = concrete session types and training qualities that get more emphasis in this scenario
 - `what_gets_de_emphasized` = concrete session types and training qualities that get less emphasis
-- `event_alignment_notes` = how this scenario specifically prepares for the athlete's in-horizon A/B events — future-only, concrete
+- `event_alignment_notes` = future-only active event logic — how this scenario specifically prepares for the athlete's in-horizon A/B events; future-only, concrete
 - `constraint_summary` — MANDATORY: scenario-specific string array, NOT a repetition of the static availability table; each entry must describe how this scenario's cadence/phase structure interacts with the athlete's actual constraints
   - entry 1 template: `At [cadence] / [phase_length_weeks]-week, [one concrete implication for how disruptions interact with the block structure].`
   - entry 2 template: `[Domain permission] means weekday sessions are [execution character: low execution risk / capable of carrying a focused quality session / demanding on multiple days].`
   - entry 3 (if applicable): `[Indoor/outdoor or logistics constraint and how it specifically affects this scenario's structure].`
   - example entries for a 2:1 / 3-week / ENDURANCE+TEMPO scenario: `["At 2:1 / 3-week, a disrupted week costs one 3-week block then resets cleanly — no cascading damage to a longer block.", "ENDURANCE+TEMPO only means every session day is low execution risk; no intensity precision is required on shorter session days.", "Indoor fallback preserves most long-ride aerobic value in winter months without requiring outdoor conditions."]`
+  - `constraint_summary` entry patterns (structural guidance; do not copy sentences):
+    - fixed rest-day constraint pattern: short operational sentence naming non-training anchors; valid examples: `Monday and Friday remain fixed no-ride days.` / `The weekly structure keeps Monday and Friday as fixed rest days.`
+    - weekday vs weekend availability asymmetry pattern: short sentence explaining compact weekday windows and longer weekend capacity; valid examples: `Weekday training has to fit into compact Tue-Thu windows, with longer work shifting to the weekend.` / `The load-bearing time budget sits mainly on the weekend because weekday availability stays compressed.`
+    - indoor / weather / travel continuity pattern: short sentence explaining fallback continuity when outdoor execution is disrupted; valid examples: `Indoor trainer access preserves continuity when weather or travel disrupts outdoor riding.` / `Travel or poor weather can be absorbed more safely because indoor fallback remains available.`
 
 - `kpi_guardrail_notes` = pacing and metabolic guardrails specific to this scenario — not generic KPI prose
 - `decision_notes` = why this cadence and posture were chosen; structured string array
@@ -216,7 +220,7 @@ Intensity-domain semantics:
 
 Season archetype semantics:
 - `season_archetype` is a normalized scenario-level semantic, not a new cycle type.
-- Use `none` by default — EXCEPT when the "Athlete VO2max development objectives" rule below mandates `ceiling_first_durability` for at least one scenario.
+- Use `none` by default. Only use `ceiling_first_durability` when the "Athlete VO2max development objectives" rule below mandates it for at least one scenario.
 - Use `ceiling_first_durability` when: (a) the athlete profile mandates it (see below) OR (b) the scenario explicitly supports a ceiling-first then economy/durability sequence on other grounds.
 - `ceiling_first_durability` is supported by:
   - enough planning runway before peak (≥ 20 weeks)

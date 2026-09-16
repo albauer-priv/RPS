@@ -6,10 +6,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-_GROQ_BASE_URL_MARKER = "api.groq.com"
-_DEFAULT_GROQ_MODEL = "groq/openai/gpt-oss-20b"
 _DEFAULT_OPENAI_MODEL = "gpt-5.6-luna"
-_DEFAULT_GROQ_MAX_COMPLETION_TOKENS = 2048
 
 
 @dataclass(frozen=True)
@@ -103,22 +100,6 @@ def _parse_int(value: str | None) -> int | None:
         return None
 
 
-def _default_model(base_url: str | None) -> str:
-    """Return the global default model for the active provider."""
-
-    if base_url and _GROQ_BASE_URL_MARKER in base_url:
-        return _DEFAULT_GROQ_MODEL
-    return _DEFAULT_OPENAI_MODEL
-
-
-def _default_max_completion_tokens(base_url: str | None) -> int | None:
-    """Return the global default max completion tokens for the active provider."""
-
-    if base_url and _GROQ_BASE_URL_MARKER in base_url:
-        return _DEFAULT_GROQ_MAX_COMPLETION_TOKENS
-    return None
-
-
 def load_env_file(path: str | Path) -> None:
     """Load a simple ``KEY=VALUE`` env file into the process environment."""
 
@@ -158,11 +139,8 @@ def load_settings() -> Settings:
 def load_app_settings() -> AppSettings:
     """Return minimal application runtime settings with sensible defaults."""
 
-    base_url = os.getenv("RPS_LLM_BASE_URL")
-    default_model = os.getenv("RPS_LLM_MODEL") or _default_model(base_url)
+    default_model = os.getenv("RPS_LLM_MODEL") or _DEFAULT_OPENAI_MODEL
     default_max_completion = _parse_int(os.getenv("RPS_LLM_MAX_COMPLETION_TOKENS"))
-    if default_max_completion is None:
-        default_max_completion = _default_max_completion_tokens(base_url)
 
     return AppSettings(
         openai_model=default_model,

@@ -1015,12 +1015,12 @@ def test_season_scenarios_task_policy_uses_profile_quality_guardrail() -> None:
     assert "season_scenarios_profile_quality" in policy.guardrails
     assert "season_scenarios_selection_contract_complete" in policy.guardrails
 
-def test_season_scenarios_task_uses_narrow_workspace_tools() -> None:
+def test_season_scenarios_task_uses_no_workspace_tools() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])
     blueprints = build_task_blueprints(bundle)
     task = blueprints["season_scenarios"]
 
-    assert task.config["tools"] == ["workspace_get_input", "workspace_get_latest"]
+    assert task.config.get("tools") is None
 
 def test_early_planning_tasks_consume_evidence_alignment_context_before_synthesis() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])

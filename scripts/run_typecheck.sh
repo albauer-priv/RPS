@@ -10,7 +10,6 @@ TYPECHECK_GROUPS=(
   "src/rps/agents"
   "src/rps/core/logging.py"
   "src/rps/data_pipeline/intervals_data.py"
-  "src/rps/openai"
   "src/rps/orchestrator"
   "src/rps/rendering/renderer.py"
   "src/rps/ui/intervals_refresh.py"

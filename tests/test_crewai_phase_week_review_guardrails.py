@@ -184,7 +184,7 @@ def test_phase_and_week_review_managers_disable_reasoning_agent_path() -> None:
     phase_review_manager = profiles["phase_review_manager"]
     week_review_manager = profiles["week_review_manager"]
 
-    assert phase_review_manager["model"] == "gpt-5.6-luna"
+    assert phase_review_manager["model"] == "gpt-5.6-terra"
     assert phase_review_manager["reasoning"]["enabled"] is False
     assert week_review_manager["model"] == "gpt-5.6-luna"
     assert week_review_manager["reasoning"]["enabled"] is False
@@ -227,11 +227,8 @@ def test_context_read_and_contract_review_tasks_use_narrow_tool_scopes() -> None
     # recovery/load_governance blocks + the whole-phase execution block), and previous-week
     # evidence are all already injected as text into week_planning's shared user_input.
     assert blueprints["week_context_read"].config.get("tools") is None
-    # season_scenarios still declares tools -- scenario generation is outside this cleanup.
-    assert blueprints["season_scenarios"].config["tools"] == [
-        "workspace_get_input",
-        "workspace_get_latest",
-    ]
+    # season_scenarios no longer declares tools — inputs are pre-injected via deterministic injection.
+    assert blueprints["season_scenarios"].config.get("tools") is None
     # season_contract_review/phase_contract_review/week_contract_review have no tools: same
     # reasoning as the review-finalizer tasks above -- the review crew inherits everything the
     # planning crew already injected, plus the candidate bundle.

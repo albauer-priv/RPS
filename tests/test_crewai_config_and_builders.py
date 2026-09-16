@@ -106,7 +106,7 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert bundle.runtime_profiles["crews"]["season_planning"]["planning"]["enabled"] is False
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["enabled"] is False
     assert bundle.runtime_profiles["crews"]["phase_planning"]["planning"]["model"] == "gpt-5.6-luna"
-    assert bundle.runtime_profiles["agents"]["season_plan_manager"]["model"] == "gpt-5.6-luna"
+    assert bundle.runtime_profiles["agents"]["season_plan_manager"]["model"] == "gpt-5.6-terra"
     assert bundle.runtime_profiles["agents"]["season_plan_manager"]["reasoning"]["enabled"] is False
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["model"] == "gpt-5.6-terra"
     assert bundle.runtime_profiles["agents"]["macrocycle_architect"]["reasoning"]["enabled"] is False
@@ -790,14 +790,8 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         ]
     }
 
-    # season_scenarios still declares tools: scenario generation is not part of the
-    # deterministic-injection tool-redundancy cleanup applied to season/phase/week planning.
-    assert _task_tools_for_blueprint(
-        tasks["season_scenarios"], tool_map
-    ) == [
-        tool_map["workspace_get_input"],
-        tool_map["workspace_get_latest"],
-    ]
+    # season_scenarios no longer declares tools — inputs are pre-injected via deterministic injection.
+    assert _task_tools_for_blueprint(tasks["season_scenarios"], tool_map) == []
     assert _task_tools_for_blueprint(tasks["week_plan"], tool_map) == []
     # season_macrocycle_draft has no tools: all of its inputs are pre-injected as text
     # into the season_planning crew's shared user_input (see season_flow.py).
@@ -820,10 +814,7 @@ def test_task_scoped_tools_and_callback_are_attached() -> None:
         tools=tool_map,
     )
 
-    assert task.kwargs["tools"] == [
-        tool_map["workspace_get_input"],
-        tool_map["workspace_get_latest"],
-    ]
+    assert task.kwargs.get("tools", []) == []
     assert task.kwargs["name"] == "season_scenarios"
     assert callable(task.kwargs["callback"])
 

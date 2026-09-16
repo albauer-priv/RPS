@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.10] - 2026-09-16
+
+### Removed
+
+- `src/rps/openai/` package: deleted `model_capabilities.py`, `reasoning.py`, and `__init__.py`. These helpers (`supports_temperature`, `build_reasoning_payload`) were never imported after LiteLLM was removed in v0.36.x — the package was dead code.
+- `src/rps/core/config.py`: removed `_GROQ_BASE_URL_MARKER`, `_DEFAULT_GROQ_MODEL`, `_DEFAULT_GROQ_MAX_COMPLETION_TOKENS` constants and the `_default_model` / `_default_max_completion_tokens` helper functions. Groq was an earlier provider option; after switching to direct OpenAI SDK use these were never referenced.
+
+### Changed
+
+- `skills/season/scenario-generation/SKILL.md`: enriched field-contract definitions with compact `= explicit X as a non-empty string` forms for `scenario_guidance` fields; added `constraint_summary` entry patterns (fixed rest-day, weekday vs weekend asymmetry, indoor/weather/travel continuity) mirroring what the prompt already contained; clarified `season_archetype` default wording.
+
 ## [0.37.9] - 2026-09-16
 
 ### Removed

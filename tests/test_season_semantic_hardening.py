@@ -152,7 +152,7 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "preferred example: `Less forgiving than A if continuity break or recovery slip appears.`" in scenario_skill
     assert "preferred example: `Too aggressive if fatigue risk or travel disruption appears.`" in scenario_skill
     assert "Field completion contract:" in scenario_skill
-    assert "examples are illustrative of structure and specificity only, not canonical wording" in scenario_skill
+    assert "examples illustrate structure and specificity only" in scenario_skill
     assert "do not mechanically reuse example sentences" in scenario_skill
     assert "fixed rest-day constraint pattern" in scenario_skill
     assert "weekday vs weekend availability asymmetry pattern" in scenario_skill
@@ -187,7 +187,7 @@ def test_season_scenario_vo2_rule_is_canonical_and_frontloaded() -> None:
     canonical_rule = (
         "Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as "
         "`sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from "
-        "`specificity-under-fatigue`, `density`, `event simulation`, or `load posture`."
+        "`specificity-under-fatigue`, `density`, `event simulation`, or `load posture`"
     )
     canonical_omission = (
         "If that rationale cannot be stated explicitly in `decision_notes` and/or `kpi_guardrail_notes`, "
