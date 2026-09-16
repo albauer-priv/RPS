@@ -1,7 +1,7 @@
 ---
-Version: 1.2
+Version: 1.3
 Status: Implemented
-Last-Updated: 2026-05-27
+Last-Updated: 2026-09-16
 Owner: Planning Runtime
 ---
 # FEAT: Evidence Curation Pipeline
@@ -9,7 +9,7 @@ Owner: Planning Runtime
 * **ID:** FEAT_evidence_curation_pipeline
 * **Status:** Implemented
 * **Owner/Area:** Planning Runtime
-* **Last-Updated:** 2026-05-27
+* **Last-Updated:** 2026-09-16
 * **Related:** `src/rps/evidence`, `config/crewai`, `skills/evidence/source-curation`
 
 ---
@@ -258,6 +258,16 @@ Use `FEAT_repo_wide_evidence_library_and_refresh` for:
 * [x] `doc/architecture/agents.md`
 * [x] new ADR for evidence curation pipeline
 * [x] evidence skill and prompt documentation
+
+---
+
+## 13) Known Issues & Post-Implementation Fixes
+
+### 2026-09-16 — Discovery query false positives (v0.37.3)
+
+**Problem:** The weekly GitHub Actions refresh (Sep 14) produced 51 false-positive `dur_auto_2026_*` entries from materials-science, electrochemistry, and medical journals. Root cause: bare queries such as `"durability" AND cycling` matched "electrode cycling" / "battery cycling" / "durability" as material properties, which PubMed indexes across all fields.
+
+**Fix:** All seven `DISCOVERY_TOPICS` queries in `src/rps/evidence/refresh.py` now require explicit sports/exercise context via `[tiab]` field tags or `[MeSH Terms]`, e.g. `"endurance athlete"[tiab]`, `cyclist[tiab]`, `"Physical Endurance"[MeSH Terms]`. The 51 false-positive entries are marked `rejected` in `core_studies.yaml`; their titles remain in the deduplication index to prevent re-discovery.
 
 ---
 
