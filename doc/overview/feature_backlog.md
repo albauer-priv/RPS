@@ -109,7 +109,7 @@ When resuming work, follow this order so context stays consistent:
 - [ ] FEAT_parquet_rollups — precomputed analytics rollups for long ranges.
 - [ ] FEAT_archival_policy — archive/restore old athlete data.
 - [x] FEAT_run_progress_ui — progress indicators for long-running planning jobs.
-- [ ] FEAT_planning_done_notification — optional banner/email/push when planning completes.
+- [x] FEAT_planning_done_notification — optional banner/email/push when planning completes.
 - [ ] FEAT_auto_retry_transient — auto-retry transient failures with clear logs.
 - [ ] FEAT_season_scenarios_tool_read_dedup — reduce redundant `workspace_get_input` / `workspace_get_latest` calls in `season_scenarios`, enforce consistent artifact/input type casing, and prefer one-pass minimal context reads per task run so guardrail retries do not amplify log noise and token/tool cost.
 - [ ] FEAT_planner_positive_frontloading_rollout — apply the documented positive-frontloading template from `FEAT_season_scenario_positive_frontloading` to Season/Phase/Week planner chains with a mandatory 3-pass model (Pass 1 structural draft, Pass 2 semantic finalization, Pass 3 planner self-audit), explicit Pass 1 vs Pass 2 loopback rules, formal review classification, and copy-only writer preconditions.

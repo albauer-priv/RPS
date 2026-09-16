@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0] - 2026-09-16
+
+### Added
+
+- Plan Hub now shows a completion banner immediately after a planning run finishes. A green `st.success` banner appears when the run ends with status `DONE` ("Planning complete — N steps · M artifacts written · Xs"), and a red `st.error` banner appears on failure. Detection uses a session-state transition (`plan_hub_was_running` → False), so the banner appears exactly once per run without repeated display on subsequent interactions.
+
 ## [0.27.0] - 2026-09-16
 
 ### Added
