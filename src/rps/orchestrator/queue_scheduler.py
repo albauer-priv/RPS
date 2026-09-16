@@ -15,6 +15,7 @@ from rps.agents.runtime import AgentRuntime
 from rps.orchestrator.plan_hub_worker import PlanHubWorkerConfig, start_plan_hub_worker_with_stop
 from rps.ui.run_store import (
     _lock_path,
+    _read_lock_run_id,
     _recover_stale_lock,
     append_event,
     load_runs,
@@ -172,20 +173,35 @@ def _recover_orphaned_active_items(paths: QueuePaths, root: Path) -> None:
 
 
 def _recover_stuck_runs(root: Path) -> None:
-    """Fail RUNNING/QUEUED runs that have a stale lock but no active/ queue item."""
-    locks_root = root
-    # Scan all per-athlete lock files under <root>/<athlete_id>/locks/
-    if not locks_root.exists():
+    """Fail RUNNING/QUEUED runs with a stale lock or a failed queue item but no active item."""
+    paths = QueuePaths(root=root)
+    if not root.exists():
         return
-    for athlete_dir in locks_root.iterdir():
+    for athlete_dir in root.iterdir():
         if not athlete_dir.is_dir():
             continue
         athlete_id = athlete_dir.name
         lock = _lock_path(root, athlete_id)
         if not lock.exists():
             continue
-        # If this lock is stale, fail its run. _recover_stale_lock checks independently.
-        _recover_stale_lock(root, athlete_id)
+        # Primary: stale by age or the guarded run is already terminal.
+        if _recover_stale_lock(root, athlete_id):
+            continue
+        # Secondary: queue item ended up in failed/ with no matching active/ item —
+        # the worker died and the active item was already cleaned up.
+        locked_run_id = _read_lock_run_id(root, athlete_id)
+        if not locked_run_id:
+            continue
+        failed_item = paths.failed / f"{locked_run_id}.json"
+        active_item = paths.active / f"{locked_run_id}.json"
+        if failed_item.exists() and not active_item.exists():
+            _fail_run(root, athlete_id, locked_run_id, "Recovered: queue item in failed with no active item")
+            _lock_path(root, athlete_id).unlink(missing_ok=True)
+            logger.warning(
+                "Recovered stuck run via failed queue item athlete=%s run_id=%s",
+                athlete_id,
+                locked_run_id,
+            )
 
 
 def start_queue_scheduler(
@@ -214,7 +230,14 @@ def start_queue_scheduler(
 
     def _loop() -> None:
         logger.info("Queue scheduler started")
+        last_recovery = time.monotonic()
         while not stop_event.is_set():
+            if time.monotonic() - last_recovery >= 60:
+                try:
+                    _recover_stuck_runs(root)
+                except Exception as exc:
+                    logger.warning("Periodic stuck-run recovery failed: %s", exc)
+                last_recovery = time.monotonic()
             for item_path in _list_queue(paths, paths.pending):
                 try:
                     item = _read_queue_item(item_path)

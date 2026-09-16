@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] - 2026-09-16
+
+### Fixed
+
+- Fixed queue scheduler failing to recover RUNNING runs whose queue item landed in `failed/` with no matching `active/` item (`fix/stuck-season-plan-run-recovery`). `_recover_stuck_runs` in `queue_scheduler.py` now additionally checks for this inconsistency and releases the lock + marks the run FAILED, unblocking subsequent queued runs. Recovery also runs periodically (every 60 s) inside the scheduler loop, not only at startup. Two new tests in `tests/test_run_scheduler_resilience.py`.
+
 ## [0.23.0] - 2026-09-15
 
 ### Added
