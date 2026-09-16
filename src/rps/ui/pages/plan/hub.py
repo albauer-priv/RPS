@@ -1582,6 +1582,40 @@ planning_locked = scope_lock
 if run_state:
     st.session_state["plan_hub_autorefresh_ts"] = time.time()
 
+_was_running = bool(st.session_state.get("plan_hub_was_running", False))
+_just_completed = _was_running and not run_state
+if _just_completed and active_run is not None:
+    _completion_run_id = _as_str(active_run.get("run_id")) or ""
+    _shown_for = st.session_state.get("plan_hub_completion_shown_for", "")
+    if _completion_run_id and _completion_run_id != _shown_for:
+        st.session_state["plan_hub_completion_shown_for"] = _completion_run_id
+        _summary = _as_map(active_run.get("summary")) or {}
+        _steps_done = _summary.get("steps_done", 0)
+        _steps_failed = _summary.get("steps_failed", 0)
+        _artefacts = _summary.get("artefacts_written", 0)
+        _started_str = _as_str(active_run.get("started_at"))
+        _finished_str = _as_str(active_run.get("finished_at"))
+        _elapsed = ""
+        if _started_str and _finished_str:
+            try:
+                _s = datetime.fromisoformat(_started_str.replace("Z", "+00:00"))
+                _f = datetime.fromisoformat(_finished_str.replace("Z", "+00:00"))
+                _secs = max(0, int((_f - _s).total_seconds()))
+                _elapsed = f"{_secs // 60} min {_secs % 60} s" if _secs >= 60 else f"{_secs} s"
+            except ValueError:
+                pass
+        elif _started_str:
+            _elapsed = _format_elapsed(_started_str)
+        _elapsed_part = f" · {_elapsed}" if _elapsed else ""
+        if active_run.get("status") == "DONE":
+            st.success(
+                f"Planning complete — {_steps_done} steps · {_artefacts} artifacts written{_elapsed_part}"
+            )
+        else:
+            st.error(
+                f"Planning failed — {_steps_done} done · {_steps_failed} failed{_elapsed_part}"
+            )
+
 if active_run_id and active_run is not None:
     _ensure_worker(
         SETTINGS.workspace_root,
@@ -2250,6 +2284,7 @@ else:
     st.info("No active run. Start planning to see execution steps.")
 logger = logging.getLogger(__name__)
 
+st.session_state["plan_hub_was_running"] = run_state
 if run_state:
     time.sleep(2)
     st.rerun()
