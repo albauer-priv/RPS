@@ -13,6 +13,7 @@ bundles:
       - path: skills/shared/durability-methodology/references/evidence_library_manifest.md
       - path: skills/shared/durability-methodology/references/durability_reference_table_core.md
       - path: skills/shared/durability-methodology/references/durability_reference_table_applied.md
+      - path: skills/season/scenario-generation/references/kj_first_durability_philosophy.md
   factual_week_refs:
     sources:
       - path: specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.7] - 2026-09-16
+
+### Added
+
+- `skills/season/scenario-generation/references/kj_first_durability_philosophy.md` — new reference document that makes the kJ-first durability philosophy explicit for the scenario generation layer: core durability definition, kJ-first principle, progression order (kJ/time → frequency → density → intensity), progressive overload guardrail numbers, decision hierarchy, and what the scenario layer must make explicit before handoff to season planning. Sourced from the existing shared durability methodology and progression guardrails.
+- `config/crewai/knowledge_sources.yaml`: added the new reference to the `factual_evidence` knowledge bundle so `season_scenario` (and all other planning agents receiving that bundle) can retrieve it via RAG.
+
+### Changed
+
+- Season scenario skill: `Purpose and contract` block now points explicitly to `references/kj_first_durability_philosophy.md` and `skills/shared/durability-methodology/SKILL.md` as the foundational justification sources for `decision_notes`, `load_philosophy`, and `risk_profile`.
+
 ## [0.37.6] - 2026-09-16
 
 ### Changed

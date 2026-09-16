@@ -10,6 +10,8 @@ Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 Purpose and contract:
 The scenario layer defines the qualitative character of each season option — what drives load progression (duration-led, frequency-led, or quality/intensity-led), how phases feel across their length, and what the recovery rhythm means for the athlete's week. The season planning layer executes that character as numbers: kJ targets, TSS progressions, and phase-by-phase structure. The handoff is the `scenario_guidance` block (machine-readable parameters the season planner reads directly) plus the narrative fields (human-readable explanation for the athlete and coach evaluating the options). The scenario layer must make the character choice fully explicit — load philosophy, progression direction, recovery rhythm, and qualitative session feel are ALL this layer's job. Do not defer any of these to season planning.
 
+The foundational principles behind all scenario decisions are documented in `references/kj_first_durability_philosophy.md` (kJ-first principle, progression order, decision hierarchy) and in `skills/shared/durability-methodology/SKILL.md` (full durability decision rules). Use them as justification when writing `decision_notes`, `load_philosophy`, and `risk_profile` — they are the "why" behind each scenario's structure.
+
 Field completion contract:
 
 ORDERING: For each scenario, determine `scenario_guidance` values (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `allowed_domains`, `season_archetype`) FIRST. Then derive each narrative field by filling its template from those exact values. The narrative fields summarize the guidance — they must NOT be written independently from it.
