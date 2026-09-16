@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.8] - 2026-09-16
+
+### Changed
+
+- `config/crewai/runtime_profiles.yaml`: elevated 17 season- and phase-layer agents from `gpt-5.6-luna` to `gpt-5.6-terra`. All week agents, writer agents, context specialists, and high-volume agents remain on Luna.
+  - Season layer → Terra: `season_scenario`, `season_planner`, `season_plan_manager`, `season_phase_blueprint_specialist`, `scenario_interpreter`, `event_priority_specialist`, `peak_window_specialist`, `season_progression_specialist`, `season_plan_auditor`, `season_governance_auditor`, `season_feed_forward_manager`
+  - Phase layer → Terra: `phase_architect`, `phase_bundle_manager`, `phase_review_manager`, `phase_feed_forward_manager`, `phase_intensity_distribution_specialist`, `phase_event_integration_specialist`, `phase_governance_auditor`
+  - Model visible in run logs via `CREW_TASK_PREPARED` / `CREW_TASK_STARTED` events (`"model"` field)
+
 ## [0.37.7] - 2026-09-16
 
 ### Added

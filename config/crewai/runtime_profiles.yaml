@@ -114,12 +114,13 @@ agents:
     reasoning:
       enabled: false
 
+  # --- Season layer: Terra for generative/high-stakes agents ---
   season_scenario:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_planner:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_context_specialist:
@@ -127,7 +128,7 @@ agents:
     reasoning:
       enabled: false
   season_plan_manager:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_review_manager:
@@ -135,7 +136,7 @@ agents:
     reasoning:
       enabled: false
   season_feed_forward_manager:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_artifact_writer:
@@ -143,15 +144,15 @@ agents:
     reasoning:
       enabled: false
   scenario_interpreter:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   event_priority_specialist:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   peak_window_specialist:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   macrocycle_architect:
@@ -163,11 +164,11 @@ agents:
     reasoning:
       enabled: false
   season_progression_specialist:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_phase_blueprint_specialist:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_constraint_specialist:
@@ -187,11 +188,11 @@ agents:
     reasoning:
       enabled: false
   season_plan_auditor:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_governance_auditor:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   season_constraints_reviewer:
@@ -203,8 +204,9 @@ agents:
     reasoning:
       enabled: false
 
+  # --- Phase layer: Terra for architect, manager, key specialists ---
   phase_architect:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   phase_context_specialist:
@@ -216,16 +218,16 @@ agents:
     reasoning:
       enabled: false
   phase_bundle_manager:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: true
       max_attempts: 3
   phase_review_manager:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   phase_feed_forward_manager:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   phase_artifact_writer:
@@ -249,11 +251,11 @@ agents:
     reasoning:
       enabled: false
   phase_intensity_distribution_specialist:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   phase_event_integration_specialist:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   phase_preview_synthesizer:
@@ -265,7 +267,7 @@ agents:
     reasoning:
       enabled: false
   phase_governance_auditor:
-    model: gpt-5.6-luna
+    model: gpt-5.6-terra
     reasoning:
       enabled: false
   phase_structure_reviewer:
