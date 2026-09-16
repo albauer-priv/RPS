@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.3] - 2026-09-16
+
+### Fixed
+
+- Evidence discovery: tightened all seven `DISCOVERY_TOPICS` PubMed queries to require explicit sports/exercise context in title or abstract (e.g. `"endurance athlete"[tiab]`, `cyclist[tiab]`, `"Physical Endurance"[MeSH Terms]`). The previous queries (`"durability" AND cycling`, `"fatigue resistance" AND cycling`, etc.) matched "cycling" and "durability" as generic material-science terms (battery charge cycles, electrode durability), producing 51 completely irrelevant false-positive auto-discovered entries in the Sep 14 refresh. All 51 `dur_auto_2026_*` entries are now marked `rejected` so their titles remain in the deduplication index and they cannot be re-added.
+
 ## [0.37.2] - 2026-09-16
 
 ### Changed

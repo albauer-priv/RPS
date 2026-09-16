@@ -39,13 +39,34 @@ _DEFAULT_LEGACY_BACKFILL_LIMIT = 1
 _DEFAULT_MAX_ENTRIES_PER_REFRESH = 5
 _DEFAULT_ABSTRACT_FETCH_RETRIES = 2
 DISCOVERY_TOPICS: tuple[tuple[str, str], ...] = (
-    ("durability", "\"durability\" AND cycling"),
-    ("fatigue_resistance", "\"fatigue resistance\" AND cycling"),
-    ("repeatability", "\"repeatability\" AND endurance"),
-    ("progressive_overload", "\"endurance training\" AND periodization AND cycling"),
-    ("taper", "taper AND endurance athletes"),
-    ("fueling", "carbohydrate fueling endurance cycling"),
-    ("masters", "masters endurance cycling training"),
+    (
+        "durability",
+        "(durability OR \"physiological resilience\") AND (\"endurance athlete\"[tiab] OR \"endurance exercise\"[tiab] OR \"cycling performance\"[tiab] OR \"Physical Endurance\"[MeSH Terms])",
+    ),
+    (
+        "fatigue_resistance",
+        "\"fatigue resistance\" AND (cyclist[tiab] OR \"endurance athlete\"[tiab] OR \"endurance exercise\"[tiab])",
+    ),
+    (
+        "repeatability",
+        "repeatability AND (cyclist[tiab] OR \"endurance athlete\"[tiab] OR \"endurance performance\"[tiab])",
+    ),
+    (
+        "progressive_overload",
+        "\"endurance training\" AND periodization AND (cyclist[tiab] OR \"endurance athlete\"[tiab])",
+    ),
+    (
+        "taper",
+        "taper AND (\"endurance athlete\"[tiab] OR cyclist[tiab] OR \"endurance sport\"[tiab])",
+    ),
+    (
+        "fueling",
+        "carbohydrate AND (\"endurance exercise\"[tiab] OR cyclist[tiab] OR \"endurance athlete\"[tiab])",
+    ),
+    (
+        "masters",
+        "(\"masters athlete\" OR \"masters cyclist\" OR \"veteran endurance\") AND (endurance[tiab] OR training[tiab])",
+    ),
 )
 
 
