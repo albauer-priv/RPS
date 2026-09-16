@@ -30,6 +30,7 @@ Completed items are removed from this file; CHANGELOG.md is the authoritative re
 - [ ] FEAT_crewai_memory_policy_tuning — tune CrewAI memory scoring/retention, add athlete-scoped forget/cleanup helpers, and keep Coach-confirmed preferences separate from planning artifacts.
 - [ ] FEAT_crewai_files_evaluation — evaluate CrewAI Files only for PDF evidence, charts, screenshots, or external feedback; keep plan artifacts Workspace/Schema-owned.
 - [ ] FEAT_crewai_mcp_apps_policy — define conservative MCP/App usage for evidence search and external integrations with RPS preview/confirm/apply boundaries.
+- [ ] FEAT_prompt_caching — wire explicit prompt-caching breakpoints at the provider level. Default model is `openai/gpt-5.6-luna` (`src/rps/crewai_runtime/provider.py`). No `cache_control`/`ephemeral` markers exist anywhere today. Task-description building (`src/rps/agents/crewai_task_execution.py`) already places static content (agent instructions, skill text) before dynamic context blocks — a prefix-caching-friendly structure, but not yet declared. Work: add `cache_control: {type: ephemeral}` breakpoints at the static/dynamic boundary in task-description construction and verify cache-hit behavior in telemetry/logs.
 
 ---
 
