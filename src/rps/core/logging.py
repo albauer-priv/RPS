@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import importlib.metadata
 import logging
 import sys
 import time
@@ -207,7 +208,13 @@ def setup_logging(
 
     if log_file:
         announce_level = max(file_level_value, console_level_value)
-        logging.getLogger("rps.logging").log(announce_level, "Log file: %s", log_file)
+        _startup_log = logging.getLogger("rps.logging")
+        _startup_log.log(announce_level, "Log file: %s", log_file)
+        try:
+            _version = importlib.metadata.version("rps")
+        except importlib.metadata.PackageNotFoundError:
+            _version = "unknown"
+        _startup_log.log(announce_level, "RPS version: %s", _version)
 
 
 def log_and_print(logger: logging.Logger, message: str, level: int = logging.INFO) -> None:
