@@ -39,6 +39,9 @@ StepRecord = dict[str, object]
 IndexRecord = dict[str, object]
 WorkerHandle = dict[str, object]
 
+MAX_STEP_RETRIES: int = 2   # number of retry attempts after first failure (total attempts = 3)
+STEP_RETRY_DELAY_S: int = 30  # seconds to wait before each retry
+
 
 @dataclass(frozen=True)
 class PlanHubWorkerConfig:
@@ -719,30 +722,67 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                     config.athlete_id,
                                     config.run_id,
                                 )
-                                step["Status"] = "FAILED"
-                                step["Details"] = root_cause or (exec_result or {}).get("error") or "Execution failed."
-                                step["Ended"] = datetime.now(UTC).isoformat()
-                                _set_duration(step)
-                                _mark_blocked(steps, step)
-                                append_event(
-                                    config.root,
-                                    config.athlete_id,
-                                    config.run_id,
-                                    {"type": "STEP_FAILED", "reason": step.get("Details"), **_step_event_context(step)},
-                                )
-                                _emit_blocked_step_events(config.root, config.athlete_id, config.run_id, steps)
-                                update_run(
-                                    config.root,
-                                    config.athlete_id,
-                                    config.run_id,
-                                    {
-                                        "status": "FAILED",
-                                        "finished_at": datetime.now(UTC).isoformat(),
-                                        "summary": _run_summary(steps),
-                                        "steps": steps,
-                                    },
-                                )
-                                return
+                                failure_detail = root_cause or (exec_result or {}).get("error") or "Execution failed."
+                                _raw_rc = step.get("_retry_count")
+                                retry_count = _raw_rc if isinstance(_raw_rc, int) else 0
+                                if retry_count < MAX_STEP_RETRIES:
+                                    step["_retry_count"] = retry_count + 1
+                                    step["Status"] = "PENDING"
+                                    step["Started"] = None
+                                    step["Ended"] = None
+                                    logger.warning(
+                                        "Step failed (attempt %d/%d), retrying in %ds: %s — run_id=%s step=%s",
+                                        retry_count + 1,
+                                        MAX_STEP_RETRIES + 1,
+                                        STEP_RETRY_DELAY_S,
+                                        failure_detail,
+                                        config.run_id,
+                                        step.get("step_id"),
+                                    )
+                                    append_event(
+                                        config.root,
+                                        config.athlete_id,
+                                        config.run_id,
+                                        {
+                                            "type": "STEP_RETRY",
+                                            "attempt": retry_count + 1,
+                                            "max_retries": MAX_STEP_RETRIES,
+                                            "reason": failure_detail,
+                                            **_step_event_context(step),
+                                        },
+                                    )
+                                    update_run(
+                                        config.root,
+                                        config.athlete_id,
+                                        config.run_id,
+                                        {"summary": _run_summary(steps), "steps": steps},
+                                    )
+                                    time.sleep(STEP_RETRY_DELAY_S)
+                                else:
+                                    step["Status"] = "FAILED"
+                                    step["Details"] = failure_detail
+                                    step["Ended"] = datetime.now(UTC).isoformat()
+                                    _set_duration(step)
+                                    _mark_blocked(steps, step)
+                                    append_event(
+                                        config.root,
+                                        config.athlete_id,
+                                        config.run_id,
+                                        {"type": "STEP_FAILED", "reason": step.get("Details"), **_step_event_context(step)},
+                                    )
+                                    _emit_blocked_step_events(config.root, config.athlete_id, config.run_id, steps)
+                                    update_run(
+                                        config.root,
+                                        config.athlete_id,
+                                        config.run_id,
+                                        {
+                                            "status": "FAILED",
+                                            "finished_at": datetime.now(UTC).isoformat(),
+                                            "summary": _run_summary(steps),
+                                            "steps": steps,
+                                        },
+                                    )
+                                    return
                     update_run(config.root, config.athlete_id, config.run_id, {"summary": _run_summary(steps), "steps": steps})
                     break
 
