@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.1] - 2026-09-16
+
+### Fixed
+
+- Scenario generation skill: prose templates in `load_philosophy`, `typical_week_feel`, and `constraint_summary` contained athlete-specific day names ("Saturday", "Tue–Thu windows") that would only fit one athlete's availability structure. Replaced with generic slot labels ("primary long session day", "shorter session days") that work for any athlete's week layout.
+
 ## [0.37.0] - 2026-09-16
 
 ### Changed
