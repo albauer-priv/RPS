@@ -9,6 +9,7 @@ import pytest
 
 from rps.orchestrator.queue_scheduler import (
     _recover_orphaned_active_items,
+    _recover_orphaned_queued_runs,
     _recover_stuck_runs,
     ensure_queue_dirs,
 )
@@ -353,4 +354,50 @@ def test_recover_stuck_runs_ignores_run_with_active_queue_item(tmp_path: Path) -
     assert _lock_path(tmp_path, "ath4").exists()
     runs = load_runs(tmp_path, "ath4", limit=10)
     run = next(r for r in runs if r["run_id"] == "live_run")
+    assert run["status"] == "RUNNING"
+
+
+# ---------------------------------------------------------------------------
+# _recover_orphaned_queued_runs
+# ---------------------------------------------------------------------------
+
+def test_recover_orphaned_queued_runs_fails_queued_run_with_no_queue_item(tmp_path: Path) -> None:
+    """QUEUED run with no pending/ or active/ item is failed so new runs can start."""
+    paths = ensure_queue_dirs(tmp_path)
+    _write_run(tmp_path, "ath5", "orphan_run", "QUEUED")
+    # Queue item only in failed/ — simulates read-error-then-move scenario
+    _write_queue_item(paths.failed, "orphan_run", "ath5")
+
+    _recover_orphaned_queued_runs(paths, tmp_path)
+
+    runs = load_runs(tmp_path, "ath5", limit=10)
+    run = next(r for r in runs if r["run_id"] == "orphan_run")
+    assert run["status"] == "FAILED"
+    events = load_events(tmp_path, "ath5", "orphan_run")
+    assert any("no pending or active queue item" in str(e.get("reason", "")) for e in events)
+
+
+def test_recover_orphaned_queued_runs_leaves_pending_run_alone(tmp_path: Path) -> None:
+    """QUEUED run with a valid pending/ item must not be failed."""
+    paths = ensure_queue_dirs(tmp_path)
+    _write_run(tmp_path, "ath5", "waiting_run", "QUEUED")
+    _write_queue_item(paths.pending, "waiting_run", "ath5")
+
+    _recover_orphaned_queued_runs(paths, tmp_path)
+
+    runs = load_runs(tmp_path, "ath5", limit=10)
+    run = next(r for r in runs if r["run_id"] == "waiting_run")
+    assert run["status"] == "QUEUED"
+
+
+def test_recover_orphaned_queued_runs_leaves_active_run_alone(tmp_path: Path) -> None:
+    """RUNNING run with an item in active/ must not be touched."""
+    paths = ensure_queue_dirs(tmp_path)
+    _write_run(tmp_path, "ath5", "active_run", "RUNNING")
+    _write_queue_item(paths.active, "active_run", "ath5")
+
+    _recover_orphaned_queued_runs(paths, tmp_path)
+
+    runs = load_runs(tmp_path, "ath5", limit=10)
+    run = next(r for r in runs if r["run_id"] == "active_run")
     assert run["status"] == "RUNNING"
