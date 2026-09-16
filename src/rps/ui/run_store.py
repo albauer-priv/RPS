@@ -14,6 +14,11 @@ logger = logging.getLogger(__name__)
 
 ACTIVE_RUN_STATUSES = {"QUEUED", "RUNNING"}
 STALE_LOCK_AGE_SECONDS: int = 14400  # 4 hours
+
+# Wall-clock timestamp captured once when this module is first imported.
+# Any lock whose mtime predates this value was created by a previous process
+# that is now dead, so it is unconditionally stale.
+_PROCESS_START_TS: float = datetime.now(UTC).timestamp()
 JsonMap = dict[str, object]
 JsonList = list[object]
 JsonPayload = JsonMap | JsonList
@@ -362,8 +367,10 @@ def _lock_is_stale(root: Path, athlete_id: str) -> bool:
     if not path.exists():
         return False
     try:
-        age = datetime.now(UTC).timestamp() - path.stat().st_mtime
-        if age > STALE_LOCK_AGE_SECONDS:
+        mtime = path.stat().st_mtime
+        if mtime < _PROCESS_START_TS:
+            return True  # lock predates current process — holding process is dead
+        if datetime.now(UTC).timestamp() - mtime > STALE_LOCK_AGE_SECONDS:
             return True
     except OSError:
         return True
