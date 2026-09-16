@@ -1544,6 +1544,63 @@ def normalize_phase_guardrails_document(
     return normalized
 
 
+def _fix_scenario_narrative_prefixes(
+    scenario: dict[str, Any],
+    guidance: dict[str, Any],
+) -> None:
+    """Force narrative field openings to match their mandatory template format.
+
+    core_idea    → "[N] phases, [cadence] cadence — …"
+    load_philosophy → "[cadence] cadence, [N]-week phases: …"
+    typical_week_feel → "Shorter session days are …"
+
+    This is a deterministic post-processing step: cadence/phase values are
+    already correct (from normalize_season_scenarios_document) so we stamp
+    them into the prose openings without touching the rest of each field.
+    """
+    cadence = str(guidance.get("deload_cadence") or "").strip()
+    phase_length = guidance.get("phase_length_weeks")
+    phase_count = guidance.get("phase_count_expected")
+
+    # core_idea: must start with "[N] phases, [cadence] cadence — "
+    if cadence and phase_count:
+        expected_prefix = f"{phase_count} phases, {cadence} cadence"
+        core_idea = str(scenario.get("core_idea") or "").strip()
+        if not core_idea.startswith(expected_prefix) and not core_idea[:3].replace(" ", "").isdigit():
+            tail = core_idea.lstrip("0123456789").lstrip()
+            # strip an existing "X phases, Y:Z cadence — " opener if present
+            if " cadence" in tail[:50]:
+                tail = tail[tail.find(" — ") + 3:] if " — " in tail[:60] else tail
+            if not tail:
+                tail = core_idea
+            scenario["core_idea"] = f"{expected_prefix} — {tail}"
+
+    # load_philosophy: must start with "[cadence] cadence, [N]-week phases: "
+    if cadence and phase_length:
+        lp_prefix = f"{cadence} cadence, {phase_length}-week phases"
+        load_philosophy = str(scenario.get("load_philosophy") or "").strip()
+        if not load_philosophy.startswith(lp_prefix) and not load_philosophy.startswith(cadence):
+            scenario["load_philosophy"] = f"{lp_prefix}: {load_philosophy}"
+
+    # typical_week_feel: must start with "Shorter session days are"
+    typical = str(scenario.get("typical_week_feel") or "").strip()
+    if typical and not typical.startswith("Shorter session days are"):
+        allowed_domains: list[str] = []
+        intensity_guidance = guidance.get("intensity_guidance")
+        if isinstance(intensity_guidance, dict):
+            raw = intensity_guidance.get("allowed_domains")
+            if isinstance(raw, list):
+                allowed_domains = [str(d).upper() for d in raw]
+        has_threshold = "THRESHOLD" in allowed_domains
+        if not has_threshold:
+            feel_opener = "Shorter session days are steady endurance or tempo."
+        elif cadence == "2:1:1":
+            feel_opener = "Shorter session days are mostly endurance; loading week 2 adds a threshold or sweet-spot session."
+        else:
+            feel_opener = "Shorter session days are quality-focused in all loading weeks."
+        scenario["typical_week_feel"] = f"{feel_opener} {typical}"
+
+
 def normalize_season_scenarios_document(
     document: dict[str, Any],
     *,
@@ -1805,6 +1862,7 @@ def normalize_season_scenarios_document(
             intensity_guidance["avoid_domains"] = avoid_domains
             guidance["intensity_guidance"] = intensity_guidance
             scenario["scenario_guidance"] = guidance
+            _fix_scenario_narrative_prefixes(scenario, guidance)
             cleaned_scenarios.append(scenario)
     data["scenarios"] = cleaned_scenarios
     document["meta"] = meta

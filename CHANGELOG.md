@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.5] - 2026-09-16
+
+### Fixed
+
+- Season scenario narrative quality: added deterministic post-processing step (`_fix_scenario_narrative_prefixes` in `src/rps/agents/output_normalization.py`) that stamps mandatory structural prefixes onto narrative fields using the already-correct `scenario_guidance` values. `core_idea` is forced to open with "[N] phases, [cadence] cadence —"; `load_philosophy` with "[cadence] cadence, [N]-week phases:"; `typical_week_feel` with "Shorter session days are". This acts as a reliable safety net even when the LLM writes abstract prose.
+- Season scenario skill (`skills/season/scenario-generation/SKILL.md`): added explicit ORDERING instruction directing the agent to determine all `scenario_guidance` values first and then derive each narrative field by filling its template from those exact values. Corrected `typical_week_feel` and `constraint_summary` GOOD examples that still referenced athlete-specific day names ("Tue-Thu", "Saturday", "Mon/Fri") — replaced with generic structural descriptions. Added hard opening-word self-check to the differentiation self-test section so the agent verifies template prefixes before returning output.
+
 ## [0.37.4] - 2026-09-16
 
 ### Added
