@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from collections.abc import Callable
 from datetime import date
@@ -316,12 +317,31 @@ def create_season_scenarios(
     except Exception as exc:
         logger.exception("Season evidence alignment preparation failed.")
         return {"ok": False, "error": f"Season evidence alignment preparation failed: {exc}"}
+    # Build injected athlete-input blocks (semi-static content first for provider prefix caching).
+    _input_blocks: list[str] = []
+    for _label, _payload in [
+        ("Athlete Profile", athlete_profile_payload),
+        ("Planning Events (future/in-horizon only)", future_planning_events_payload),
+        ("Logistics", logistics_payload),
+        ("Availability", availability_payload),
+        ("KPI Profile", kpi_profile_payload),
+    ]:
+        if isinstance(_payload, dict) and _payload:
+            try:
+                _input_blocks.append(
+                    f"{_label}:\n```json\n{json.dumps(_payload, ensure_ascii=False, indent=2)}\n```"
+                )
+            except (TypeError, ValueError):
+                pass
+    _injected_inputs_block = "\n\n".join(_input_blocks)
     user_input = (
         "Mode A. Generate the pre-decision scenarios. "
         f"Target ISO week: {year}-{week:02d}. "
-        "Use workspace_get_input for Athlete Profile, Planning Events, and Logistics. "
-        "Use workspace_get_latest only for shared latest inputs Availability, KPI Profile, and Wellness. "
+        "All athlete-managed inputs (`planning_events`, `athlete_profile`, `logistics`, `availability`, "
+        "`kpi_profile`) are already provided below as injected context — "
+        "no workspace tools are available or needed for this task. "
         "Focus on qualitative scenario differences; runtime will canonicalize horizon and phase math from planning events. "
+        f"\n\n{_injected_inputs_block}\n\n"
         f"{athlete_state_snapshot_block}"
         f"{planning_horizon_block}"
         f"{cadence_options_block}"
@@ -346,6 +366,7 @@ def create_season_scenarios(
                 _as_map(_as_map(planning_events_payload if "planning_events_payload" in locals() else {}).get("data")).get("events")
             ),
         },
+        preloaded_inputs={"planning_events": planning_events_payload or {}},
     ):
         return run_agent_multi_output(
             runtime_for,

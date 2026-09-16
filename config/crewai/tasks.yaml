@@ -108,9 +108,6 @@ tasks:
     agent: season_scenario
     kind: persisted_artifact
     output: artifact_envelope
-    tools:
-      - workspace_get_input
-      - workspace_get_latest
     description: >-
       Recommendation-default cadence hard rule: deterministic recommendation
       cadence is advisory for one scenario, not the default cadence for all
@@ -216,7 +213,10 @@ tasks:
       clearly supports optional early ceiling work, enough runway, preserved
       later durability/specificity work, and recovery tolerance. Objective
       mismatch may be named as unresolved input context only; do not resolve it
-      here.
+      here. All athlete-managed inputs (`planning_events`, `athlete_profile`,
+      `logistics`, `availability`, `kpi_profile`) are already provided above as
+      injected context -- no workspace tools are available or needed for this
+      task.
     expected_output: Schema-compliant artifact data; if an envelope is emitted, persisted meta is runtime-owned and non-authoritative.
   season_scenario_selection:
     agent: season_scenario

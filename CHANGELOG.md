@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.32.0] - 2026-09-16
+
+### Changed
+
+- Season Scenarios now uses injected context instead of workspace tool calls. All athlete-managed inputs (`athlete_profile`, `planning_events`, `logistics`, `availability`, `kpi_profile`) are pre-loaded by the orchestrator and injected directly into the task description before the crew runs, mirroring the pattern already in use for Season Plan, Phase, and Week tasks. The tool-call instructions have been removed from `user_input` and the tools list removed from the `season_scenarios` task in `tasks.yaml`. Pre-loaded `planning_events` data is passed via `guardrail_runtime_context(preloaded_inputs=...)` so `_normalize_document` can resolve `planning_events_document` without a tool-call fallback. Injected inputs are ordered before the dynamic context blocks (horizon, evidence, recommendation) to maximize the stable prefix OpenAI's automatic prefix caching can reuse across runs for the same athlete.
+
 ## [0.31.0] - 2026-09-16
 
 ### Added
