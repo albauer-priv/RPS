@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.4] - 2026-09-16
+
+### Added
+
+- Prompt caching — `FEAT_prompt_caching`:
+  - **OpenAI** (`gpt-5.6-luna`, the default): automatic prefix caching is already active for inputs ≥ 1024 tokens; the existing task-description structure (static agent instructions before dynamic user_input) is already prefix-caching-friendly. Cache hits are now surfaced as `LLM_CACHE_HIT` telemetry events with `cached_tokens` count via a registered LiteLLM success callback in `src/rps/crewai_runtime/telemetry.py`.
+  - **Anthropic** (when `RPS_LLM_MODEL` is set to a `claude-*` or `anthropic/*` model): `extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"}` is now injected into the LLM kwargs by `build_crewai_llm_kwargs()` in `src/rps/crewai_runtime/provider.py`. This activates the Anthropic prompt-caching beta; explicit `cache_control` breakpoints at the message level are the remaining step for Anthropic-side prefix reuse.
+
 ## [0.37.3] - 2026-09-16
 
 ### Fixed

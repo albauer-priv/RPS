@@ -68,6 +68,12 @@ def resolve_crewai_provider_config(
     )
 
 
+def _is_anthropic_model(model: str) -> bool:
+    """Return True when the resolved model string routes to Anthropic."""
+    lower = model.lower()
+    return lower.startswith("anthropic/") or lower.startswith("claude-")
+
+
 def build_crewai_llm_kwargs(
     agent_name: str,
     *,
@@ -103,6 +109,10 @@ def build_crewai_llm_kwargs(
         kwargs["reasoning_effort"] = config.reasoning_effort
     if config.max_completion_tokens is not None:
         kwargs["max_completion_tokens"] = config.max_completion_tokens
+    if _is_anthropic_model(config.model):
+        # Enable Anthropic prompt-caching beta; cache_control breakpoints are
+        # injected at the message level via the LiteLLM success callback in telemetry.
+        kwargs["extra_headers"] = {"anthropic-beta": "prompt-caching-2024-07-31"}
     return kwargs
 
 

@@ -612,6 +612,46 @@ def _tool_name(event: object, source: object) -> str:
     return "Tool"
 
 
+_CACHE_CALLBACK_REGISTERED = False
+
+
+def _register_litellm_cache_callback() -> None:
+    """Register a one-time LiteLLM success callback that logs cache-hit stats."""
+
+    global _CACHE_CALLBACK_REGISTERED
+    if _CACHE_CALLBACK_REGISTERED:
+        return
+    try:
+        litellm = import_module("litellm")
+    except Exception:
+        return
+
+    def _on_llm_success(kwargs: object, completion_response: object, start_time: object, end_time: object) -> None:
+        try:
+            usage = getattr(completion_response, "usage", None)
+            if usage is None:
+                return
+            details = getattr(usage, "prompt_tokens_details", None)
+            cached = int(getattr(details, "cached_tokens", 0) or 0)
+            if cached <= 0:
+                # Anthropic surfaces cache_read_input_tokens instead
+                cached = int(getattr(usage, "cache_read_input_tokens", 0) or 0)
+            if cached > 0:
+                _append_with_context("LLM_CACHE_HIT", cached_tokens=cached)
+        except Exception:
+            pass
+
+    callbacks = getattr(litellm, "success_callback", None)
+    if isinstance(callbacks, list):
+        callbacks.append(_on_llm_success)
+    else:
+        try:
+            litellm.success_callback = [_on_llm_success]
+        except Exception:
+            return
+    _CACHE_CALLBACK_REGISTERED = True
+
+
 def ensure_crewai_event_listener() -> None:
     """Register the singleton CrewAI event listener once."""
 
@@ -769,6 +809,7 @@ def ensure_crewai_event_listener() -> None:
         return
 
     _LISTENER_READY = True
+    _register_litellm_cache_callback()
 
 
 @contextmanager
