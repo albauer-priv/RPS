@@ -7,6 +7,9 @@ metadata:
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
+Purpose and contract:
+The scenario layer defines the qualitative character of each season option — what drives load progression (duration-led, frequency-led, or quality/intensity-led), how phases feel across their length, and what the recovery rhythm means for the athlete's week. The season planning layer executes that character as numbers: kJ targets, TSS progressions, and phase-by-phase structure. The handoff is the `scenario_guidance` block (machine-readable parameters the season planner reads directly) plus the narrative fields (human-readable explanation for the athlete and coach evaluating the options). The scenario layer must make the character choice fully explicit — load philosophy, progression direction, recovery rhythm, and qualitative session feel are ALL this layer's job. Do not defer any of these to season planning.
+
 Field completion contract:
 
 ORDERING: For each scenario, determine `scenario_guidance` values (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `allowed_domains`, `season_archetype`) FIRST. Then derive each narrative field by filling its template from those exact values. The narrative fields summarize the guidance — they must NOT be written independently from it.
@@ -263,13 +266,27 @@ Internal consistency checks:
 - If Scenario B is the performance-default option, make economy/sub-threshold logic plausible in the scenario story.
 - If Scenario C uses no additional domains beyond `ENDURANCE` or `TEMPO`, make the ambition visible through B2B, hard-late, pre-load, event simulation, or other specificity-under-fatigue markers.
 
-Differentiation self-test (mandatory before returning):
+3-pass verification (mandatory before returning):
+
+Pass 1 — Contract alignment: do the narrative fields fulfill the scenario layer's job?
+- For each scenario: does `load_philosophy` explicitly name what drives load progression — duration-led, frequency-led, or quality/intensity-led? If not, rewrite it. This is the primary character handoff to season planning.
+- Does `core_idea` state the phase count, cadence, and the season outcome the athlete is building toward? If it reads like a mood word or abstract goal instead of a structural description, rewrite it.
+- Does `typical_week_feel` describe session character (what intensity domains appear, when, how the legs feel across the week) derived from `allowed_domains` and cadence — not from assumed day names? If it reads like scheduling language instead of session feel, rewrite it.
+- Are `recovery_margin`, `fatigue_exposure`, and `specificity_density` in `scenario_guidance` non-empty explicit strings? These are the machine-readable character parameters the season planner reads directly. If any is empty or deferred, fill it now.
+
+Pass 2 — Template compliance: do the fields open correctly?
+- Each scenario's `core_idea` must start with a number, e.g. "18 phases, 2:1 cadence —". If any starts with anything else (e.g. "Protect…", "Progress…", "Use…"), rewrite it using the phase count and cadence from `scenario_guidance`.
+- Each scenario's `load_philosophy` must start with the cadence string, e.g. "2:1 cadence, 3-week phases:". If any starts with a mood word or generic description, rewrite it.
+- Each scenario's `typical_week_feel` must start with "Shorter session days are". If any starts with anything else, rewrite it.
+- `constraint_summary` entries must follow the entry templates (see below). If any entry reads as the static availability table instead of cadence-specific interaction, rewrite it.
+
+Pass 3 — Cross-scenario differentiation: would a reader know which scenario they're reading?
 - For each narrative field across all three scenarios, ask: "Could this sentence be moved to a different scenario without the reader noticing?" If yes, rewrite it with concrete scenario-specific content.
-- `constraint_summary` must NOT be identical across scenarios. It must describe how this scenario's specific cadence, phase structure, and domain permission interact with the athlete's available time budget — not just list the static availability table.
-  - BAD (same for all three): "Monday and Friday remain fixed no-ride days. Typical availability is 14 hours per week, with a practical range of 10.5 to 25 hours."
-  - GOOD (Scenario A / 2:1 / 3-week): "At 2:1 / 3-week, a disrupted week resets into the next block cleanly — two loading weeks then a reset is a short enough cycle that one missed week never cascades. ENDURANCE+TEMPO only means shorter session days carry low execution risk; no intensity precision is required on any weekday."
-  - GOOD (Scenario B / 2:1:1 / 4-week): "At 2:1:1 / 4-week, two loading weeks then a reload mean the reload week is the continuity safety valve — one poor loading week can still be salvaged if the reload restores quality. THRESHOLD permission means loading week 2 shorter sessions carry a quality ask; if those sessions are missed the reload may not fully compensate."
-  - GOOD (Scenario C / 3:1 / 4-week): "At 3:1 / 4-week, three consecutive loading weeks mean a disrupted week near the end of a block wastes the accumulated loading context of the whole block — there is no mid-block reload. THRESHOLD permission means shorter session days in all three loading weeks carry a quality ask; execution reliability on those sessions directly determines whether the fatigue load is useful or just damaging."
+- Hard: if any two scenarios share word-for-word identical sentences in `constraint_summary`, `typical_week_feel`, or `main_payoff`, those must be rewritten before returning.
+- `main_payoff` and `main_cost` must be scenario-specific claims that would be false if applied to one of the other two scenarios.
+  - BAD payoff: "Best balance of adaptation, control, and practical execution." (could fit any scenario)
+  - GOOD payoff (Scenario A): "Highest number of uninterrupted training weeks across the season — the 2:1/3-week rhythm is the most resilient to travel, fatigue spikes, or single-week disruptions."
+  - GOOD cost (Scenario C): "The 3:1 block commits three weeks of loading before any reset — one disrupted week near the end of a block costs more accumulated quality than in A or B."
 - `key_differences` must name concrete structural facts: cadence (e.g. 2:1 vs 2:1:1), phase length, domain breadth (e.g. "no THRESHOLD"), and what that means in practice.
   - BAD: "Compared with B and C, this scenario keeps week-to-week pressure more controlled and asks for less fatigue exposure."
   - GOOD: "Scenario A uses 2:1 cadence with 3-week phases and excludes THRESHOLD and VO2MAX — a tighter reset rhythm and narrower domain ceiling than both B (2:1:1, THRESHOLD permitted) and C (3:1, THRESHOLD + VO2MAX). The shorter phase length means 18 phases vs 13 in B and C, with more frequent adaptation checkpoints but less sustained overload per block."
@@ -279,15 +296,11 @@ Differentiation self-test (mandatory before returning):
   - GOOD (Scenario A / 2:1 / 3-week / ENDURANCE+TEMPO): "Shorter session days are steady endurance or tempo — no intervals, no threshold work in any loading week. The primary long session is purely aerobic, growing progressively longer each phase. The athlete closes most loading weeks feeling absorbed."
   - GOOD (Scenario B / 2:1:1 / 4-week / adds THRESHOLD): "Shorter session days are mostly endurance; loading week 2 adds a threshold or sweet-spot session on one of them. The primary long session grows progressively and includes event-pace work in the second half. The athlete closes most loading weeks carrying useful fatigue but the quality session remains consistently executable."
   - GOOD (Scenario C / 3:1 / 4-week / THRESHOLD): "Shorter session days are deliberately quality-focused in all three loading weeks — threshold or sweet-spot work appears on at least one shorter session day every week. The primary long session is started with prior-day fatigue already in the legs. The athlete closes most loading weeks carrying productive strain; the deload week is the only recovery window."
-- `main_payoff` and `main_cost` must be scenario-specific claims that would be false if applied to one of the other two scenarios.
-  - BAD payoff: "Best balance of adaptation, control, and practical execution." (could fit any scenario)
-  - GOOD payoff (Scenario A): "Highest number of uninterrupted training weeks across the season — the 2:1/3-week rhythm is the most resilient to travel, fatigue spikes, or single-week disruptions."
-  - GOOD cost (Scenario C): "The 3:1 block commits three weeks of loading before any reset — one disrupted week near the end of a block costs more accumulated quality than in A or B."
-- Hard: if after reviewing all three scenarios any two share word-for-word identical sentences in `constraint_summary`, `typical_week_feel`, or `main_payoff`, those must be rewritten before returning.
-- Hard opening-word self-check (verify before returning):
-  - Each scenario's `core_idea` must start with a number, e.g. "18 phases, 2:1 cadence —". If any starts with anything else (e.g. "Protect…", "Progress…", "Use…"), rewrite it using the phase count and cadence from `scenario_guidance`.
-  - Each scenario's `load_philosophy` must start with the cadence string, e.g. "2:1 cadence, 3-week phases:". If any starts with a mood word or generic description, rewrite it.
-  - Each scenario's `typical_week_feel` must start with "Shorter session days are". If any starts with anything else, rewrite it.
+- `constraint_summary` must NOT be identical across scenarios. It must describe how this scenario's specific cadence, phase structure, and domain permission interact with the athlete's available time budget — not just list the static availability table.
+  - BAD (same for all three): "Monday and Friday remain fixed no-ride days. Typical availability is 14 hours per week, with a practical range of 10.5 to 25 hours."
+  - GOOD (Scenario A / 2:1 / 3-week): "At 2:1 / 3-week, a disrupted week resets into the next block cleanly — two loading weeks then a reset is a short enough cycle that one missed week never cascades. ENDURANCE+TEMPO only means shorter session days carry low execution risk; no intensity precision is required on any weekday."
+  - GOOD (Scenario B / 2:1:1 / 4-week): "At 2:1:1 / 4-week, two loading weeks then a reload mean the reload week is the continuity safety valve — one poor loading week can still be salvaged if the reload restores quality. THRESHOLD permission means loading week 2 shorter sessions carry a quality ask; if those sessions are missed the reload may not fully compensate."
+  - GOOD (Scenario C / 3:1 / 4-week): "At 3:1 / 4-week, three consecutive loading weeks mean a disrupted week near the end of a block wastes the accumulated loading context of the whole block — there is no mid-block reload. THRESHOLD permission means shorter session days in all three loading weeks carry a quality ask; execution reliability on those sessions directly determines whether the fatigue load is useful or just damaging."
 
 Hard rules:
 - the active scenario-generation layer is the front-loaded source of operational posture; do not defer recovery, fatigue, or specificity stance to Selection, Season planning, review, writer, or renderer

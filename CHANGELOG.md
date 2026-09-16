@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.6] - 2026-09-16
+
+### Changed
+
+- Season scenario skill: added explicit **Purpose and contract** section at the top making clear that the scenario layer owns the qualitative character handoff (what drives load progression, how phases feel, recovery rhythm) and that the season planner executes that character as numbers. The contract is: `scenario_guidance` = machine-readable parameters; narrative fields = human-readable explanation for athlete and coach.
+- Season scenario skill: replaced the unstructured differentiation self-test with an explicit **3-pass verification** (mandatory before returning):
+  - Pass 1 — Contract alignment: verifies `load_philosophy` names the progression driver (duration-led / frequency-led / quality-led), `core_idea` states structural facts, `typical_week_feel` describes session character from `allowed_domains`, and `recovery_margin` / `fatigue_exposure` / `specificity_density` are non-empty explicit strings.
+  - Pass 2 — Template compliance: verifies opening-word rules for `core_idea`, `load_philosophy`, `typical_week_feel`, and `constraint_summary` entries.
+  - Pass 3 — Cross-scenario differentiation: verifies no two scenarios share identical sentences in `constraint_summary`, `typical_week_feel`, or `main_payoff`; checks `main_payoff` / `main_cost` are scenario-specific claims.
+
 ## [0.37.5] - 2026-09-16
 
 ### Fixed
