@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.0] - 2026-09-16
+
+### Changed
+
+- Scenario generation skill: field completion contract rewritten as mandatory fill-in-the-blanks prose templates. `typical_week_feel`, `load_philosophy`, `core_idea`, `risk_profile`, `key_differences`, `main_payoff`, `main_cost`, and `constraint_summary` now each have a required sentence template with named slots (e.g. `[intensity character]`, `[long ride character]`, `[deload_cadence] / [phase_length_weeks]-week`). The agent must fill the slots from the scenario's structured fields — it cannot substitute free-form abstract prose. All BAD/GOOD open examples replaced by one concrete filled-in template example per field. The change removes the agent's ability to default to vague planning language when the structured fields already contain the concrete facts.
+
 ## [0.36.0] - 2026-09-16
 
 ### Changed
