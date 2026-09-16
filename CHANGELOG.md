@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.35.0] - 2026-09-16
+
+### Changed
+
+- Scenario generation skill: `ceiling_first_durability` activation is now a hard rule enforced in the Hard rules block and a mandatory pre-return self-check. Emitting `season_archetype: "none"` for all three scenarios when the athlete profile contains VO2max development language and runway ≥ 20 weeks is now explicitly a hard error. The "Season archetype semantics" escape hatch ("if the scenario does not clearly justify that sequence, emit none") is removed — when the athlete profile mandates ceiling_first, the scenario is shaped to support it, not the other way around. The VO2max development objective is now marked as categorically separate from the competitive-ambition mismatch with a CRITICAL EXCEPTION label.
+- Scenario generation skill: mandatory "Differentiation self-test" section added. `constraint_summary` must reflect the scenario's specific cadence/phase interaction with the time budget, not repeat the static availability table. `key_differences` must name concrete structural facts (cadence, phase length, domain breadth). `typical_week_feel` must describe session-specific content, not generic phrases. `main_payoff` and `main_cost` must be scenario-unique claims. Word-for-word identical sentences across scenarios in those fields are a hard error.
+
 ## [0.34.0] - 2026-09-16
 
 ### Added
