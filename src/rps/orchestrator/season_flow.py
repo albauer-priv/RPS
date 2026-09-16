@@ -666,6 +666,13 @@ def create_season_plan(
     except Exception as exc:
         logger.exception("Season deterministic context construction failed.")
         return {"ok": False, "error": f"Season deterministic context construction failed: {exc}"}
+    _avail_data_sp = _as_map(_as_map(availability_payload or {}).get("data"))
+    _seasonal_context_sp = _as_map(_avail_data_sp.get("seasonal_context")) if _avail_data_sp.get("seasonal_context") else {}
+    _seasonal_ctx_block = (
+        f"Seasonal context:\n```json\n{json.dumps(_seasonal_context_sp, ensure_ascii=False, indent=2)}\n```\n\n"
+        if _seasonal_context_sp
+        else ""
+    )
     user_input = (
         f"{scenario_line}Mode A. Create the SEASON_PLAN. "
         f"Target ISO week: {year}-{week:02d}. "
@@ -673,6 +680,7 @@ def create_season_plan(
         f"{historical_context_line}"
         f"{athlete_state_snapshot_block}"
         f"{user_data_block}"
+        f"{_seasonal_ctx_block}"
         f"{historical_baseline_block}"
         f"{resolved_activity_block}"
         f"{season_evidence_alignment_block}"
@@ -691,8 +699,6 @@ def create_season_plan(
         week,
         selected or "latest",
     )
-    _avail_data_sp = _as_map(_as_map(availability_payload or {}).get("data"))
-    _seasonal_context_sp = _as_map(_avail_data_sp.get("seasonal_context")) if _avail_data_sp.get("seasonal_context") else {}
     with guardrail_runtime_context(
         phase_slot_context=phase_slot_context_payload,
         season_phase_load_context=season_phase_load_context_payload,
