@@ -107,6 +107,12 @@ fixed_rest_days = data.get("fixed_rest_days") or []
 notes = data.get("notes") or ""
 if not isinstance(weekly_hours, dict):
     weekly_hours = {"min": 0.0, "typical": 0.0, "max": 0.0}
+_sc = data.get("seasonal_context") or {}
+if not isinstance(_sc, dict):
+    _sc = {}
+MONTH_OPTIONS = list(range(1, 13))
+MONTH_NAMES = {1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
+               7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec"}
 
 st.subheader("Weekly Hours")
 col_min, col_typ, col_max = st.columns(3)
@@ -198,6 +204,51 @@ fixed_rest_days = st.multiselect(
 
 notes = st.text_area("Notes", value=notes, height=120)
 
+st.subheader("Seasonal Context")
+st.caption(
+    "Optional. Specify which months are predominantly outdoor vs. indoor, "
+    "and practical maximum session durations per mode. "
+    "The planning agents use this to shape phase descriptions and load ceilings per season."
+)
+sc_col1, sc_col2 = st.columns(2)
+with sc_col1:
+    outdoor_season_months = st.multiselect(
+        "Outdoor season months",
+        options=MONTH_OPTIONS,
+        default=[m for m in (_sc.get("outdoor_season_months") or []) if isinstance(m, int)],
+        format_func=lambda m: MONTH_NAMES[m],
+    )
+    outdoor_weekend_max_hours = st.number_input(
+        "Outdoor max session hours",
+        min_value=0.0,
+        max_value=24.0,
+        step=0.5,
+        format="%.1f",
+        value=_snap_half(float(_sc.get("outdoor_weekend_max_hours") or 0.0)),
+        help="Practical maximum hours for a single outdoor session (e.g. 8.0).",
+    )
+with sc_col2:
+    indoor_dominant_months = st.multiselect(
+        "Indoor dominant months",
+        options=MONTH_OPTIONS,
+        default=[m for m in (_sc.get("indoor_dominant_months") or []) if isinstance(m, int)],
+        format_func=lambda m: MONTH_NAMES[m],
+    )
+    indoor_weekend_max_hours = st.number_input(
+        "Indoor max session hours",
+        min_value=0.0,
+        max_value=24.0,
+        step=0.5,
+        format="%.1f",
+        value=_snap_half(float(_sc.get("indoor_weekend_max_hours") or 0.0)),
+        help="Practical maximum hours for a single indoor trainer session (e.g. 4.0).",
+    )
+sc_notes = st.text_input(
+    "Seasonal notes",
+    value=str(_sc.get("notes") or ""),
+    help="Free-text context about seasonal availability patterns.",
+)
+
 if st.button("Save Availability", width="content"):
     run_ts = datetime.now(UTC)
     version_key = run_ts.strftime("%Y%m%d_%H%M%S")
@@ -212,6 +263,17 @@ if st.button("Save Availability", width="content"):
             row["hours_min"] = 0.0
             row["hours_typical"] = 0.0
             row["hours_max"] = 0.0
+    seasonal_context_payload: dict[str, object] = {}
+    if outdoor_season_months:
+        seasonal_context_payload["outdoor_season_months"] = sorted(outdoor_season_months)
+    if indoor_dominant_months:
+        seasonal_context_payload["indoor_dominant_months"] = sorted(indoor_dominant_months)
+    if outdoor_weekend_max_hours > 0.0:
+        seasonal_context_payload["outdoor_weekend_max_hours"] = _snap_half(outdoor_weekend_max_hours)
+    if indoor_weekend_max_hours > 0.0:
+        seasonal_context_payload["indoor_weekend_max_hours"] = _snap_half(indoor_weekend_max_hours)
+    if sc_notes.strip():
+        seasonal_context_payload["notes"] = sc_notes.strip()
     payload = {
         "source_type": "manual",
         "source_ref": "ui_manual",
@@ -223,6 +285,7 @@ if st.button("Save Availability", width="content"):
         },
         "fixed_rest_days": fixed_rest_days,
         "notes": notes,
+        **({"seasonal_context": seasonal_context_payload} if seasonal_context_payload else {}),
     }
     store.save_version(
         athlete_id,

@@ -220,6 +220,14 @@ Athlete VO2max development objectives:
 - VO2MAX in the ceiling-first scenario must still be framed as early-season ceiling-support: fresh-only, time-limited to the first two phases, and not a season-wide permission.
 - Write the `season_archetype_rationale` using concrete athlete-profile facts (planning runway in weeks, explicit VO2max objective text, weekday vs. weekend availability asymmetry) so the rationale is unambiguous to the macrocycle-architecture task.
 
+Seasonal availability context:
+- When `seasonal_context` is present in the injected context, read `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, and `outdoor_weekend_max_hours`.
+- For phases whose ISO-week range falls predominantly inside `indoor_dominant_months`: describe lower practical volume ceilings for weekend long rides (cap at `indoor_weekend_max_hours` rather than the static table max), note the indoor-trainer character of those sessions, and reflect that intensity density relative to volume may be higher than in outdoor months.
+- For phases inside `outdoor_season_months`: weekend long rides may reach `outdoor_weekend_max_hours`; describe outdoor riding character, terrain leverage, and durability volume potential.
+- Carry this distinction into the scenario's `load_philosophy`, `event_alignment_notes`, and `decision_notes` where season character differs meaningfully between indoor and outdoor phases.
+- Do not alter the weekly `hours_min/typical/max` aggregate figures; `seasonal_context` is advisory shaping context only.
+- If `seasonal_context` is absent, do not invent seasonal character — proceed with the static availability table only.
+
 Objective mismatch semantics:
 - If the scenario layer notices a mismatch between upstream objective language and active event hierarchy, treat it as unresolved upstream input context only.
 - You may name that mismatch in notes, assumptions, unknowns, or caution fields.

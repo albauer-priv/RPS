@@ -353,6 +353,8 @@ def create_season_scenarios(
         "Return only the final schema-compliant SEASON_SCENARIOS artifact envelope."
     )
     logger.info("Creating season scenarios athlete=%s iso_week=%04d-W%02d", athlete_id, year, week)
+    _avail_data_sc = _as_map(_as_map(availability_payload if "availability_payload" in locals() else {}).get("data"))
+    _seasonal_context = _as_map(_avail_data_sc.get("seasonal_context")) if _avail_data_sc.get("seasonal_context") else {}
     with guardrail_runtime_context(
         season_scenario_recommendation_context=recommendation_context if isinstance(recommendation_context, dict) else {},
         season_scenario_event_context={
@@ -367,6 +369,7 @@ def create_season_scenarios(
             ),
         },
         preloaded_inputs={"planning_events": planning_events_payload or {}},
+        seasonal_context=_seasonal_context,
     ):
         return run_agent_multi_output(
             runtime_for,
@@ -688,6 +691,8 @@ def create_season_plan(
         week,
         selected or "latest",
     )
+    _avail_data_sp = _as_map(_as_map(availability_payload or {}).get("data"))
+    _seasonal_context_sp = _as_map(_avail_data_sp.get("seasonal_context")) if _avail_data_sp.get("seasonal_context") else {}
     with guardrail_runtime_context(
         phase_slot_context=phase_slot_context_payload,
         season_phase_load_context=season_phase_load_context_payload,
@@ -698,6 +703,7 @@ def create_season_plan(
         planning_events_payload=planning_events_payload or {},
         logistics_payload=logistics_payload or {},
         zone_model_payload=zone_model_payload or {},
+        seasonal_context=_seasonal_context_sp,
     ):
         result = run_agent_multi_output(
             runtime_for,

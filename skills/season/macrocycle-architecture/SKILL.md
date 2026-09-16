@@ -40,6 +40,15 @@ Permitted ultra/brevet archetype:
 - do not introduce free `THRESHOLD` or `VO2MAX` blocks in the Season Plan artifact; if aerobic-ceiling work is relevant, express it as high-level phase intent only when the selected scenario permits the domain
 - once a scenario is selected, refer to it neutrally as the selected scenario or user-selected scenario; do not re-argue the choice with evaluative language
 
+Seasonal availability context:
+- When `seasonal_context` is present in the injected context, read `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, and `outdoor_weekend_max_hours`.
+- For each phase, check whether its ISO-week range falls predominantly inside `indoor_dominant_months` or `outdoor_season_months` and annotate the phase with that character.
+- Indoor-dominant phases: cap weekend long-ride volume at `indoor_weekend_max_hours` in the phase narrative; describe the phase as trainer-based with higher relative intensity density potential; do not assign outdoor durability volumes that cannot be realistically achieved indoors.
+- Outdoor phases: weekend long rides may reach `outdoor_weekend_max_hours`; terrain, elevation, and pacing variation are available overload levers.
+- Express the seasonal character in phase-level `rationale`, `description`, or `intent` fields where they exist; downstream tasks and the writer use this to adjust session prescriptions.
+- Do not alter kJ-band math or deterministic load corridor values; `seasonal_context` is advisory narrative shaping only.
+- If `seasonal_context` is absent, do not invent seasonal annotations — proceed with the static availability table only.
+
 Ceiling-first archetype activation (mandatory when scenario uses it):
 - when the selected scenario has `season_archetype: "ceiling_first_durability"` and `VO2MAX` in its `allowed_intensity_domains`, the macrocycle MUST map the first one or two phases (typically the opening 6–10 weeks of the horizon) to `vo2_build` intent with `VO2MAX` permitted — this is mandatory, not optional, when the scenario explicitly activates the archetype
 - after the VO2 foundation block, from the third phase onward, transition to `durability_build` intent and suppress `VO2MAX` — economy, VLamax-lowering, and long-ride volume become the primary overload axis from that point

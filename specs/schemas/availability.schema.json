@@ -83,6 +83,43 @@
         }
       }
     },
+    "seasonal_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "outdoor_season_months": {
+          "type": "array",
+          "description": "ISO month numbers (1–12) when outdoor riding is the primary mode.",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          }
+        },
+        "indoor_dominant_months": {
+          "type": "array",
+          "description": "ISO month numbers (1–12) when indoor trainer is the primary mode.",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          }
+        },
+        "indoor_weekend_max_hours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Practical maximum single-session hours on the indoor trainer."
+        },
+        "outdoor_weekend_max_hours": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Practical maximum single outdoor session hours."
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
     "availability_data": {
       "type": "object",
       "additionalProperties": false,
@@ -123,6 +160,9 @@
         },
         "notes": {
           "type": "string"
+        },
+        "seasonal_context": {
+          "$ref": "#/$defs/seasonal_context"
         }
       }
     }
