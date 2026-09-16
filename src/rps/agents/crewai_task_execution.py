@@ -1356,10 +1356,12 @@ def _persist_artifact_document(
 def _normalize_document(spec: Any, document: JsonMap, loaded_inputs: dict[str, object]) -> JsonMap:
     """Apply the same deterministic normalization rules as the legacy runner."""
 
+    _ctx_preloaded = current_guardrail_runtime_context().get("preloaded_inputs")
+    _preloaded: dict[str, object] = _ctx_preloaded if isinstance(_ctx_preloaded, dict) else {}
     normalized = normalize_season_scenarios_document(
         document,
         planning_events_document=extract_planning_events_document(
-            loaded_inputs.get("planning_events")
+            loaded_inputs.get("planning_events") or _preloaded.get("planning_events")
         ),
     )
     normalized = _normalize_artifact_meta(normalized, spec.artifact_type)
