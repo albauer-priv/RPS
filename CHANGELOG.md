@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.36.0] - 2026-09-16
+
+### Changed
+
+- Scenario generation skill: complete rewrite of the field completion contract to eliminate generic template sentences that the agent copied verbatim. All preferred examples replaced with concrete, qualitative ELI5-style examples showing session types, intensity character, cadence rhythm, and scenario-specific failure modes. `typical_week_feel` now requires qualitative session-type description (which intensity domains appear when, how legs feel across the week) rather than abstract planning prose. `load_philosophy` requires cadence-specific session character description. `constraint_summary` requires how the scenario's structure interacts with the athlete's available time budget. `core_idea`, `key_differences`, `main_payoff`, `main_cost`, `risk_profile` all have concrete GOOD/BAD examples showing the expected specificity level.
+
 ## [0.35.0] - 2026-09-16
 
 ### Changed
