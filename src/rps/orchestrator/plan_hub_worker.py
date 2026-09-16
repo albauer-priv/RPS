@@ -727,7 +727,7 @@ def run_plan_hub_worker(config: PlanHubWorkerConfig, stop_event: threading.Event
                                 retry_count = _raw_rc if isinstance(_raw_rc, int) else 0
                                 if retry_count < MAX_STEP_RETRIES:
                                     step["_retry_count"] = retry_count + 1
-                                    step["Status"] = "PENDING"
+                                    step["Status"] = "QUEUED"
                                     step["Started"] = None
                                     step["Ended"] = None
                                     logger.warning(
