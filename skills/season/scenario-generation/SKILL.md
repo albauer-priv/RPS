@@ -191,9 +191,10 @@ Intensity-domain semantics:
 - `SWEET_SPOT` is optional when time budget limits kJ separation or when economy / sustained sub-threshold work is part of the scenario story.
 - `THRESHOLD` and `VO2MAX` are special-case permissions, not default markers of ambition.
 - Scenario C is not defined by `VO2MAX`.
-- Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as `sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
+- Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as `sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture` — OR when `season_archetype: "ceiling_first_durability"` applies (see "Athlete VO2max development objectives" below), in which case VO2MAX is a deliberate early-phase build intent, not sparse ceiling-support, and the framing must reflect that.
 - If that rationale cannot be stated explicitly in `decision_notes` and/or `kpi_guardrail_notes`, omit `VO2MAX` from Scenario C `allowed_domains`.
-- Preferred copyable sentence when Scenario C allows `VO2MAX`: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
+- Preferred copyable sentence when Scenario C allows `VO2MAX` without `ceiling_first_durability`: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
+- Preferred copyable sentence when Scenario uses `ceiling_first_durability`: `VO2MAX is permitted as an early-season aerobic-ceiling build in the first two phases only; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering.`
 - Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
 - Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant and explain which other axes carry the differentiation.
 - Cluster wording (`cluster`, `event cluster`, `B-event cluster`, `peak cluster`) requires multiple relevant in-horizon events; otherwise use singular event wording.
@@ -211,10 +212,19 @@ Season archetype semantics:
 - If `season_archetype = ceiling_first_durability`, `season_archetype_rationale` must state why early ceiling support is permitted and why later durability/specificity work still has enough runway.
 - If the scenario does not clearly justify that sequence, emit `season_archetype = none`.
 
+Athlete VO2max development objectives:
+- When `athlete_profile.objectives.secondary` or `objectives.priority_order` contains explicit VO2max development language AND the planning runway is ≥ 20 weeks, the scenario layer MUST generate at least one scenario with `season_archetype: "ceiling_first_durability"` and `VO2MAX` in `intensity_guidance.allowed_domains`.
+- This is not an objective mismatch — it is a direct and binding planning directive from the athlete profile that must be honoured in at least one scenario.
+- The ceiling-first scenario typically shapes Scenario C; it may shape Scenario B when Scenario C is already differentiated by higher specificity-under-fatigue and load rather than intensity archetype.
+- Apply the `ceiling_first_durability` rationale as: long planning runway (≥ 20 weeks), explicit aerobic ceiling development goal, weekday time-crunch with weekend leverage all support conditional early VO2max work before durability volume expansion — with sufficient horizon remaining for the economy/durability block after the VO2 phase.
+- VO2MAX in the ceiling-first scenario must still be framed as early-season ceiling-support: fresh-only, time-limited to the first two phases, and not a season-wide permission.
+- Write the `season_archetype_rationale` using concrete athlete-profile facts (planning runway in weeks, explicit VO2max objective text, weekday vs. weekend availability asymmetry) so the rationale is unambiguous to the macrocycle-architecture task.
+
 Objective mismatch semantics:
 - If the scenario layer notices a mismatch between upstream objective language and active event hierarchy, treat it as unresolved upstream input context only.
 - You may name that mismatch in notes, assumptions, unknowns, or caution fields.
 - Do not claim that the scenario layer resolved or replaced the objective/event hierarchy.
+- EXCEPTION — VO2max development objective: VO2max development in `athlete_profile.objectives` is NOT an objective mismatch if the planning runway supports a ceiling-first sequence. Treat it as an active planning directive and honour it in the ceiling-first scenario rather than surfacing it as a warning-only note.
 
 Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.

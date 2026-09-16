@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.33.0] - 2026-09-16
+
+### Changed
+
+- Season Scenarios skill now activates the `ceiling_first_durability` season archetype when the athlete profile contains explicit VO2max development objectives and planning runway is ≥ 20 weeks. The scenario-generation skill MUST produce at least one scenario with `season_archetype: "ceiling_first_durability"` and `VO2MAX` in `allowed_intensity_domains` in this case — no longer treated as an objective-mismatch warning. The macrocycle-architecture skill now mandatorily maps the first one or two phases to `vo2_build` intent when the selected scenario uses the archetype, then transitions to `durability_build` from phase 3 onward. The Scenario C VO2MAX hard rule is updated to distinguish sparse-ceiling-support framing from the ceiling-first deliberate build framing. Added spec: `doc/specs/features/FEAT_vo2_scenario_activation.md`.
+
+### Added
+
+- Feature backlog entry for `FEAT_seasonal_availability`: planned extension of the AVAILABILITY schema with a `seasonal_context` block (outdoor/indoor months, indoor session hour limits), a new Streamlit form section, and season skill updates to describe winter/indoor phases with appropriate load ceiling and intensity density. Spec: `doc/specs/features/FEAT_seasonal_availability.md`.
+
 ## [0.32.0] - 2026-09-16
 
 ### Changed

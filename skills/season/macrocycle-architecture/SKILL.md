@@ -40,6 +40,12 @@ Permitted ultra/brevet archetype:
 - do not introduce free `THRESHOLD` or `VO2MAX` blocks in the Season Plan artifact; if aerobic-ceiling work is relevant, express it as high-level phase intent only when the selected scenario permits the domain
 - once a scenario is selected, refer to it neutrally as the selected scenario or user-selected scenario; do not re-argue the choice with evaluative language
 
+Ceiling-first archetype activation (mandatory when scenario uses it):
+- when the selected scenario has `season_archetype: "ceiling_first_durability"` and `VO2MAX` in its `allowed_intensity_domains`, the macrocycle MUST map the first one or two phases (typically the opening 6–10 weeks of the horizon) to `vo2_build` intent with `VO2MAX` permitted — this is mandatory, not optional, when the scenario explicitly activates the archetype
+- after the VO2 foundation block, from the third phase onward, transition to `durability_build` intent and suppress `VO2MAX` — economy, VLamax-lowering, and long-ride volume become the primary overload axis from that point
+- size the VO2 block to leave enough horizon for at least three durability-build phases plus specificity and taper; do not extend it so far that the durability runway is compromised
+- cite the selected scenario's `season_archetype_rationale` when explaining why the first phases use `vo2_build` intent
+
 Allowed multi-`A` models:
 - `multiple macrocycles`: only when `A` events are separated enough for full recovery and rebuild
 - `A-event cluster / peak window`: one build and one peak window with a single taper strategy
