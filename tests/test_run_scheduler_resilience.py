@@ -319,3 +319,38 @@ def test_recover_stuck_runs_leaves_live_lock(tmp_path: Path) -> None:
 
     # Lock is fresh + run is active → untouched
     assert _lock_path(tmp_path, "ath3").exists()
+
+
+def test_recover_stuck_runs_fails_run_with_failed_queue_item(tmp_path: Path) -> None:
+    """RUNNING run whose queue item landed in failed/ (no active/ item) is recovered."""
+    paths = ensure_queue_dirs(tmp_path)
+    _write_run(tmp_path, "ath4", "stuck_run", "RUNNING")
+    _write_lock(tmp_path, "ath4", "stuck_run")
+    # Simulate: queue item already moved to failed/, nothing in active/
+    _write_queue_item(paths.failed, "stuck_run", "ath4")
+
+    _recover_stuck_runs(tmp_path)
+
+    assert not _lock_path(tmp_path, "ath4").exists()
+    runs = load_runs(tmp_path, "ath4", limit=10)
+    run = next(r for r in runs if r["run_id"] == "stuck_run")
+    assert run["status"] == "FAILED"
+    events = load_events(tmp_path, "ath4", "stuck_run")
+    assert any("queue item in failed" in str(e.get("reason", "")) for e in events)
+
+
+def test_recover_stuck_runs_ignores_run_with_active_queue_item(tmp_path: Path) -> None:
+    """RUNNING run with a healthy active/ item is left alone."""
+    paths = ensure_queue_dirs(tmp_path)
+    _write_run(tmp_path, "ath4", "live_run", "RUNNING")
+    _write_lock(tmp_path, "ath4", "live_run")
+    _write_queue_item(paths.active, "live_run", "ath4")
+    # Also put a stale copy in failed/ — active/ presence should suppress recovery
+    _write_queue_item(paths.failed, "live_run", "ath4")
+
+    _recover_stuck_runs(tmp_path)
+
+    assert _lock_path(tmp_path, "ath4").exists()
+    runs = load_runs(tmp_path, "ath4", limit=10)
+    run = next(r for r in runs if r["run_id"] == "live_run")
+    assert run["status"] == "RUNNING"
