@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.34.0] - 2026-09-16
+
+### Added
+
+- Seasonal availability context (`FEAT_seasonal_availability`): the `AVAILABILITY` schema now has an optional `seasonal_context` block with `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, `outdoor_weekend_max_hours`, and `notes`. The Streamlit Availability editor has a new "Seasonal Context" section to set these values. The rendering template renders the block in section 5. The Season orchestrator extracts `seasonal_context` from the availability payload and injects it into `guardrail_runtime_context` for both `create_season_scenarios` and `create_season_plan`. The scenario-generation and macrocycle-architecture skills now read `seasonal_context` and use it to shape phase narrative: indoor-dominant phases get lower weekend long-ride ceilings and higher relative intensity density; outdoor phases can leverage `outdoor_weekend_max_hours` for durability volume. Spec: `doc/specs/features/FEAT_seasonal_availability.md`.
+
 ## [0.33.0] - 2026-09-16
 
 ### Changed

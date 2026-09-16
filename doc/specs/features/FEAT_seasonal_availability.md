@@ -1,6 +1,6 @@
 ---
-Status: Planned
-Version: 0.1
+Status: Implemented
+Version: 1.0
 Last-Updated: 2026-09-16
 ---
 # FEAT_seasonal_availability
@@ -41,14 +41,11 @@ density, session duration) accordingly.
   to shape narrative and phase-level intensity density descriptions; deterministic kJ bands remain
   in their responsible components.
 
-## Planned Files
+## Changed Files
 
-- `src/rps/ui/pages/athlete_inputs/availability.py` (or equivalent) — new Streamlit form section
-  for `seasonal_context`.
-- `specs/schemas/availability.schema.json` — add optional `seasonal_context` object.
-- `src/rps/workspace/models.py` (or Availability model) — typed `SeasonalContext` dataclass/model.
-- `src/rps/orchestrator/season_flow.py` — inject `seasonal_context` into `guardrail_runtime_context`.
-- `skills/season/scenario-generation/SKILL.md` — read `seasonal_context`; use `indoor_dominant_months`
-  to describe winter phases with lower volume ceiling and higher intensity density.
-- `skills/season/macrocycle-architecture/SKILL.md` — use `seasonal_context` to flag which phase
-  slots fall inside indoor-dominant months and adjust phase narrative accordingly.
+- `specs/schemas/availability.schema.json` — added optional `seasonal_context` object (new `$defs/seasonal_context` entry; `availability_data` references it).
+- `src/rps/ui/pages/athlete_profile/availability.py` — new "Seasonal Context" UI section with outdoor/indoor month selectors and max-hours inputs.
+- `src/rps/rendering/templates/availability.md.j2` — new section 5 renders `seasonal_context` fields.
+- `src/rps/orchestrator/season_flow.py` — extracts `seasonal_context` from availability payload and passes it as a named key to `guardrail_runtime_context` in both `create_season_scenarios` and `create_season_plan`.
+- `skills/season/scenario-generation/SKILL.md` — new "Seasonal availability context" section.
+- `skills/season/macrocycle-architecture/SKILL.md` — new "Seasonal availability context" section.

@@ -57,3 +57,17 @@ N/A
 
 {{ data.notes or "N/A" }}
 
+## 5) Seasonal Context
+
+{% if data.seasonal_context %}
+| Field | Value |
+|---|---|
+| Outdoor season months | {{ data.seasonal_context.outdoor_season_months | join(", ") if data.seasonal_context.outdoor_season_months else "N/A" }} |
+| Indoor dominant months | {{ data.seasonal_context.indoor_dominant_months | join(", ") if data.seasonal_context.indoor_dominant_months else "N/A" }} |
+| Outdoor max session hours | {{ data.seasonal_context.outdoor_weekend_max_hours if data.seasonal_context.outdoor_weekend_max_hours is not none else "N/A" }} |
+| Indoor max session hours | {{ data.seasonal_context.indoor_weekend_max_hours if data.seasonal_context.indoor_weekend_max_hours is not none else "N/A" }} |
+| Notes | {{ data.seasonal_context.notes or "N/A" }} |
+{% else %}
+N/A
+{% endif %}
+
