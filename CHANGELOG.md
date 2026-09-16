@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-09-16
+
+### Added
+
+- Git commit SHA logged at startup alongside the version: `RPS version: 0.27.0 (commit <sha>)`. The full SHA is passed as `--build-arg GIT_COMMIT=${{ github.sha }}` in `ghcr-image.yml`, stored as `ENV GIT_COMMIT` in the image, and read at runtime via `os.environ`. Makes it trivial to confirm which exact container is running.
+
 ## [0.26.0] - 2026-09-16
 
 ### Added

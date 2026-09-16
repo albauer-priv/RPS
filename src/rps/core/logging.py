@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import importlib.metadata
 import logging
+import os
 import sys
 import time
 from collections.abc import Iterable
@@ -28,9 +29,6 @@ def _normalize_level(level: str | int | None) -> int:
     if not level:
         return logging.INFO
     return _LEVELS.get(level.strip().upper(), logging.INFO)
-
-
-import os
 
 
 def _is_disabled(value: str | int | None) -> bool:
@@ -214,7 +212,8 @@ def setup_logging(
             _version = importlib.metadata.version("rps")
         except importlib.metadata.PackageNotFoundError:
             _version = "unknown"
-        _startup_log.log(announce_level, "RPS version: %s", _version)
+        _commit = os.environ.get("GIT_COMMIT", "unknown")
+        _startup_log.log(announce_level, "RPS version: %s (commit %s)", _version, _commit)
 
 
 def log_and_print(logger: logging.Logger, message: str, level: int = logging.INFO) -> None:
