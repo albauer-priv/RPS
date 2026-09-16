@@ -219,6 +219,11 @@ Athlete VO2max development objectives:
 - Apply the `ceiling_first_durability` rationale as: long planning runway (≥ 20 weeks), explicit aerobic ceiling development goal, weekday time-crunch with weekend leverage all support conditional early VO2max work before durability volume expansion — with sufficient horizon remaining for the economy/durability block after the VO2 phase.
 - VO2MAX in the ceiling-first scenario must still be framed as early-season ceiling-support: fresh-only, time-limited to the first two phases, and not a season-wide permission.
 - Write the `season_archetype_rationale` using concrete athlete-profile facts (planning runway in weeks, explicit VO2max objective text, weekday vs. weekend availability asymmetry) so the rationale is unambiguous to the macrocycle-architecture task.
+- POSITIVE EXAMPLE — what a correct ceiling_first_durability scenario C looks like:
+  - `season_archetype: "ceiling_first_durability"`
+  - `season_archetype_rationale`: `["52-week planning runway provides enough horizon for 2 VO2-build phases (~8 weeks) before the durability block, leaving ≥ 30 weeks for economy, VLamax-lowering, and specificity. Athlete profile explicitly states 'Increase aerobic capacity (VO2max)' and 'Increase VO2max, lower VLamax' as priority 3. Weekend leverage (up to 8h outdoor / 4h indoor) can support fresh VO2max intervals within compact weekday windows. VO2MAX is permitted only in phases 1–2 as an early aerobic ceiling build; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering."]`
+  - `intensity_guidance.allowed_domains`: `["RECOVERY", "ENDURANCE", "TEMPO", "VO2MAX"]` (VO2MAX active, THRESHOLD suppressed in the VO2 block; THRESHOLD may return in later durability/build phases)
+  - `decision_notes` must include: "VO2MAX is permitted as an early-season aerobic-ceiling build in the first two phases only; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering."
 
 Seasonal availability context:
 - When `seasonal_context` is present in the injected context, read `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, and `outdoor_weekend_max_hours`.
@@ -251,10 +256,22 @@ Internal consistency checks:
 
 Differentiation self-test (mandatory before returning):
 - For each narrative field across all three scenarios, ask: "Could this sentence be moved to a different scenario without the reader noticing?" If yes, rewrite it with concrete scenario-specific content.
-- `constraint_summary` must NOT be identical across scenarios. It must describe how this scenario's specific cadence, phase structure, and domain permission interact with the athlete's available time budget — not just list the static availability table. Example: "At 2:1 cadence with 3-week phases, the 14 h/week typical budget translates to two quality weekends per reset cycle before a recovery week." Not: "Typical availability is 14 hours per week."
-- `key_differences` must name concrete structural facts: cadence (e.g. 2:1 vs 2:1:1), phase length, domain breadth (e.g. "no THRESHOLD"), and what that means in practice — not just "this scenario keeps pressure more controlled."
-- `typical_week_feel` must describe something specific to this scenario's session mix, not a generic "structured but manageable." Name the dominant session type, duration range, or intensity character that distinguishes this week from the other scenarios' weeks.
+- `constraint_summary` must NOT be identical across scenarios. It must describe how this scenario's specific cadence, phase structure, and domain permission interact with the athlete's available time budget — not just list the static availability table.
+  - BAD (same for all three): "Monday and Friday remain fixed no-ride days. Typical availability is 14 hours per week, with a practical range of 10.5 to 25 hours."
+  - GOOD (Scenario A / 2:1 / 3-week): "At 2:1 cadence with 3-week phases, the 14 h typical week produces two progressive weekends before each recovery reset — short enough to prevent deep fatigue accumulation but frequent enough to limit long-ride progression. Mon/Fri rest anchors constrain quality to Tue–Thu + Sat/Sun; the conservative domain ceiling (no THRESHOLD) keeps session density manageable within those windows."
+  - GOOD (Scenario B / 2:1:1 / 4-week): "At 2:1:1 cadence with 4-week phases, two loading weekends followed by a mini-reset or reload allow progressive long-ride specificity before consolidation. The THRESHOLD permission widens the Sat/Sun session palette beyond pure endurance, supporting both durability volume and economy work within the 10.5–25 h range."
+  - GOOD (Scenario C / 3:1 / 4-week): "At 3:1 cadence with 4-week phases, three consecutive loading weeks demand that weekend long rides are executed under accumulated mid-week fatigue. The 10.5–25 h range becomes the stress window, not just the budget ceiling; planned deloads are mandatory, not optional freshness."
+- `key_differences` must name concrete structural facts: cadence (e.g. 2:1 vs 2:1:1), phase length, domain breadth (e.g. "no THRESHOLD"), and what that means in practice.
+  - BAD: "Compared with B and C, this scenario keeps week-to-week pressure more controlled and asks for less fatigue exposure."
+  - GOOD: "Scenario A uses 2:1 cadence with 3-week phases and excludes THRESHOLD and VO2MAX — a tighter reset rhythm and narrower domain ceiling than both B (2:1:1, THRESHOLD permitted) and C (3:1, THRESHOLD + VO2MAX). The shorter phase length means 18 phases vs 13 in B and C, with more frequent adaptation checkpoints but less sustained overload per block."
+- `typical_week_feel` must name the dominant session type, duration range, or intensity character specific to this scenario.
+  - BAD: "Structured but manageable; the athlete should usually finish the week feeling contained rather than stretched."
+  - GOOD (Scenario A): "Two compact Tue–Thu sessions (1.5–3 h, ENDURANCE or TEMPO) and one longer Saturday ride (4–6 h, pure aerobic durability). Sunday is either a short recovery spin or rest. The week closes with clearly absorbed load, not accumulated strain."
+  - GOOD (Scenario C): "Two focused weekday sessions (including at least one TEMPO or THRESHOLD touch) and a Saturday long ride designed to be started with mid-week fatigue already present. The athlete should feel productive strain rather than contained freshness by Sunday."
 - `main_payoff` and `main_cost` must be scenario-specific claims that would be false if applied to one of the other two scenarios.
+  - BAD payoff: "Best balance of adaptation, control, and practical execution." (could fit any scenario)
+  - GOOD payoff (Scenario A): "Highest number of uninterrupted training weeks across the season — the 2:1/3-week rhythm is the most resilient to travel, fatigue spikes, or single-week disruptions."
+  - GOOD cost (Scenario C): "The 3:1 block commits three weeks of loading before any reset — one disrupted week near the end of a block costs more accumulated quality than in A or B."
 - Hard: if after reviewing all three scenarios any two share word-for-word identical sentences in `constraint_summary`, `typical_week_feel`, or `main_payoff`, those must be rewritten before returning.
 
 Hard rules:
