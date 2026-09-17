@@ -2,6 +2,7 @@ crews:
   coach_conversation:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/domain-glossary
       - skills/shared/resolved-context-consumption
       - skills/shared/traceability-and-naming
   workout_editor_conversation:
@@ -12,6 +13,7 @@ crews:
   season_planning:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/domain-glossary
       - skills/shared/resolved-context-consumption
       - skills/shared/snapshot-memory-consumption
       - skills/shared/contract-context-consumption
@@ -19,6 +21,7 @@ crews:
   season_review:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/domain-glossary
       - skills/shared/snapshot-memory-consumption
       - skills/shared/contract-context-consumption
       - skills/shared/blueprint-contract-validation
@@ -34,6 +37,7 @@ crews:
   phase_planning:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/domain-glossary
       - skills/shared/resolved-context-consumption
       - skills/shared/snapshot-memory-consumption
       - skills/shared/contract-context-consumption
@@ -41,6 +45,7 @@ crews:
   phase_review:
     skills:
       - skills/shared/runtime-boundaries
+      - skills/shared/domain-glossary
       - skills/shared/snapshot-memory-consumption
       - skills/shared/contract-context-consumption
       - skills/shared/blueprint-contract-validation

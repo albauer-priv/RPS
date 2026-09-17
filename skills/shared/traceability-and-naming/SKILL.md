@@ -1,9 +1,9 @@
 ---
 name: traceability-and-naming
-description: Apply traceability, naming, versioning, and data-confidence conventions to planning outputs.
+description: Apply traceability, naming, versioning, data-confidence, and reasoning-citation conventions to planning outputs.
 metadata:
   author: rps
-  version: "2.1"
+  version: "2.2"
 ---
 Apply naming, traceability, and confidence rules exactly.
 
@@ -33,6 +33,12 @@ Confidence rules:
 - `MEDIUM`: interpretation allowed, but limitations must be named explicitly.
 - `LOW` or `UNKNOWN`: informational only; use higher-confidence data for progression, deload, or governance decisions.
 - Upgrade confidence downstream only when new source data supports it.
+
+Reasoning citation rules:
+- when emitting a `blocking_issue`, `warning`, or corridor value, name the governing rule or constraint that drives the decision — one short clause is enough (e.g., "per load-governance SKILL.md max-cap rule", "per macrocycle-architecture taper-window rule", "per cadence-recovery disrupted-week anchor rule")
+- do not cite vague sources like "training principles" or "general guidelines"; cite the specific skill, section, or threshold
+- if no specific rule applies and the decision is judgment-based, state that explicitly: "judgment — no specific rule applies"
+- this makes plan decisions reproducible and auditable: reviewers can verify the same input produces the same conclusion
 
 Hard rules:
 - preserve lineage from available upstream references and mark missing lineage explicitly

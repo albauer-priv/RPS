@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.17] - 2026-09-17
+
+### Changed
+
+- `skills/shared/domain-glossary/SKILL.md` (new): shared RPS domain glossary injected as a crew-level skill — canonical definitions for `kJ`, `BL_kJ`, `W_prev_actual`, `availability_load_capacity_kj`, disrupted-week threshold, phase cycle names, event priority (A/B/C), cadence families (3:1/2:1/2:1:1), durability-first, and `blocking_issue` vs `warning` discipline. Added to `coach_conversation`, `season_planning`, `season_review`, `phase_planning`, `phase_review` crews in `skills.yaml`. Implements Fowler aspect 3 — semantic layer / shared vocabulary.
+- `skills/shared/traceability-and-naming/SKILL.md` (v2.2): added **Reasoning citation rules** — when emitting a `blocking_issue`, `warning`, or corridor value, agents must cite the governing rule or constraint (specific skill, section, or threshold); vague sources prohibited; judgment-based decisions must be stated explicitly. Makes plan decisions reproducible and auditable. Implements Fowler aspect 2 — traceability.
+- `skills/shared/runtime-boundaries/SKILL.md`: added **Capability tiers** section — specialist, manager/synthesis, audit/review, and writer agents each have explicit authority limits; the plan advances only when the review layer approves it; no agent can bypass the review layer or authorize its own work as final. Implements Fowler aspect 4 — capability model.
+- `src/rps/orchestrator/season_flow.py`: added pre-flight event validation in `create_season_scenarios` — returns a structured error if no future planning events exist on or after `target_week_start`, rather than silently running the crew with an empty event horizon. Implements Fowler aspect 1 — data quality / input contracts.
+
 ## [0.37.16] - 2026-09-17
 
 ### Changed
