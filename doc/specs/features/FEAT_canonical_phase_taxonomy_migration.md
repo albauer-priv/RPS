@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-21
 Owner: Planning Semantics
 ---
 # FEAT: Canonical Phase Taxonomy Migration
 
 * **ID:** FEAT_canonical_phase_taxonomy_migration
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Planning Semantics
 * **Last-Updated:** 2026-05-21
 * **Related:** [FEAT_phase_intent_semantic_backbone](/doc/specs/features/FEAT_phase_intent_semantic_backbone.md), [FEAT_auditable_week_workout_selection](/doc/specs/features/FEAT_auditable_week_workout_selection.md), [ADR-053-canonical-phase-taxonomy-and-build-subtypes](/doc/adr/ADR-053-canonical-phase-taxonomy-and-build-subtypes.md)
@@ -224,14 +224,14 @@ Owner: Planning Semantics
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Canonical `phase_type` / `phase_intent` / `build_subtype` helpers exist in code.
-* [ ] Known legacy values normalize to the approved canonical taxonomy.
-* [ ] Unknown legacy values fail closed.
-* [ ] New writes using legacy taxonomy values fail validation.
-* [ ] `SEASON_PLAN` and downstream phase schemas require canonical semantic fields.
-* [ ] `data.body_metadata.phase_taxonomy_version` is persisted where body metadata exists.
-* [ ] Deterministic season derivation emits only canonical semantics.
-* [ ] Validation passes:
+* [x] Canonical `phase_type` / `phase_intent` / `build_subtype` helpers exist in code.
+* [x] Known legacy values normalize to the approved canonical taxonomy.
+* [x] Unknown legacy values fail closed.
+* [x] New writes using legacy taxonomy values fail validation.
+* [x] `SEASON_PLAN` and downstream phase schemas require canonical semantic fields.
+* [x] `data.body_metadata.phase_taxonomy_version` is persisted where body metadata exists.
+* [x] Deterministic season derivation emits only canonical semantics.
+* [x] Validation passes:
   * `python3 scripts/check_schema_required.py`
   * `python3 scripts/bundle_schemas.py`
   * `python3 -m py_compile $(git ls-files '*.py')`
@@ -305,13 +305,13 @@ Owner: Planning Semantics
 
 Update these docs as part of implementation:
 
-* [ ] [doc/specs/features/FEAT_phase_intent_semantic_backbone.md](/doc/specs/features/FEAT_phase_intent_semantic_backbone.md) — mark superseded
-* [ ] [doc/adr/ADR-053-canonical-phase-taxonomy-and-build-subtypes.md](/doc/adr/ADR-053-canonical-phase-taxonomy-and-build-subtypes.md) — final decision record
-* [ ] [specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md](/specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md) — canonical semantic fields
-* [ ] [specs/knowledge/_shared/sources/specs/mandatory_output_phase_guardrails.md](/specs/knowledge/_shared/sources/specs/mandatory_output_phase_guardrails.md) — canonical semantic fields
-* [ ] [specs/knowledge/_shared/sources/specs/mandatory_output_phase_structure.md](/specs/knowledge/_shared/sources/specs/mandatory_output_phase_structure.md) — canonical semantic fields
-* [ ] [specs/knowledge/_shared/sources/specs/mandatory_output_phase_preview.md](/specs/knowledge/_shared/sources/specs/mandatory_output_phase_preview.md) — canonical semantic fields
-* [ ] [CHANGELOG.md](/CHANGELOG.md) — record migration
+* [x] [doc/specs/features/FEAT_phase_intent_semantic_backbone.md](/doc/specs/features/FEAT_phase_intent_semantic_backbone.md) — mark superseded
+* [x] [doc/adr/ADR-053-canonical-phase-taxonomy-and-build-subtypes.md](/doc/adr/ADR-053-canonical-phase-taxonomy-and-build-subtypes.md) — final decision record
+* [x] [specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md](/specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md) — canonical semantic fields
+* [x] [specs/knowledge/_shared/sources/specs/mandatory_output_phase_guardrails.md](/specs/knowledge/_shared/sources/specs/mandatory_output_phase_guardrails.md) — canonical semantic fields
+* [x] [specs/knowledge/_shared/sources/specs/mandatory_output_phase_structure.md](/specs/knowledge/_shared/sources/specs/mandatory_output_phase_structure.md) — canonical semantic fields
+* [x] [specs/knowledge/_shared/sources/specs/mandatory_output_phase_preview.md](/specs/knowledge/_shared/sources/specs/mandatory_output_phase_preview.md) — canonical semantic fields
+* [x] [CHANGELOG.md](/CHANGELOG.md) — record migration
 
 ---
 

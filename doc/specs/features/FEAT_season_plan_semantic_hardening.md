@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-19
 Owner: Season Planning
 ---
 # FEAT: Season Plan Semantic Hardening
 
 * **ID:** FEAT_season_plan_semantic_hardening
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Season Planning
 * **Last-Updated:** 2026-05-19
 * **Related:** [skills/season/macrocycle-architecture/SKILL.md](/skills/season/macrocycle-architecture/SKILL.md), [skills/season/load-governance/SKILL.md](/skills/season/load-governance/SKILL.md)
@@ -175,13 +175,13 @@ Owner: Season Planning
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Selected scenario cadence is the only cadence authority during Season Plan generation.
-* [ ] Phase slots include derived cadence week roles in deterministic prompt context.
-* [ ] `SeasonPlanBundleModel` validates phase blueprints.
-* [ ] Season skills block cadence mismatch, missing A-event taper, full B-event taper, availability-capacity copy-through, and phase corridors above feasible availability.
-* [ ] Phase skills block weekly bands that contradict phase role, inherited week role, or S5 trace.
-* [ ] Golden tests cover i150546/KW21 semantic expectations.
-* [ ] Validation passes: py_compile, lint, typecheck, targeted pytest.
+* [x] Selected scenario cadence is the only cadence authority during Season Plan generation.
+* [x] Phase slots include derived cadence week roles in deterministic prompt context.
+* [x] `SeasonPlanBundleModel` validates phase blueprints.
+* [x] Season skills block cadence mismatch, missing A-event taper, full B-event taper, availability-capacity copy-through, and phase corridors above feasible availability.
+* [x] Phase skills block weekly bands that contradict phase role, inherited week role, or S5 trace.
+* [x] Golden tests cover i150546/KW21 semantic expectations.
+* [x] Validation passes: py_compile, lint, typecheck, targeted pytest.
 
 ---
 
@@ -229,7 +229,7 @@ Owner: Season Planning
 Update these docs as part of implementation:
 
 * [x] This feature spec.
-* [ ] `CHANGELOG.md` — summarize generator hardening.
+* [x] `CHANGELOG.md` — summarize generator hardening.
 
 ---
 

@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-02-08
 Owner: UI/Data Contracts
 ---
 # FEAT: Remove Planning Event Objective Field
 
 * **ID:** FEAT_remove_event_objective
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** UI + Schemas
 * **Last-Updated:** 2026-02-08
 * **Related:** [doc/ui/pages/athlete_profile/events.md](/doc/ui/pages/athlete_profile/events.md) (if present), specs/schemas/planning_events.schema.json
@@ -37,14 +37,14 @@ Owner: UI/Data Contracts
 
 **Goals**
 
-* [ ] Remove `objective` from Planning Events schema and payloads.
-* [ ] Render only `goal` in the Events table.
-* [ ] Migrate existing payloads safely (drop `objective` or map into `goal` if missing).
+* [x] Remove `objective` from Planning Events schema and payloads.
+* [x] Render only `goal` in the Events table.
+* [x] Migrate existing payloads safely (drop `objective` or map into `goal` if missing).
 
 **Non-Goals**
 
-* [ ] No change to event ranking/priority semantics.
-* [ ] No change to other event fields.
+* [x] No change to event ranking/priority semantics.
+* [x] No change to other event fields.
 
 ---
 
@@ -168,11 +168,11 @@ flowchart TD
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Events UI no longer displays `objective`.
-* [ ] `specs/schemas/planning_events.schema.json` removes `objective` and bumps version.
-* [ ] Bundled schemas regenerated and validated.
-* [ ] Legacy events upgrade removes `objective` or maps into `goal`.
-* [ ] Validation passes: `python3 scripts/check_schema_required.py`, `python3 scripts/bundle_schemas.py`.
+* [x] Events UI no longer displays `objective`.
+* [x] `specs/schemas/planning_events.schema.json` removes `objective` and bumps version.
+* [x] Bundled schemas regenerated and validated.
+* [x] Legacy events upgrade removes `objective` or maps into `goal`.
+* [x] Validation passes: `python3 scripts/check_schema_required.py`, `python3 scripts/bundle_schemas.py`.
 
 ---
 

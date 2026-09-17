@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-06-09
 Owner: UI / Run Store
 ---
 # FEAT: Run Event Telemetry Enrichment
 
 * **ID:** FEAT_run_event_telemetry_enrichment
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** UI / Run Store
 * **Last-Updated:** 2026-06-09
 * **Related:** FEAT_plan_hub_runtime_progress_visibility, FEAT_crewai_event_listener_runtime_telemetry
@@ -230,4 +230,4 @@ flowchart TD
 Update these docs as part of implementation:
 
 * [x] This feature doc
-* [ ] `CHANGELOG.md` — user-visible telemetry enrichment once the change is released
+* [x] `CHANGELOG.md` — user-visible telemetry enrichment once the change is released

@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-04-14
 Owner: UI / Planning
 ---
 # FEAT: Consolidate Plan Hub Phase Cards
 
 * **ID:** FEAT_plan_hub_phase_card_consolidation
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Plan Hub UI / Planning
 * **Last-Updated:** 2026-04-14
 * **Related:** `src/rps/ui/pages/plan/hub.py`, `tests/test_plan_pages.py`, `doc/specs/features/FEAT_plan_hub_phase_step_isolation.md`
@@ -235,8 +235,8 @@ flowchart TD
 ## 11) Documentation Updates
 
 * [x] `doc/specs/features/FEAT_plan_hub_phase_card_consolidation.md` — document the UI consolidation
-* [ ] `doc/specs/features/FEAT_plan_hub_phase_step_isolation.md` — align user-facing scope wording
-* [ ] `CHANGELOG.md` — record the simplified phase card behavior
+* [x] `doc/specs/features/FEAT_plan_hub_phase_step_isolation.md` — align user-facing scope wording
+* [x] `CHANGELOG.md` — record the simplified phase card behavior
 
 ---
 

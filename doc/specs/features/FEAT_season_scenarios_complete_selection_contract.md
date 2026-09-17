@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-28
 Owner: Planning Runtime
 ---
 # FEAT: Season Scenarios Complete Selection Contract
 
 * **ID:** FEAT_season_scenarios_complete_selection_contract
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Planning Runtime
 * **Last-Updated:** 2026-05-28
 * **Related:** [FEAT_selected_scenario_contract_chain](/Users/alexander/RPS/doc/specs/features/FEAT_selected_scenario_contract_chain.md), [FEAT_strict_season_selection_binding](/Users/alexander/RPS/doc/specs/features/FEAT_strict_season_selection_binding.md)
@@ -41,15 +41,15 @@ Owner: Planning Runtime
 
 **Goals**
 
-* [ ] Make `SEASON_SCENARIOS.data.scenarios[].scenario_guidance` a complete source for selected-scenario operational posture.
-* [ ] Align schema, knowledge specs, active producer files, normalization, guardrails, extraction, and readiness to one canonical field shape.
-* [ ] Preserve strict selection-binding behavior while removing false incomplete-contract failures for fresh valid scenarios.
+* [x] Make `SEASON_SCENARIOS.data.scenarios[].scenario_guidance` a complete source for selected-scenario operational posture.
+* [x] Align schema, knowledge specs, active producer files, normalization, guardrails, extraction, and readiness to one canonical field shape.
+* [x] Preserve strict selection-binding behavior while removing false incomplete-contract failures for fresh valid scenarios.
 
 **Non-Goals**
 
-* [ ] No relaxation of stale-selection semantics.
-* [ ] No new artifact type.
-* [ ] No Phase/Week schema redesign in this change.
+* [x] No relaxation of stale-selection semantics.
+* [x] No new artifact type.
+* [x] No Phase/Week schema redesign in this change.
 
 ---
 
@@ -187,14 +187,14 @@ flowchart TD
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] `SEASON_SCENARIOS` schema requires `recovery_margin`, `fatigue_exposure`, and `specificity_density` in `scenario_guidance`.
-* [ ] `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` are treated canonically as string arrays.
-* [ ] Active scenario-generation files define the posture fields locally and require direct serialization rather than prose inference.
-* [ ] Runtime guardrails reject scenario outputs that are missing the required operational posture.
-* [ ] `build_selected_scenario_contract_context(...)` preserves strings as strings and list fields as lists.
-* [ ] Readiness reports incomplete current scenario payloads accurately and does not misclassify fresh valid scenarios.
-* [ ] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`, `python3 scripts/check_schema_required.py`, `python3 scripts/bundle_schemas.py`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted `pytest`
-* [ ] No regressions in Season Scenario -> Selection -> Season Plan startup flow.
+* [x] `SEASON_SCENARIOS` schema requires `recovery_margin`, `fatigue_exposure`, and `specificity_density` in `scenario_guidance`.
+* [x] `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` are treated canonically as string arrays.
+* [x] Active scenario-generation files define the posture fields locally and require direct serialization rather than prose inference.
+* [x] Runtime guardrails reject scenario outputs that are missing the required operational posture.
+* [x] `build_selected_scenario_contract_context(...)` preserves strings as strings and list fields as lists.
+* [x] Readiness reports incomplete current scenario payloads accurately and does not misclassify fresh valid scenarios.
+* [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`, `python3 scripts/check_schema_required.py`, `python3 scripts/bundle_schemas.py`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted `pytest`
+* [x] No regressions in Season Scenario -> Selection -> Season Plan startup flow.
 
 ---
 
@@ -243,8 +243,8 @@ flowchart TD
 
 ## 11) Documentation Updates
 
-* [ ] [specs/knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md) — require the canonical scenario posture fields and types
-* [ ] [specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md) — align interface wording with canonical shapes
-* [ ] [specs/knowledge/_shared/sources/contracts/scenario__season_contract.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/contracts/scenario__season_contract.md) — clarify advisory producer responsibilities vs canonical posture emission
-* [ ] [CHANGELOG.md](/Users/alexander/RPS/CHANGELOG.md) — record complete scenario contract hardening
-* [ ] [doc/overview/feature_backlog.md](/Users/alexander/RPS/doc/overview/feature_backlog.md) — record feature completion
+* [x] [specs/knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/specs/mandatory_output_season_scenarios.md) — require the canonical scenario posture fields and types
+* [x] [specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/specs/season_scenarios_interface_spec.md) — align interface wording with canonical shapes
+* [x] [specs/knowledge/_shared/sources/contracts/scenario__season_contract.md](/Users/alexander/RPS/specs/knowledge/_shared/sources/contracts/scenario__season_contract.md) — clarify advisory producer responsibilities vs canonical posture emission
+* [x] [CHANGELOG.md](/Users/alexander/RPS/CHANGELOG.md) — record complete scenario contract hardening
+* [x] [doc/overview/feature_backlog.md](/Users/alexander/RPS/doc/overview/feature_backlog.md) — record feature completion

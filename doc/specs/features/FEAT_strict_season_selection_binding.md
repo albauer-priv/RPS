@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-28
 Owner: Planning Runtime
 ---
 # FEAT: Strict Season Scenario Selection Binding
 
 * **ID:** FEAT_strict_season_selection_binding
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Planning Runtime
 * **Last-Updated:** 2026-05-28
 * **Related:** [FEAT_selected_scenario_contract_chain](/doc/specs/features/FEAT_selected_scenario_contract_chain.md)
@@ -185,13 +185,13 @@ flowchart TD
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] New `SEASON_SCENARIOS` invalidates older latest selection immediately in UI readiness.
-* [ ] `SEASON_PLAN` cannot start unless latest selection binds to latest scenarios and yields a complete `selected_scenario_contract`.
-* [ ] No season planning crew task is prepared when binding fails.
-* [ ] `ATHLETE_STATE_SNAPSHOT` only carries authoritative selected scenario contract block when binding succeeds.
-* [ ] Season finalize/review/writer active files explicitly treat `selected_scenario_contract` as binding and fail closed when it is incomplete.
-* [ ] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted `pytest`
-* [ ] No regressions in Season scenarios selection and season-plan startup flows.
+* [x] New `SEASON_SCENARIOS` invalidates older latest selection immediately in UI readiness.
+* [x] `SEASON_PLAN` cannot start unless latest selection binds to latest scenarios and yields a complete `selected_scenario_contract`.
+* [x] No season planning crew task is prepared when binding fails.
+* [x] `ATHLETE_STATE_SNAPSHOT` only carries authoritative selected scenario contract block when binding succeeds.
+* [x] Season finalize/review/writer active files explicitly treat `selected_scenario_contract` as binding and fail closed when it is incomplete.
+* [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted `pytest`
+* [x] No regressions in Season scenarios selection and season-plan startup flows.
 
 ---
 
@@ -240,9 +240,9 @@ flowchart TD
 
 ## 11) Documentation Updates
 
-* [ ] [doc/overview/artefact_flow.md](/doc/overview/artefact_flow.md) — clarify strict reselection semantics after new scenarios
-* [ ] [doc/overview/how_to_plan.md](/doc/overview/how_to_plan.md) — note that Season Plan requires a fresh selection bound to latest scenarios
-* [ ] [CHANGELOG.md](/CHANGELOG.md) — record strict selection binding enforcement
+* [x] [doc/overview/artefact_flow.md](/doc/overview/artefact_flow.md) — clarify strict reselection semantics after new scenarios
+* [x] [doc/overview/how_to_plan.md](/doc/overview/how_to_plan.md) — note that Season Plan requires a fresh selection bound to latest scenarios
+* [x] [CHANGELOG.md](/CHANGELOG.md) — record strict selection binding enforcement
 
 ---
 

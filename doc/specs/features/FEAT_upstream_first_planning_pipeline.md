@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-22
 Owner: Planning Runtime
 ---
 # FEAT: Upstream-First Planning Pipeline
 
 * **ID:** FEAT_upstream_first_planning_pipeline
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Planning Runtime
 * **Last-Updated:** 2026-05-22
 * **Related:** ADR-056
@@ -193,14 +193,14 @@ Owner: Planning Runtime
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Season finalize catches semantic/event/domain drift before writer handoff.
-* [ ] Phase finalize catches structure/load-role drift before writer handoff.
-* [ ] Week finalize catches agenda/domain/export-intent drift before writer handoff.
-* [ ] Review normally approves clean finalize bundles and only escalates real residual issues.
-* [ ] Writer no longer blocks on forbidden-domain prose drift or phantom event semantics for Season.
-* [ ] Deterministic writer projection remains in place for code-owned fields.
-* [ ] Validation passes: `py_compile`, lint, typecheck, targeted CrewAI/planning tests.
-* [ ] No regressions in Season / Phase / Week artifact persistence.
+* [x] Season finalize catches semantic/event/domain drift before writer handoff.
+* [x] Phase finalize catches structure/load-role drift before writer handoff.
+* [x] Week finalize catches agenda/domain/export-intent drift before writer handoff.
+* [x] Review normally approves clean finalize bundles and only escalates real residual issues.
+* [x] Writer no longer blocks on forbidden-domain prose drift or phantom event semantics for Season.
+* [x] Deterministic writer projection remains in place for code-owned fields.
+* [x] Validation passes: `py_compile`, lint, typecheck, targeted CrewAI/planning tests.
+* [x] No regressions in Season / Phase / Week artifact persistence.
 
 ---
 

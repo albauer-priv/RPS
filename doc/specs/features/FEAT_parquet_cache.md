@@ -1,6 +1,6 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-02-04
 Owner: Data Pipeline
 ---
@@ -8,7 +8,7 @@ Owner: Data Pipeline
 # FEAT: Parquet Cache for Intervals Pipeline Outputs
 
 * **ID:** FEAT_parquet_cache
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Data Pipeline
 * **Last-Updated:** 2026-02-04
 * **Related:** ADR-024-parquet-cache.md
@@ -37,14 +37,14 @@ Owner: Data Pipeline
 
 **Goals**
 
-* [ ] Write Parquet caches automatically during the Intervals pipeline run.
-* [ ] Keep caches in the same week/latest folders as CSV/JSON.
-* [ ] Treat Parquet as non-canonical (best-effort cache only).
+* [x] Write Parquet caches automatically during the Intervals pipeline run.
+* [x] Keep caches in the same week/latest folders as CSV/JSON.
+* [x] Treat Parquet as non-canonical (best-effort cache only).
 
 **Non-Goals**
 
-* [ ] Replace JSON/CSV artifacts as the source of truth.
-* [ ] Change UI readers to require Parquet.
+* [x] Replace JSON/CSV artifacts as the source of truth.
+* [x] Change UI readers to require Parquet.
 
 ---
 
@@ -157,10 +157,10 @@ Owner: Data Pipeline
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Parquet cache files are written for activities_actual and activities_trend.
-* [ ] Cache writes are best-effort; pipeline does not fail if Parquet fails.
-* [ ] Dependency updated to support Parquet.
-* [ ] Docs updated to note cache behavior and non-canonical status.
+* [x] Parquet cache files are written for activities_actual and activities_trend.
+* [x] Cache writes are best-effort; pipeline does not fail if Parquet fails.
+* [x] Dependency updated to support Parquet.
+* [x] Docs updated to note cache behavior and non-canonical status.
 
 ---
 
@@ -198,8 +198,8 @@ Owner: Data Pipeline
 
 ## 11) Documentation Updates
 
-* [ ] [doc/architecture/subsystems/data_pipeline.md](../../architecture/subsystems/data_pipeline.md) — mention Parquet cache.
-* [ ] [doc/adr/ADR-024-parquet-cache.md](../../adr/ADR-024-parquet-cache.md) — decision record.
+* [x] [doc/architecture/subsystems/data_pipeline.md](../../architecture/subsystems/data_pipeline.md) — mention Parquet cache.
+* [x] [doc/adr/ADR-024-parquet-cache.md](../../adr/ADR-024-parquet-cache.md) — decision record.
 
 ---
 

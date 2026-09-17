@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-22
 Owner: Season Planning
 ---
 # FEAT: Generic Season Semantics Revision
 
 * **ID:** FEAT_generic_season_semantics_revision
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Season Planning
 * **Last-Updated:** 2026-05-22
 * **Related:** [FEAT_season_plan_semantic_hardening](/doc/specs/features/FEAT_season_plan_semantic_hardening.md), [FEAT_phase_intent_semantic_backbone](/doc/specs/features/FEAT_phase_intent_semantic_backbone.md), [ADR-053](/doc/adr/ADR-053-canonical-phase-taxonomy-and-build-subtypes.md)
@@ -201,14 +201,14 @@ Owner: Season Planning
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] `RECOVERY` is legal across the canonical phase taxonomy unless explicitly overridden.
-* [ ] Canonical `allowed_load_modalities` are derived from phase semantics rather than copied from model prose.
-* [ ] `SEASON_PLAN.events_constraints` contains only real events and no synthetic “no event” placeholders.
-* [ ] Structured deterministic role-week bands remain the validation source of truth.
-* [ ] Final `SEASON_PLAN` visibly materializes role-week guardrails in existing text fields.
-* [ ] Taper validation distinguishes pre-event training load from total event-week load.
-* [ ] Objective/A-event mismatch produces a warning in the final plan and contract checks, but does not block writing.
-* [ ] Validation passes: `py_compile`, lint, typecheck, targeted pytest, and one relevant smoke run.
+* [x] `RECOVERY` is legal across the canonical phase taxonomy unless explicitly overridden.
+* [x] Canonical `allowed_load_modalities` are derived from phase semantics rather than copied from model prose.
+* [x] `SEASON_PLAN.events_constraints` contains only real events and no synthetic “no event” placeholders.
+* [x] Structured deterministic role-week bands remain the validation source of truth.
+* [x] Final `SEASON_PLAN` visibly materializes role-week guardrails in existing text fields.
+* [x] Taper validation distinguishes pre-event training load from total event-week load.
+* [x] Objective/A-event mismatch produces a warning in the final plan and contract checks, but does not block writing.
+* [x] Validation passes: `py_compile`, lint, typecheck, targeted pytest, and one relevant smoke run.
 
 ---
 
@@ -270,9 +270,9 @@ Owner: Season Planning
 Update these docs as part of implementation:
 
 * [x] [doc/specs/features/FEAT_generic_season_semantics_revision.md](/doc/specs/features/FEAT_generic_season_semantics_revision.md) — feature source of truth
-* [ ] [doc/adr/ADR-055-season-semantic-recovery-and-guardrail-serialization.md](/doc/adr/ADR-055-season-semantic-recovery-and-guardrail-serialization.md) — architectural decision
-* [ ] [specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md](/specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md) — season output semantics
-* [ ] [CHANGELOG.md](/CHANGELOG.md) — summarize semantic revision
+* [x] [doc/adr/ADR-055-season-semantic-recovery-and-guardrail-serialization.md](/doc/adr/ADR-055-season-semantic-recovery-and-guardrail-serialization.md) — architectural decision
+* [x] [specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md](/specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md) — season output semantics
+* [x] [CHANGELOG.md](/CHANGELOG.md) — summarize semantic revision
 
 ---
 

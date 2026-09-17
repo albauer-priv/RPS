@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-04-13
 Owner: Orchestration / Planning
 ---
 # FEAT: Phase Guardrails KPI Gating Relaxation
 
 * **ID:** FEAT_phase_guardrails_kpi_gating_relaxation
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Plan Week Orchestration / Phase Architect
 * **Last-Updated:** 2026-04-13
 * **Related:** `src/rps/orchestrator/plan_week.py`, `prompts/agents/phase_architect.md`, `tests/test_plan_pages.py`
@@ -216,7 +216,7 @@ Owner: Orchestration / Planning
 ## 11) Documentation Updates
 
 * [x] `doc/specs/features/FEAT_phase_guardrails_kpi_gating_relaxation.md`
-* [ ] `CHANGELOG.md`
+* [x] `CHANGELOG.md`
 
 ---
 

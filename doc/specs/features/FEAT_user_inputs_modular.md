@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-02-05
 Owner: Data Model / UI
 ---
 # FEAT: Modular User Inputs (Profile, Availability, Logistics, Events)
 
 * **ID:** FEAT_user_inputs_modular
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Data Model / UI
 * **Last-Updated:** 2026-02-05
 * **Related:** —
@@ -44,8 +44,8 @@ Owner: Data Model / UI
 
 **Non-Goals**
 
-* [ ] Maintain legacy season_brief/events inputs in runtime.
-* [ ] Changing planning logic beyond input decomposition.
+* [x] Maintain legacy season_brief/events inputs in runtime.
+* [x] Changing planning logic beyond input decomposition.
 
 ---
 

@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-02-04
 Owner: UI Analytics
 ---
 # FEAT: Prefer Parquet Cache for Data & Metrics
 
 * **ID:** FEAT_parquet_readers
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** UI Analytics
 * **Last-Updated:** 2026-02-04
 * **Related:** FEAT_parquet_cache
@@ -35,14 +35,14 @@ Owner: UI Analytics
 
 **Goals**
 
-* [ ] Prefer Parquet cache for activities_trend when available.
-* [ ] Prefer Parquet cache for activities_actual when available.
-* [ ] Fall back to JSON on missing/failed Parquet reads.
+* [x] Prefer Parquet cache for activities_trend when available.
+* [x] Prefer Parquet cache for activities_actual when available.
+* [x] Fall back to JSON on missing/failed Parquet reads.
 
 **Non-Goals**
 
-* [ ] Remove JSON/CSV usage elsewhere.
-* [ ] Require Parquet for UI operation.
+* [x] Remove JSON/CSV usage elsewhere.
+* [x] Require Parquet for UI operation.
 
 ---
 
@@ -113,9 +113,9 @@ Owner: UI Analytics
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Data & Metrics uses Parquet when available for trend and actual data.
-* [ ] JSON fallback remains functional.
-* [ ] No regressions in charts or tables.
+* [x] Data & Metrics uses Parquet when available for trend and actual data.
+* [x] JSON fallback remains functional.
+* [x] No regressions in charts or tables.
 
 ---
 
@@ -141,7 +141,7 @@ Owner: UI Analytics
 
 ## 11) Documentation Updates
 
-* [ ] [doc/ui/pages/performance_data_metrics.md](../../ui/pages/performance_data_metrics.md) — note Parquet preference.
+* [x] [doc/ui/pages/performance_data_metrics.md](../../ui/pages/performance_data_metrics.md) — note Parquet preference.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-04
 Owner: Planning / Workspace
 Related: none
@@ -8,7 +8,7 @@ Related: none
 # FEAT: WEEK_PLAN Consistency Guards
 
 * **ID:** FEAT_week_plan_consistency_guards
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Planning / Workspace
 * **Last-Updated:** 2026-05-04
 * **Related:** `WEEK_PLAN`, `INTERVALS_WORKOUTS`, workout export validation
@@ -49,8 +49,8 @@ Related: none
 
 **Non-Goals**
 
-* [ ] Rework the planning prompts or weekly load estimation model.
-* [ ] Introduce a new artefact type or schema revision.
+* [x] Rework the planning prompts or weekly load estimation model.
+* [x] Introduce a new artefact type or schema revision.
 
 ---
 
@@ -199,13 +199,13 @@ flowchart TD
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] A `WEEK_PLAN` with linked `workout_id` and `planned_duration = 00:00` is rejected unless normalization can repair it.
-* [ ] A `WEEK_PLAN` with workout `duration = 00:00:01` is rejected unless normalization can replace it from `workout_text`.
-* [ ] Agenda `planned_duration` is kept aligned with workout duration for linked workouts.
-* [ ] Agenda `planned_kj` can be filled from workout notes when the note contains deterministic `planned_kJ` metadata.
-* [ ] Weekly summary mechanical total note is checked against the agenda sum when the note contains that statement.
-* [ ] Validation passes: `py_compile`, targeted `pytest`, `run_lint.sh`, `run_typecheck.sh`.
-* [ ] No regressions in `Workout Editor` preview/apply and `INTERVALS_WORKOUTS` export.
+* [x] A `WEEK_PLAN` with linked `workout_id` and `planned_duration = 00:00` is rejected unless normalization can repair it.
+* [x] A `WEEK_PLAN` with workout `duration = 00:00:01` is rejected unless normalization can replace it from `workout_text`.
+* [x] Agenda `planned_duration` is kept aligned with workout duration for linked workouts.
+* [x] Agenda `planned_kj` can be filled from workout notes when the note contains deterministic `planned_kJ` metadata.
+* [x] Weekly summary mechanical total note is checked against the agenda sum when the note contains that statement.
+* [x] Validation passes: `py_compile`, targeted `pytest`, `run_lint.sh`, `run_typecheck.sh`.
+* [x] No regressions in `Workout Editor` preview/apply and `INTERVALS_WORKOUTS` export.
 
 ---
 
@@ -256,10 +256,10 @@ flowchart TD
 
 Update these docs as part of implementation:
 
-* [ ] `doc/overview/artefact_flow.md` — mention stricter `WEEK_PLAN` store/export consistency gate
-* [ ] `doc/architecture/workspace.md` — mention `WEEK_PLAN` guarded consistency validation before save
-* [ ] `doc/ui/pages/plan_workouts.md` — note that editor preview/apply uses the same consistency layer as the planner/store
-* [ ] `CHANGELOG.md` — summarize the fix
+* [x] `doc/overview/artefact_flow.md` — mention stricter `WEEK_PLAN` store/export consistency gate
+* [x] `doc/architecture/workspace.md` — mention `WEEK_PLAN` guarded consistency validation before save
+* [x] `doc/ui/pages/plan_workouts.md` — note that editor preview/apply uses the same consistency layer as the planner/store
+* [x] `CHANGELOG.md` — summarize the fix
 
 ---
 

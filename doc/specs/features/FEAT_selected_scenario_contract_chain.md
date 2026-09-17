@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-28
 Owner: Planning Runtime
 ---
 # FEAT: Selected Scenario Contract Chain
 
 * **ID:** FEAT_selected_scenario_contract_chain
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Planning Runtime
 * **Last-Updated:** 2026-05-28
 * **Related:** [FEAT_planner_positive_frontloading_rollout](/Users/alexander/RPS/doc/specs/features/FEAT_planner_positive_frontloading_rollout.md)
@@ -41,14 +41,14 @@ Owner: Planning Runtime
 
 **Goals**
 
-* [ ] Introduce one code-owned selected-scenario contract derived from `SEASON_SCENARIOS` + `SEASON_SCENARIO_SELECTION`.
-* [ ] Propagate this contract through Season -> Phase -> Week artifacts, deterministic context, snapshots, tools, and active files.
-* [ ] Validate and enforce contract consistency in normalization, planning contracts, guardrails, and guarded store.
+* [x] Introduce one code-owned selected-scenario contract derived from `SEASON_SCENARIOS` + `SEASON_SCENARIO_SELECTION`.
+* [x] Propagate this contract through Season -> Phase -> Week artifacts, deterministic context, snapshots, tools, and active files.
+* [x] Validate and enforce contract consistency in normalization, planning contracts, guardrails, and guarded store.
 
 **Non-Goals**
 
-* [ ] Introduce an automatic selector that chooses A/B/C.
-* [ ] Add a new serialized scenario contract block to `WEEK_PLAN` in this change.
+* [x] Introduce an automatic selector that chooses A/B/C.
+* [x] Add a new serialized scenario contract block to `WEEK_PLAN` in this change.
 
 ---
 
@@ -192,14 +192,14 @@ flowchart TD
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] `SEASON_PLAN` requires and serializes `selected_scenario_contract`.
-* [ ] `PHASE_GUARDRAILS` and `PHASE_STRUCTURE` require and serialize `inherited_scenario_contract`.
-* [ ] Deterministic context tools expose nested selected/inherited posture blocks exactly as specified.
-* [ ] Athlete/planning snapshots include authoritative posture prompt blocks.
-* [ ] Advisory memory includes only narrative posture summaries.
-* [ ] Active Season / Phase / Week prompts, tasks, and skills positively describe received posture and preservation duties.
-* [ ] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`, `python3 scripts/check_schema_required.py`, `python3 scripts/generate_artifact_models.py`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted `pytest`.
-* [ ] No regressions in Season -> Phase -> Week planning contract enforcement.
+* [x] `SEASON_PLAN` requires and serializes `selected_scenario_contract`.
+* [x] `PHASE_GUARDRAILS` and `PHASE_STRUCTURE` require and serialize `inherited_scenario_contract`.
+* [x] Deterministic context tools expose nested selected/inherited posture blocks exactly as specified.
+* [x] Athlete/planning snapshots include authoritative posture prompt blocks.
+* [x] Advisory memory includes only narrative posture summaries.
+* [x] Active Season / Phase / Week prompts, tasks, and skills positively describe received posture and preservation duties.
+* [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`, `python3 scripts/check_schema_required.py`, `python3 scripts/generate_artifact_models.py`, `./scripts/run_lint.sh`, `./scripts/run_typecheck.sh`, targeted `pytest`.
+* [x] No regressions in Season -> Phase -> Week planning contract enforcement.
 
 ---
 
@@ -250,7 +250,7 @@ flowchart TD
 
 Update these docs as part of implementation:
 
-* [ ] [doc/overview/artefact_flow.md](/Users/alexander/RPS/doc/overview/artefact_flow.md) — document selected/inherited scenario contract flow.
-* [ ] [doc/architecture/system_architecture.md](/Users/alexander/RPS/doc/architecture/system_architecture.md) — note Season-only binding of user scenario selection.
-* [ ] [doc/overview/feature_backlog.md](/Users/alexander/RPS/doc/overview/feature_backlog.md) — record completion.
-* [ ] [CHANGELOG.md](/Users/alexander/RPS/CHANGELOG.md) — summarize runtime and contract changes.
+* [x] [doc/overview/artefact_flow.md](/Users/alexander/RPS/doc/overview/artefact_flow.md) — document selected/inherited scenario contract flow.
+* [x] [doc/architecture/system_architecture.md](/Users/alexander/RPS/doc/architecture/system_architecture.md) — note Season-only binding of user scenario selection.
+* [x] [doc/overview/feature_backlog.md](/Users/alexander/RPS/doc/overview/feature_backlog.md) — record completion.
+* [x] [CHANGELOG.md](/Users/alexander/RPS/CHANGELOG.md) — summarize runtime and contract changes.
