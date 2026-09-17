@@ -106,7 +106,9 @@ For active Season / Phase / Week files:
 - variable-like terms must be locally defined, mapped to injected deterministic/runtime truth, or explicitly forbidden
 - thin “see reference X” wrappers are not sufficient
 
-For details, see `.clinerules.d/20-agent-runtime.md`.
+When adding or modifying skills, orchestrators, or agent prompts, also apply the four agentic-readiness principles: validate inputs before running crews, cite governing rules in decisions, use canonical domain vocabulary from the domain-glossary skill, and respect capability tier authority boundaries.
+
+For details, see `.clinerules.d/20-agent-runtime.md` (section: Agentic-readiness principles).
 
 ## 7) UI and Streamlit minimum rules
 

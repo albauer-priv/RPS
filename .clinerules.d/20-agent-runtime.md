@@ -10,6 +10,7 @@
 - `doc/adr/ADR-046-crewai-state-memory-knowledge-guardrails.md`
 - `doc/adr/ADR-049-single-method-skill-attachment.md`
 - `doc/adr/ADR-056-upstream-first-planning-pipeline.md`
+- `doc/adr/ADR-062-skill-content-delivery-rules.md`
 
 ## Top-level authority boundaries
 
@@ -53,6 +54,34 @@ For active Season / Phase / Week files:
 - operative rules must be locally usable
 - variable-like terms must be locally defined, mapped to injected runtime truth, or explicitly forbidden
 - thin “see reference X” wrappers are not sufficient as active planning logic
+
+## Agentic-readiness principles (Fowler)
+
+When adding or modifying skills, orchestrators, or agent prompts, apply all four principles:
+
+**1. Input contracts — validate before running**
+- Every crew entry point that requires external data (events, availability, profile) must validate that data exists and is usable before starting the crew.
+- Return a structured `{"ok": False, "error": "..."}` with a human-readable message; do not let a crew silently run with empty or invalid inputs.
+- Reference: `create_season_scenarios` pre-flight check in `src/rps/orchestrator/season_flow.py`.
+
+**2. Traceability — cite governing rules**
+- When adding a skill rule that produces a `blocking_issue`, `warning`, or corridor value, the skill must instruct agents to cite the specific governing rule (skill name, section, or threshold).
+- Vague sources ("training principles", "general guidelines") are prohibited.
+- If no rule applies: state "judgment — no specific rule applies" explicitly.
+- Reference: `skills/shared/traceability-and-naming/SKILL.md` Reasoning citation rules.
+
+**3. Semantic layer — use canonical vocabulary**
+- Do not redefine `kJ`, `BL_kJ`, `W_prev_actual`, `availability_load_capacity_kj`, phase cycle names, event priority labels, cadence families, or `blocking_issue` vs `warning` semantics inside individual skill files.
+- These terms are defined once in `skills/shared/domain-glossary/SKILL.md`; reference or extend there.
+- When adding a new domain term used across more than one skill, add it to the domain glossary first.
+
+**4. Capability model — respect tier authority**
+- Specialist agents propose and flag; they do not authorize.
+- Manager/synthesis agents aggregate and dispatch; they do not substitute for specialist decisions.
+- Audit/review agents emit issues and warnings; they do not rewrite plan content.
+- Writer agents transform; they do not alter load math or corridor values.
+- The plan advances only when the review layer approves it — no agent can self-authorize.
+- Reference: `skills/shared/runtime-boundaries/SKILL.md` Capability tiers.
 
 ## Runtime memory vs developer handoff
 
