@@ -394,12 +394,18 @@ def _show_receipt_status_panel(
     n_conflicts = len(status.conflicts)
     n_unposted = len(status.unposted)
 
-    summary = (
-        f"✓ {n_posted} posted    "
-        f"↻ {n_updates} update{'s' if n_updates != 1 else ''}    "
-        f"⚠ {n_conflicts} conflict{'s' if n_conflicts != 1 else ''}    "
-        f"○ {n_unposted} unposted"
-    )
+    # Build summary from non-zero counts only to avoid noise
+    parts: list[str] = []
+    if n_posted:
+        parts.append(f"✓ {n_posted} posted")
+    if n_updates:
+        parts.append(f"↻ {n_updates} update{'s' if n_updates != 1 else ''}")
+    if n_conflicts:
+        parts.append(f"⚠ {n_conflicts} conflict{'s' if n_conflicts != 1 else ''}")
+    if n_unposted:
+        parts.append(f"○ {n_unposted} unposted")
+    summary = "    ".join(parts) if parts else "No workouts"
+
     version_label = f"{year:04d}-W{week:02d}"
     st.subheader(f"Receipt Status · {version_label}")
     if n_conflicts:
@@ -409,25 +415,7 @@ def _show_receipt_status_panel(
     else:
         st.success(summary)
 
-    if n_unposted:
-        with st.expander(f"Unposted ({n_unposted})", expanded=False):
-            st.dataframe(
-                [{"Name": r["name"], "Date": r["start_date_local"]} for r in status.unposted],
-                use_container_width=True,
-                hide_index=True,
-            )
-
-    if n_updates:
-        with st.expander(f"Changed since last post ({n_updates})", expanded=False):
-            st.dataframe(
-                [
-                    {"Name": r["name"], "Date": r["start_date_local"], "Note": "Payload changed — will be reposted"}
-                    for r in status.updates
-                ],
-                use_container_width=True,
-                hide_index=True,
-            )
-
+    # Conflicts always expanded — user must act
     for row in status.conflicts:
         with st.container():
             st.error(
@@ -451,6 +439,38 @@ def _show_receipt_status_panel(
                 else:
                     st.error("Could not resolve — workout not found in current payload.")
                 st.rerun()
+
+    # Unposted: auto-expand when there are items and no conflicts competing for attention
+    if n_unposted:
+        with st.expander(f"Unposted ({n_unposted})", expanded=not n_conflicts):
+            st.dataframe(
+                [{"Name": r["name"], "Date": r["start_date_local"]} for r in status.unposted],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    # Updates: auto-expand when there are items and nothing more urgent
+    if n_updates:
+        with st.expander(f"Changed since last post ({n_updates})", expanded=not n_conflicts and not n_unposted):
+            st.dataframe(
+                [
+                    {"Name": r["name"], "Date": r["start_date_local"], "Note": "Payload changed — will be reposted"}
+                    for r in status.updates
+                ],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    # Posted: collapsed by default — transparency/verification only
+    if n_posted:
+        with st.expander(f"Posted ({n_posted})", expanded=False):
+            st.dataframe(
+                [{"Name": r["name"], "Date": r["start_date_local"]} for r in status.posted],
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    st.divider()
 
 
 state = init_ui_state()

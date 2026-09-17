@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.19] - 2026-09-17
+
+### Changed
+
+- `src/rps/ui/pages/plan/workouts.py` — Receipt status panel UX polish:
+  - Summary line now shows only non-zero categories (e.g. `✓ 3 posted  ○ 2 unposted` instead of all four counts including zeros)
+  - Unposted expander auto-expands when there are items and no conflicts competing for attention
+  - Updates expander auto-expands when it is the only actionable category
+  - New collapsed `Posted (N)` expander shows which workouts have been successfully posted — transparency/verification
+  - `st.divider()` added after panel to visually separate it from the Actions expander
+  - Conflict rows rendered before unposted/updates rows — highest priority first
+- `tests/test_workouts_page.py` — extended tests covering: summary omits zero-count groups, Posted expander presence, unposted expander label presence
+
 ## [0.37.18] - 2026-09-17
 
 ### Changed

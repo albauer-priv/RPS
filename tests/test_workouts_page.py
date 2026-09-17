@@ -110,6 +110,9 @@ def test_workouts_page_receipt_panel_shows_unposted(tmp_path):
     assert any("Receipt Status" in s for s in subheaders)
     info_texts = " ".join(i.value for i in at.info)
     assert "1 unposted" in info_texts
+    # unposted expander auto-expands when no conflicts
+    expander_labels = [e.label for e in at.expander]
+    assert any("Unposted" in label for label in expander_labels)
 
 
 def test_workouts_page_receipt_panel_shows_conflict(tmp_path):
@@ -160,3 +163,61 @@ def test_workouts_page_receipt_panel_shows_update(tmp_path):
     assert len(at.error) == 0
     info_texts = " ".join(i.value for i in at.info)
     assert "1 update" in info_texts
+    # summary must not mention zero-counts for unposted or conflicts
+    assert "unposted" not in info_texts
+    assert "conflict" not in info_texts
+
+
+def test_workouts_page_receipt_panel_posted_expander(tmp_path):
+    """Panel shows a collapsed 'Posted' expander when workouts are posted."""
+    year, week = _current_iso()
+    workout = {"name": "Recovery Ride", "start_date_local": "2026-09-13T07:00:00"}
+    _write_workouts(tmp_path, [workout])
+
+    uid = hashlib.sha256(
+        f"{workout['start_date_local']}|{workout['name']}".encode()
+    ).hexdigest()[:16]
+    _write_receipt(tmp_path, year, week, uid, {
+        "payload_hash": _payload_hash(workout),
+        "status": "POSTED",
+        "workout_uid": uid,
+    })
+
+    at = AppTest.from_file(_PAGE)
+    at.run(timeout=10)
+    expander_labels = [e.label for e in at.expander]
+    assert any("Posted" in label for label in expander_labels)
+    # success summary must include posted count and omit zero-count groups
+    success_texts = " ".join(s.value for s in at.success)
+    assert "1 posted" in success_texts
+    assert "unposted" not in success_texts
+    assert "conflict" not in success_texts
+    assert "update" not in success_texts
+
+
+def test_workouts_page_receipt_summary_omits_zero_counts(tmp_path):
+    """Summary line shows only non-zero categories."""
+    year, week = _current_iso()
+    workouts = [
+        {"name": "Morning Run", "start_date_local": "2026-09-15T06:00:00"},
+        {"name": "Evening Ride", "start_date_local": "2026-09-15T18:00:00"},
+    ]
+    _write_workouts(tmp_path, workouts)
+
+    uid0 = hashlib.sha256(
+        f"{workouts[0]['start_date_local']}|{workouts[0]['name']}".encode()
+    ).hexdigest()[:16]
+    # post one workout; leave the other unposted
+    _write_receipt(tmp_path, year, week, uid0, {
+        "payload_hash": _payload_hash(workouts[0]),
+        "status": "POSTED",
+        "workout_uid": uid0,
+    })
+
+    at = AppTest.from_file(_PAGE)
+    at.run(timeout=10)
+    all_text = " ".join(i.value for i in at.info) + " ".join(s.value for s in at.success)
+    # zero groups must not appear
+    assert "0 " not in all_text
+    assert "↻" not in all_text  # no update line
+    assert "⚠" not in all_text  # no conflict line
