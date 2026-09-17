@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.21] - 2026-09-17
+
+### Fixed
+
+- `src/rps/crewai_runtime/guardrails_season.py`: added mandatory `ceiling_first_durability` presence check — when athlete objectives contain explicit VO2max development language and planning runway is ≥ 20 weeks, at least one scenario must use `season_archetype: ceiling_first_durability`. Previously the guardrail only rejected malformed `ceiling_first_durability` but did not enforce its required presence; the agent responded to the rationale-missing rejection by removing the archetype entirely (wrong), triggering no further failure.
+- `src/rps/planning/scenario_recommendation.py`: added `vo2_mandate` flag to the `features` map — derived from athlete profile objectives text; passed through recommendation context into the guardrail.
+- `skills/season/scenario-generation/SKILL.md`: added explicit guardrail correction rule — when a guardrail rejects `ceiling_first_durability` for missing rationale, the agent must fix the rationale, not remove the archetype; removing it violates the athlete objective mandate and triggers a separate guardrail failure.
+
 ## [0.37.20] - 2026-09-17
 
 ### Fixed

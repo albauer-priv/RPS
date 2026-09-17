@@ -574,6 +574,24 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
         if not has_shared_cadence_rationale:
             return (False, "Season scenarios collapse cadence across A/B/C without explicit justification.")
 
+    # Enforce ceiling_first_durability when athlete objectives mandate it
+    recommendation_ctx = _as_map(current_guardrail_runtime_context().get("season_scenario_recommendation_context"))
+    features_ctx = _as_map(recommendation_ctx.get("features"))
+    vo2_mandate = bool(features_ctx.get("vo2_mandate"))
+    horizon_weeks = int(_as_map(data).get("planning_horizon_weeks") or 0)
+    if vo2_mandate and horizon_weeks >= 20:
+        archetypes_present = {
+            str(_as_map(by_id[sid].get("scenario_guidance")).get("season_archetype") or "").strip()
+            for sid in by_id
+        }
+        if "ceiling_first_durability" not in archetypes_present:
+            return (
+                False,
+                "Athlete objectives require VO2max development and planning runway is sufficient (≥ 20 weeks): "
+                "at least one scenario must use season_archetype: ceiling_first_durability with VO2MAX in allowed_domains. "
+                "Typically Scenario C. Add the archetype and provide the required rationale — do not omit it to avoid the rationale requirement.",
+            )
+
     scenario_c = by_id["C"]
     guidance_c = _as_map(scenario_c.get("scenario_guidance"))
     intensity_c = _as_map(guidance_c.get("intensity_guidance"))
@@ -584,7 +602,11 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
         decision_text = " ".join(_string_list(guidance_c.get("decision_notes"))).lower()
         joined_text = f"{archetype_rationale} {decision_text}"
         if not all(any(marker in joined_text for marker in group) for group in _ARCHETYPE_REQUIRED_MARKER_GROUPS):
-            return (False, "Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway.")
+            return (
+                False,
+                "Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway. "
+                "Fix: add the required rationale to season_archetype_rationale and decision_notes — do not remove the archetype.",
+            )
     if allowed_c == {"ENDURANCE"}:
         return (False, "Scenario C must express ambitious specificity beyond ENDURANCE-only semantics.")
     c_story = " ".join(
