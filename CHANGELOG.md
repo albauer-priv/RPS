@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.12] - 2026-09-17
+
+### Changed
+
+- `skills/season/load-governance/references/progression_guardrails.md`: added **disrupted week re-entry** rule — when `W_prev_actual < BL_kJ × 0.85`, classify the week as disrupted and use the deterministic `BL_kJ` as the re-entry anchor, not `W_prev_actual`; a corridor within `BL_kJ × 0.85–1.05` is never a blocker. Added **progressive overload lever rule** (5 levers, max 1–2 per cycle step).
+- `skills/season/load-governance/SKILL.md`: added **blocking issue threshold** section — explicit list of what belongs in `blocking_issues` vs `warnings`; corridors within re-entry range, disrupted-week gaps, RELOAD→TAPER adjacency, and domain coherence narrative notes are all warnings, not blockers.
+- `skills/season/constraint-synthesis/SKILL.md`: added **blocker vs warning discipline** section — load progression vs disrupted week, RELOAD→TAPER adjacency, domain coherence notes, and active-replan status are all warnings; domain restriction in the selected scenario contract is authoritative over prose notes.
+- `skills/season/macrocycle-architecture/references/macrocycle_and_peak_window_rules.md`: added minimum effective taper window (2–3 weeks for ultra/brevet events), RELOAD→A-event adjacency warning rule, and **progressive brevet event sequencing** guidance (200→300→400 km as stress-plus-recovery milestones, no rebuild block between final B-event and A-event taper when spacing ≤ 3 weeks).
+- `skills/season/macrocycle-architecture/references/kinzlbauer_season_template.md`: enriched typical season sequence with explicit phase block labels (GPP, VO2 foundation, VO2 block, transition, economy/durability, specific durability); added **kJ/kg durability milestones** per season arc, **fueling as a trainable dimension** with progression targets (40–90 g/h arc), and **HR late-suppression** as autonomic fatigue marker guidance.
+
 ## [0.37.11] - 2026-09-16
 
 ### Fixed

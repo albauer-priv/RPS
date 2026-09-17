@@ -20,9 +20,22 @@ Method:
    - never create synthetic placeholder findings such as `No target-week event` or `No event-driven load exception`
 
 Constraint categories:
-- hard blockers: event immovability, zero-availability days, travel/work windows that eliminate training opportunity, explicit recovery protections
-- soft constraints: preferred days, optional modality preferences, advisory scenario flavor
+- hard blockers: event immovability, zero-availability days, travel/work windows that eliminate training opportunity, explicit recovery protections, an event date that cannot be accommodated within the current macrocycle structure without overlap or taper collapse
+- soft constraints: preferred days, optional modality preferences, advisory scenario flavor, load progression concerns that are above the disrupted-week threshold but within normal re-entry range
 - unresolved uncertainty: incomplete availability, ambiguous logistics, unconfirmed event detail
+
+Blocker vs warning discipline:
+- raise a `blocking_issue` only for genuinely hard constraints from the list above — things the planner **cannot** resolve through normal planning
+- do **not** raise a `blocking_issue` for:
+  - a load progression corridor that is above a recent disrupted week (`W_prev < BL_kJ × 0.85`);
+    use `progression_guardrails.md` disrupted-week re-entry rule and record as a warning
+  - `RELOAD → TAPER` phase adjacency; that is a macrocycle architecture warning
+  - a domain coherence narrative note (e.g. a green-range VO2MAX note where VO2MAX is forbidden);
+    domain restrictions in the selected scenario contract are authoritative — a prose note that
+    mentions a forbidden domain is a finalize-pass coherence warning, not a constraint blocker
+  - active-replan status remaining `replan_required` from a prior REDO cycle — that is evidence
+    context, not a constraint; the planner must resolve or acknowledge it, but it is not a blocker
+    unless the replan instruction itself contains an unresolvable physical impossibility
 
 Hard rules:
 - use explicit athlete and logistics facts from upstream context

@@ -132,6 +132,21 @@ Season-level overload-policy translation:
   - mini-reset became true deload
   - reload became re-entry
 
+Blocking issue threshold:
+- raise a `blocking_issue` in `load_governance` only for genuine planning safety failures:
+  - a phase corridor that materially exceeds the athlete's demonstrated historical maximum
+  - a corridor that exceeds the deterministic `availability_load_capacity_kj` max cap
+  - a missing or zero baseline that makes corridor derivation impossible
+  - a cadence or phase-role assignment that is structurally undefined
+- do **not** raise a `blocking_issue` for:
+  - a corridor that is above a recent disrupted week's actual load (when `W_prev < BL_kJ × 0.85`,
+    the disrupted-week rule applies and the corridor is expected to exceed `W_prev_actual`)
+  - a standard re-entry corridor within `BL_kJ × 0.85–1.05`
+  - a phase sequence concern (e.g. `RELOAD → TAPER` adjacency) — that is a warning
+  - a domain coherence narrative note — that is a finalize-pass concern, not a load-governance blocker
+- use `warnings` (not `blocking_issues`) for concerns that the review crew should see but that do
+  not prevent a valid plan from being submitted
+
 Hard rules:
 - keep event ambition inside safe ramp limits
 - set season corridors that remain achievable without repeated catch-up weeks
