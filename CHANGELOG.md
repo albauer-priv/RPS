@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.23] - 2026-09-17
+
+### Fixed
+
+- `tests/test_crewai_config_and_builders.py`: updated `test_knowledge_and_memory_profiles_resolve_from_config` — `season_planning` crew has intentionally empty knowledge bundle sources (content delivered via skills per ADR-062); updated assertion to `== []` instead of truthy.
+- `tests/test_season_planning_orchestration.py`: updated `test_create_season_scenarios_fails_closed_when_recommendation_context_errors` — test seeded empty events list which caused a pre-validation failure before reaching `build_scenario_recommendation_context`; added a valid future event so the monkeypatched exception is actually reached and the assertion is meaningful.
+
 ## [0.37.22] - 2026-09-17
 
 ### Changed

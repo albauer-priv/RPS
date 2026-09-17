@@ -554,7 +554,7 @@ def test_knowledge_and_memory_profiles_resolve_from_config() -> None:
     )
 
     assert coach_knowledge["sources"]
-    assert season_knowledge["sources"]
+    assert season_knowledge["sources"] == []  # season_planning crew delivers content via skills, not knowledge bundles
     assert coach_memory["enabled"] is True
     assert coach_memory["scope"] == "/athlete/i150546/coach/shared"
     assert season_memory["enabled"] is False

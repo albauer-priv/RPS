@@ -890,7 +890,7 @@ def test_create_season_scenarios_fails_closed_when_recommendation_context_errors
         encoding="utf-8",
     )
     store.latest_path("test_athlete", ArtifactType.PLANNING_EVENTS).write_text(
-        json.dumps({"data": {"events": []}}),
+        json.dumps({"data": {"events": [{"type": "A", "event_name": "Test Event", "date": "2026-05-10", "event_type": "Race", "goal": "finish"}]}}),
         encoding="utf-8",
     )
     _seed_previous_week_planning_evidence(store, "test_athlete", target_year=2026, target_week=12)
