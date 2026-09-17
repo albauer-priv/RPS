@@ -32,6 +32,26 @@ Rules:
 - Re-entry returns near baseline, not peak build.
 - If fatigue remains high, use the lower end of the re-entry range or extend deload.
 
+## Disrupted-week re-entry
+
+When the most recent completed week load (`W_prev_actual`) is materially below the deterministic
+baseline (`W_prev_actual < BL_kJ × 0.85`), that week was disrupted — below-baseline due to
+illness, travel, vacation, or other transient cause.
+
+Rules for disrupted-week re-entry:
+- Do **not** use `W_prev_actual` as the re-entry anchor.
+- Use `BL_kJ` (historical baseline) as the anchor.
+- Apply the normal re-entry formula: `RE_kJ = BL_kJ × 0.90 to 1.00`.
+- A phase corridor starting at `RE_kJ = BL_kJ × 0.90–1.00` is valid re-entry even if it is
+  substantially above `W_prev_actual` — the gap is explained by the disrupted week, not a
+  planning error.
+- Do not flag this as overload; it is the correct re-entry range.
+
+Blocker threshold for disrupted-week context: only raise a `blocking_issue` when the first planned
+corridor exceeds `BL_kJ × 1.10` without an explicit re-entry rationale, or materially exceeds the
+athlete's demonstrated historical maximum. A corridor within `BL_kJ × 0.90–1.05` is never a
+blocker in a disrupted-week context.
+
 ## 3:1 targets
 
 - `W1_kJ = BL_kJ * 1.00 to 1.05`

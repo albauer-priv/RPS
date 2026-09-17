@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.13] - 2026-09-17
+
+### Changed
+
+- `skills/season/governance-review/SKILL.md`: added **blocker vs warning discipline** section — disrupted-week re-entry corridors, RELOAD→TAPER adjacency, domain coherence notes, and corridors between typical and max capacity are all warnings; only corridors exceeding the deterministic max cap are blockers. Fixed threshold inconsistency: "above typical" → "exceeds max cap" to match `load-governance/SKILL.md`.
+- `skills/season/historical-context/SKILL.md`: added **disrupted-week classification** rules — when `W_prev_actual < BL_kJ × 0.85`, the specialist must explicitly flag the week as DISRUPTED, state that downstream load governance must use `BL_kJ` as the re-entry anchor (not `W_prev_actual`), and avoid advising agents to "stay conservative relative to last week's actual load."
+- `skills/season/audit/SKILL.md`: added **"Do NOT raise a blocking_issue for:"** section — disrupted-week re-entry corridors, RELOAD→TAPER adjacency (warn only; block only if taper window < minimum effective), domain coherence narrative notes, and objective mismatch are all warnings.
+- `skills/season/evidence-alignment/SKILL.md`: added disrupted-week detection logic and explicit prohibited implication examples — agents must not emit "overreach risk" for corridors within `BL_kJ × 0.85–1.05` when the gap is explained by a disrupted week.
+- `skills/phase/load-governance-audit/SKILL.md`: added **"Do NOT raise a blocking_issue for:"** section — disrupted-week opening corridors, phase corridors between typical and max availability capacity, and RELOAD→TAPER adjacency are all warnings at phase level.
+- `skills/phase/constraint-audit/SKILL.md`: added **blocker vs warning discipline** section — mirrors the season `constraint-synthesis/SKILL.md` fix; disrupted-week corridors, RELOAD→TAPER adjacency, domain coherence notes, and active-replan status are all warnings, not phase constraint blockers.
+- `skills/phase/cadence-recovery/references/deload_and_reentry.md`: added **disrupted-week re-entry** section with threshold definition (`W_prev_actual < BL_kJ × 0.85`), anchor rule (`BL_kJ` not `W_prev_actual`), valid re-entry range, and blocker threshold.
+
 ## [0.37.12] - 2026-09-17
 
 ### Changed

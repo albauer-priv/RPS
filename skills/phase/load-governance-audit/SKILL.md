@@ -34,13 +34,21 @@ Checklist:
 
 Block approval when:
 - a weekly band differs from S5 without an explicit code-owned fallback trace
-- a band is widened above availability capacity
+- a band is widened above the deterministic `availability_load_capacity_kj` **max cap**
 - a week relies on load compression to recover from an infeasible season corridor
 - deload intent contradicts the season-owned cadence
 - week-role bands contradict inherited cadence roles
 - phase role and week role disagree, e.g. Peak + LOAD_2 creates a Build-style ramp
 - weekly bands are only explainable by hidden catch-up or recovery compression
 - a threshold-shaped progression survives while `THRESHOLD` is suppressed upstream
+
+Do NOT raise a blocking_issue for:
+- a phase opening corridor that is above the most recent `W_prev_actual` when the prior week
+  was disrupted (`W_prev_actual < BL_kJ × 0.85`); the disrupted-week rule applies at season
+  level — use `BL_kJ` as the re-entry anchor; a corridor at `BL_kJ × 0.85–1.05` is valid
+  re-entry and is expected to exceed a disrupted `W_prev_actual`
+- a phase corridor between typical and max availability capacity when progression rationale is given
+- `RELOAD → TAPER` phase adjacency — that is a structural warning, not a load-governance blocker
 
 Output format:
 - Return the task expected_output as a structured review contribution.

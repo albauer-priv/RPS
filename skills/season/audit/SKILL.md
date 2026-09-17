@@ -46,6 +46,17 @@ Block approval when:
 - an `A` event lacks coherent `Peak`/`Transition` handling
 - `self_check.every_phase_maps_to_cycle_and_deload_intent` is true while cycle/cadence/deload evidence is missing
 
+Do NOT raise a blocking_issue for:
+- a re-entry corridor above a recent disrupted week's actual load — when `W_prev_actual < BL_kJ × 0.85`
+  the disrupted-week rule applies; a corridor at `BL_kJ × 0.85–1.05` is valid re-entry
+- `RELOAD → TAPER` phase adjacency — flag as structural **warning** and recommend restructuring
+  the preceding phase's final week to `MINI_RESET` or `DELOAD`; only block if the taper window
+  itself is shorter than the minimum effective window (2–3 weeks including event week for events
+  > 12 hours) — see `macrocycle_and_peak_window_rules.md`
+- a domain coherence narrative note (a forbidden domain mentioned in phase prose) — that is a
+  finalize-pass coherence warning, not a macrocycle audit blocker
+- objective mismatch between athlete goal and highest in-horizon A event — warn but do not block
+
 Output format:
 - Return the task expected_output as a structured review contribution.
 - Include approved findings, blocking issues, warnings, and required adjustments in separate fields or clearly separated sections.
