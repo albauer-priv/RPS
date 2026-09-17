@@ -96,24 +96,6 @@ _SCENARIO_SELECTION_NEGATIVE_MARKERS = (
 )
 
 
-_DOMAIN_ELIGIBILITY_MARKERS = (
-    "eligibility",
-    "eligible",
-    "later assignment",
-    "not every phase",
-    "does not authorize every domain",
-    "not phase-wide authorization",
-)
-
-
-_DOMAIN_AUTHORIZATION_MARKERS = (
-    "every phase",
-    "all phases",
-    "blanket legality",
-    "globally authorized",
-    "phase-wide authorization",
-)
-
 
 _OBJECTIVE_RESOLUTION_MARKERS = (
     "objective reconciled",
@@ -481,10 +463,6 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
     cadence_by_id: dict[str, str] = {}
     rationale_by_id: dict[str, str] = {}
     global_notes_text = " ".join(_string_list(data.get("notes"))).lower()
-    if not _contains_any(global_notes_text, _DOMAIN_ELIGIBILITY_MARKERS):
-        return (False, "Season scenarios must state that allowed_domains are eligibility only, not phase-wide authorization.")
-    if _contains_any(global_notes_text, _DOMAIN_AUTHORIZATION_MARKERS) and not _contains_any(global_notes_text, _DOMAIN_ELIGIBILITY_MARKERS):
-        return (False, "Season scenarios must not describe allowed_domains as blanket legality for all phases.")
     if _contains_any(global_notes_text, _OBJECTIVE_RESOLUTION_MARKERS):
         return (False, "Scenario layer must not claim that objective mismatch is already resolved.")
 
@@ -549,14 +527,10 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
                 or (" cluster" in event_text and not any(token in event_text for token in ("historical context", "cluster-member")))
             ) and sum(future_type_counts.values()) < 2:
                 return (False, "Cluster wording requires multiple relevant in-horizon events.")
-        intensity = _as_map(guidance.get("intensity_guidance"))
-        allowed_domains = [str(item).strip().upper() for item in _as_list(intensity.get("allowed_domains")) if str(item).strip()]
-        if "ENDURANCE" not in allowed_domains:
-            return (False, f"Scenario {scenario_id} must include ENDURANCE in allowed_domains.")
         load_philosophy = str(scenario.get("load_philosophy") or "").strip().lower()
         risk_profile = str(scenario.get("risk_profile") or "").strip().lower()
         key_diff = str(scenario.get("key_differences") or "").strip().lower()
-        signatures.add((load_philosophy, risk_profile, key_diff, tuple(allowed_domains)))
+        signatures.add((load_philosophy, risk_profile, key_diff))
     if seen_ids != {"A", "B", "C"}:
         return (False, "Season scenarios must include scenario ids A, B, and C exactly once.")
     if len(signatures) < 3:
@@ -588,14 +562,12 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
             return (
                 False,
                 "Athlete objectives require VO2max development and planning runway is sufficient (≥ 20 weeks): "
-                "at least one scenario must use season_archetype: ceiling_first_durability with VO2MAX in allowed_domains. "
+                "at least one scenario must use season_archetype: ceiling_first_durability. "
                 "Typically Scenario C. Add the archetype and provide the required rationale — do not omit it to avoid the rationale requirement.",
             )
 
     scenario_c = by_id["C"]
     guidance_c = _as_map(scenario_c.get("scenario_guidance"))
-    intensity_c = _as_map(guidance_c.get("intensity_guidance"))
-    allowed_c = {str(item).strip().upper() for item in _as_list(intensity_c.get("allowed_domains")) if str(item).strip()}
     season_archetype = str(guidance_c.get("season_archetype") or "").strip()
     archetype_rationale = " ".join(_string_list(guidance_c.get("season_archetype_rationale"))).lower()
     if season_archetype == "ceiling_first_durability":
@@ -607,8 +579,6 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
                 "Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway. "
                 "Fix: add the required rationale to season_archetype_rationale and decision_notes — do not remove the archetype.",
             )
-    if allowed_c == {"ENDURANCE"}:
-        return (False, "Scenario C must express ambitious specificity beyond ENDURANCE-only semantics.")
     c_story = " ".join(
         [
             str(scenario_c.get("load_philosophy") or ""),
@@ -621,9 +591,6 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
     ).lower()
     if not any(marker in c_story for marker in ("back-to-back", "b2b", "hard-late", "event simulation", "specificity", "fatigue")):
         return (False, "Scenario C must describe higher specificity or fatigue exposure, not only a larger kJ envelope.")
-    if "VO2MAX" in allowed_c:
-        if not all(any(marker in c_story for marker in group) for group in _VO2_RATIONALE_MARKER_GROUPS):
-            return (False, "Scenario C may allow VO2MAX only with explicit sparse ceiling-support rationale.")
     return (True, mapping)
 
 

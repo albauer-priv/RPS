@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.22] - 2026-09-17
+
+### Changed
+
+- `src/rps/planning/season_structure.py`: `_scenario_intensity_domains` now always returns all canonical intensity domains as permitted — the `intensity_guidance.allowed_domains` field in the scenario JSON is now advisory/documentary only and not binding at runtime. Intensity gating is delegated entirely to the phase layer via canonical phase-intent semantics (`season_phase_allowed_domains` in `phase_intents.py`).
+- `src/rps/planning/season_structure.py`: `_scenario_archetype_context` no longer takes `allowed_domains` as a parameter and no longer blocks `ceiling_first_durability` when VO2MAX was absent from `allowed_domains` — VO2MAX is always available at the season level since all canonical domains are now deterministically permitted.
+- `src/rps/crewai_runtime/guardrails_season.py`: removed domain-framing guardrail checks (`_DOMAIN_ELIGIBILITY_MARKERS`, `_DOMAIN_AUTHORIZATION_MARKERS`) that enforced specific prose phrasing around `allowed_domains`; removed per-scenario ENDURANCE presence check; removed Scenario C VO2MAX rationale requirements; removed `allowed_domains` from scenario uniqueness signature (signature is now `(load_philosophy, risk_profile, key_diff)`).
+- `skills/season/scenario-generation/SKILL.md` (v4.3): updated to reflect `allowed_domains` as documentary/advisory — intensity gating is owned by the phase layer.
+
 ## [0.37.21] - 2026-09-17
 
 ### Fixed

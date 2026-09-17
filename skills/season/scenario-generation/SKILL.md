@@ -1,9 +1,9 @@
 ---
 name: scenario-generation
-description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and bounded intensity semantics.
+description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and advisory intensity narrative.
 metadata:
   author: rps
-  version: "4.2"
+  version: "4.3"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
@@ -14,9 +14,9 @@ The foundational principles behind all scenario decisions are documented in `ref
 
 Field completion contract:
 
-ORDERING: For each scenario, determine `scenario_guidance` values (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `allowed_domains`, `season_archetype`) FIRST. Then derive each narrative field by filling its template from those exact values. The narrative fields summarize the guidance — they must NOT be written independently from it.
+ORDERING: For each scenario, determine `scenario_guidance` values (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `season_archetype`) FIRST. Then derive each narrative field by filling its template from those exact values. The narrative fields summarize the guidance — they must NOT be written independently from it.
 
-Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `allowed_domains`, `season_archetype`) that are already concrete facts. The narrative fields below must translate those facts into plain language. Use the mandatory sentence templates below — fill in the bracketed slots from `scenario_guidance`. Do not substitute abstract planning prose for the template slots.
+Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `phase_count_expected`, `season_archetype`) that are already concrete facts. The narrative fields below must translate those facts into plain language. Use the mandatory sentence templates below — fill in the bracketed slots from `scenario_guidance`. Do not substitute abstract planning prose for the template slots.
 
 - `scenario_guidance.recovery_margin` = explicit recovery stance as a non-empty string — required sentence pattern: `[high/moderate/lower] — [one concrete sentence describing what disruption this scenario can absorb before it needs to downshift]`
   - example: `moderate — one disrupted week is absorbable; two in a row require a posture correction before continuing the block`
@@ -32,7 +32,7 @@ Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `ph
   - example: `13 phases, 3:1 cadence — train event-specific pacing discipline under real accumulated fatigue across three loading weeks before each reset.`
 
 - `load_philosophy` — MANDATORY TEMPLATE: `[deload_cadence] cadence, [phase_length_weeks]-week phases: [describe shorter session days character in loading week 1]. [Describe what changes in loading week 2 if different — or omit if identical]. [Describe primary long session character and how it changes across the season]. [One sentence on what drives load progression in this scenario — duration, frequency, or quality].`
-  - fill slot values from the scenario's `allowed_domains`, `deload_cadence`, and the athlete's availability structure
+  - fill slot values from the scenario's `deload_cadence`, the intensity character in `intensity_guidance`, and the athlete's availability structure
   - example: `2:1 cadence, 3-week phases: both loading weeks are aerobic — endurance and tempo on shorter session days, a progressively longer aerobic ride on the primary long session day. No threshold or interval work appears. Load grows through longer long sessions and slightly higher weekly volume, not through intensity escalation.`
   - example: `2:1:1 cadence, 4-week phases: loading week 1 keeps all sessions aerobic; loading week 2 adds a threshold or sweet-spot session on one shorter session day. The primary long ride grows progressively and includes event-pace work as the A-event approaches. The reload week preserves the quality achieved without adding more fatigue.`
   - example: `3:1 cadence, 4-week phases: all three loading weeks carry deliberate quality on both shorter session days and the primary long session day. Long sessions in weeks 2–3 are started with real prior-day fatigue already in the legs — intentional specificity, not a scheduling accident. The reset week is the only recovery window per phase.`
@@ -46,7 +46,7 @@ Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `ph
   - example: `A: 2:1 / 3-week → 18 phases, ENDURANCE+TEMPO only. B: 2:1:1 / 4-week → 13 phases, adds THRESHOLD. C: 3:1 / 4-week → 13 phases, adds THRESHOLD+VO2MAX. A resets most often and asks for the least intensity precision; C loads longest and asks for the most execution consistency.`
 
 - `typical_week_feel` — MANDATORY TEMPLATE: `Shorter session days are [intensity character: e.g. steady endurance / endurance with one quality session in loading week 2 / deliberately hard on multiple days]. The primary long session is [long session character: e.g. purely aerobic, growing longer each phase / progressively event-specific in the second half / started with prior-day fatigue by design]. The athlete closes most loading weeks feeling [absorbed / carrying useful fatigue / with productive strain].`
-  - fill in the slots based on the scenario's `allowed_domains` and `deload_cadence` — derive session character from the availability structure, not from assumed day names
+  - fill in the slots based on the scenario's intensity narrative and `deload_cadence` — derive session character from the availability structure, not from assumed day names
   - example: `Shorter session days are steady endurance or tempo — no intervals, no threshold work in any loading week. The primary long session is purely aerobic, growing longer as the season progresses. The athlete closes most loading weeks feeling absorbed, not stretched.`
   - example: `Shorter session days are mostly endurance; loading week 2 adds threshold or sweet-spot quality on one of them. The primary long ride becomes progressively event-specific in the second half of the season. The athlete carries useful fatigue at the end of loading weeks but the mid-week quality session remains consistently executable.`
   - example: `Shorter session days are deliberately hard in all loading weeks — quality appears on multiple days, not just one. The primary long session is started with prior-day fatigue already in the legs, training pacing discipline under real conditions. The athlete closes most loading weeks carrying productive strain; the deload week is the recovery, not the last day's rest.`
@@ -78,7 +78,7 @@ Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `ph
 - `decision_notes` = why this cadence and posture were chosen; structured string array
 - `assumptions` = what must stay true for this scenario to remain valid
 - `unknowns` = what could change scenario choice later
-- `data.notes` = global scenario-layer clarifications (future-only event scope, allowed_domains as eligibility not obligation, etc.)
+- `data.notes` = global scenario-layer clarifications (future-only event scope, objective mismatch handling, etc.)
 
 Method:
 1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
@@ -131,7 +131,7 @@ Deterministic recommendation context:
 - reflect recommendation-specific rationale in the matching scenario's `scenario_guidance.decision_notes`
 - keep the recommendation advisory; selection still belongs to the user/selection task
 - preserve recommendation context as advisory evidence only; do not mirror its cadence or posture blindly into all three scenarios
-- use top-level `data.notes` for global scenario-layer clarifications such as eligibility-not-authorization and warning-only objective mismatch handling
+- use top-level `data.notes` for global scenario-layer clarifications such as warning-only objective mismatch handling
 
 Required content per scenario:
 - `scenario_id`, `name`, `core_idea`, `load_philosophy`, `risk_profile`, `key_differences`, `best_suited_if`
@@ -202,21 +202,16 @@ Scenario math rules:
 - Keep `avoid_domains` to trainable intensity domains; use `NONE` and `RECOVERY` only for availability/recovery semantics.
 
 Intensity-domain semantics:
-- `allowed_domains` are permissions, not obligations.
-- `allowed_domains` define eligibility for later assignment only; they do not authorize every domain in every phase.
+- `intensity_guidance.allowed_domains` is **documentary and advisory only** — all canonical intensity domains are permitted at the season level; the phase layer owns intensity gating via canonical phase-intent semantics. The field remains in the JSON for narrative coherence.
+- `allowed_domains` are permissions, not obligations — they describe the expected session-intensity character, not a requirement to use every listed domain in every phase.
+- Write `allowed_domains` to honestly reflect which intensity domains the scenario's session character draws on. This keeps `typical_week_feel` and the rest of the scenario narrative coherent.
 - `ENDURANCE` is the core domain of every scenario.
 - `TEMPO` is in many ultra/brevet contexts the most likely first additional domain because it supports sub-threshold economy and long stable duration, but it is not dogma.
 - `SWEET_SPOT` is optional when time budget limits kJ separation or when economy / sustained sub-threshold work is part of the scenario story.
-- `THRESHOLD` and `VO2MAX` are special-case permissions, not default markers of ambition.
+- `THRESHOLD` and `VO2MAX` are special-case entries, not default markers of ambition.
 - Scenario C is not defined by `VO2MAX`.
-- Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as `sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture` — OR when `season_archetype: "ceiling_first_durability"` applies (see "Athlete VO2max development objectives" below), in which case VO2MAX is a deliberate early-phase build intent, not sparse ceiling-support, and the framing must reflect that.
-- If that rationale cannot be stated explicitly in `decision_notes` and/or `kpi_guardrail_notes`, omit `VO2MAX` from Scenario C `allowed_domains`.
-- Preferred copyable sentence when Scenario C allows `VO2MAX` without `ceiling_first_durability`: `VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; the scenario ambition comes from specificity-under-fatigue, density, and event simulation.`
-- Preferred copyable sentence when Scenario uses `ceiling_first_durability`: `VO2MAX is permitted as an early-season aerobic-ceiling build in the first two phases only; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering.`
-- Scenarios B and C may legitimately share identical `allowed_domains` when their kJ-envelope, specificity, fatigue exposure, density, and risk contract are clearly different.
 - Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant and explain which other axes carry the differentiation.
 - Cluster wording (`cluster`, `event cluster`, `B-event cluster`, `peak cluster`) requires multiple relevant in-horizon events; otherwise use singular event wording.
-- If Scenario C includes `VO2MAX`, the scenario story must explicitly say it is a sparse / limited / occasional ceiling-support or fresh-only permission, include the exact phrase `not primary identity`, and say that the ambition instead comes from `specificity-under-fatigue`, `density`, `event simulation`, or `load posture`.
 
 Season archetype semantics:
 - `season_archetype` is a normalized scenario-level semantic, not a new cycle type.
@@ -231,7 +226,7 @@ Season archetype semantics:
 - If `season_archetype = ceiling_first_durability`, `season_archetype_rationale` must state why early ceiling support is permitted and why later durability/specificity work still has enough runway.
 
 Athlete VO2max development objectives:
-- When `athlete_profile.objectives.secondary` or `objectives.priority_order` contains explicit VO2max development language AND the planning runway is ≥ 20 weeks, the scenario layer MUST generate at least one scenario with `season_archetype: "ceiling_first_durability"` and `VO2MAX` in `intensity_guidance.allowed_domains`.
+- When `athlete_profile.objectives.secondary` or `objectives.priority_order` contains explicit VO2max development language AND the planning runway is ≥ 20 weeks, the scenario layer MUST generate at least one scenario with `season_archetype: "ceiling_first_durability"`.
 - This is not an objective mismatch — it is a direct and binding planning directive from the athlete profile that must be honoured in at least one scenario.
 - **Guardrail correction rule**: when a guardrail rejects `ceiling_first_durability` for missing rationale or runway statement, the correct fix is to write the required rationale — do NOT remove `ceiling_first_durability` from the scenario. Removing it to avoid the rationale requirement violates the athlete objective mandate and will trigger a separate guardrail failure.
 - The ceiling-first scenario typically shapes Scenario C; it may shape Scenario B when Scenario C is already differentiated by higher specificity-under-fatigue and load rather than intensity archetype.
@@ -241,7 +236,7 @@ Athlete VO2max development objectives:
 - POSITIVE EXAMPLE — what a correct ceiling_first_durability scenario C looks like:
   - `season_archetype: "ceiling_first_durability"`
   - `season_archetype_rationale`: `["52-week planning runway provides enough horizon for 2 VO2-build phases (~8 weeks) before the durability block, leaving ≥ 30 weeks for economy, VLamax-lowering, and specificity. Athlete profile explicitly states 'Increase aerobic capacity (VO2max)' and 'Increase VO2max, lower VLamax' as priority 3. Weekend leverage (up to 8h outdoor / 4h indoor) can support fresh VO2max intervals within compact weekday windows. VO2MAX is permitted only in phases 1–2 as an early aerobic ceiling build; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering."]`
-  - `intensity_guidance.allowed_domains`: `["RECOVERY", "ENDURANCE", "TEMPO", "VO2MAX"]` (VO2MAX active, THRESHOLD suppressed in the VO2 block; THRESHOLD may return in later durability/build phases)
+  - `intensity_guidance.allowed_domains`: `["RECOVERY", "ENDURANCE", "TEMPO", "VO2MAX"]` (documentary: VO2MAX active in early phases, THRESHOLD suppressed in the VO2 block; the phase layer maps these to canonical phase-intent semantics)
   - `decision_notes` must include: "VO2MAX is permitted as an early-season aerobic-ceiling build in the first two phases only; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering."
 
 Seasonal availability context:
@@ -266,19 +261,15 @@ Internal consistency checks:
 - Ensure `risk_flags` contain guardrail-visible words, not vague phrases like `general caution` or `watch recovery`.
 - Make cadence rationale visible in stored scenario fields such as `decision_notes`, `risk_flags`, `event_alignment_notes`, or `kpi_guardrail_notes`.
 - If multiple scenarios share the same cadence, say directly that cadence is intentionally shared and that differentiation comes from other axes such as specificity-under-fatigue, recovery margin, or risk posture.
-- If `VO2MAX` is allowed, explain the ceiling-support role explicitly in `decision_notes` or `kpi_guardrail_notes`.
-- Use explicit wording such as `ceiling-support`, `fresh`, `high-intensity`, `support`, or `VO2` so the rationale is unambiguous.
-- Put the explanation in the actual stored scenario fields, not only in surrounding prose.
-- If you cannot write that explanation cleanly, remove `VO2MAX` from `allowed_domains`.
 - If Scenario B is the performance-default option, make economy/sub-threshold logic plausible in the scenario story.
-- If Scenario C uses no additional domains beyond `ENDURANCE` or `TEMPO`, make the ambition visible through B2B, hard-late, pre-load, event simulation, or other specificity-under-fatigue markers.
+- Make Scenario C ambition visible through B2B, hard-late, pre-load, event simulation, or other specificity-under-fatigue markers.
 
 3-pass verification (mandatory before returning):
 
 Pass 1 — Contract alignment: do the narrative fields fulfill the scenario layer's job?
 - For each scenario: does `load_philosophy` explicitly name what drives load progression — duration-led, frequency-led, or quality/intensity-led? If not, rewrite it. This is the primary character handoff to season planning.
 - Does `core_idea` state the phase count, cadence, and the season outcome the athlete is building toward? If it reads like a mood word or abstract goal instead of a structural description, rewrite it.
-- Does `typical_week_feel` describe session character (what intensity domains appear, when, how the legs feel across the week) derived from `allowed_domains` and cadence — not from assumed day names? If it reads like scheduling language instead of session feel, rewrite it.
+- Does `typical_week_feel` describe session character (what intensity domains appear, when, how the legs feel across the week) derived from the scenario's intensity narrative and cadence — not from assumed day names? If it reads like scheduling language instead of session feel, rewrite it.
 - Are `recovery_margin`, `fatigue_exposure`, and `specificity_density` in `scenario_guidance` non-empty explicit strings? These are the machine-readable character parameters the season planner reads directly. If any is empty or deferred, fill it now.
 
 Pass 2 — Template compliance: do the fields open correctly?
@@ -313,7 +304,7 @@ Hard rules:
 - the active scenario-generation layer is the front-loaded source of operational posture; do not defer recovery, fatigue, or specificity stance to Selection, Season planning, review, writer, or renderer
 - the active scenario-generation layer must be self-contained for operational posture: define `recovery_margin`, `fatigue_exposure`, and `specificity_density` locally here and serialize them directly
 - examples illustrate structure and specificity only; do not mechanically reuse example sentences in `constraint_summary`, and apply the same principle to `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes`
-- CEILING-FIRST MANDATE: if `athlete_profile.objectives.secondary` or `objectives.priority_order` contains VO2max development language AND planning runway ≥ 20 weeks, emitting `season_archetype: "none"` for all three scenarios is a hard error — at least one scenario MUST use `ceiling_first_durability` with `VO2MAX` in `allowed_domains`; check this before returning and revise if violated
+- CEILING-FIRST MANDATE: if `athlete_profile.objectives.secondary` or `objectives.priority_order` contains VO2max development language AND planning runway ≥ 20 weeks, emitting `season_archetype: "none"` for all three scenarios is a hard error — at least one scenario MUST use `ceiling_first_durability`; check this before returning and revise if violated
 - output exactly three scenarios
 - keep numeric weekly kJ targets for season/phase planning tasks
 - use canonical intensity domains
@@ -325,7 +316,6 @@ Hard rules:
 - do not emit A/B/C with the same `deload_cadence` unless the stored scenario fields clearly justify why cadence is intentionally held constant
 - do not let Scenario C become "the VO2 scenario" by default
 - do not keep `VO2MAX` in Scenario C without an explicit ceiling-support explanation in `decision_notes` or `kpi_guardrail_notes`
-- do not describe `allowed_domains` as blanket legality for all phases
 - do not claim that objective mismatch is resolved in this layer
 - do not invent fake kJ separation when the actual time budget cannot support it
 

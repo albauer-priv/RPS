@@ -257,7 +257,7 @@ def test_season_scenarios_profile_quality_rejects_weak_scenario_c() -> None:
     )
 
     assert failed is False
-    assert "Scenario C must express ambitious specificity" in message
+    assert "Scenario C must describe higher specificity or fatigue exposure" in message
 
 def test_season_scenarios_profile_quality_rejects_shared_cadence_without_explicit_justification() -> None:
     failed, message = season_scenarios_profile_quality(
@@ -737,7 +737,7 @@ def test_season_scenarios_profile_quality_rejects_ceiling_first_without_full_rat
     )
 
     assert failed is False
-    assert message == "Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway."
+    assert message.startswith("Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway.")
 
 def test_season_scenarios_profile_quality_rejects_missing_selection_gate_semantics() -> None:
     failed, message = season_scenarios_profile_quality(
@@ -825,98 +825,6 @@ def test_season_scenarios_profile_quality_rejects_missing_risk_flag_semantics() 
     assert failed is False
     assert message == "Scenario A must include concrete caution markers in risk_flags."
 
-def test_season_scenarios_profile_quality_rejects_vo2_rationale_missing_primary_identity_clause() -> None:
-    failed, message = season_scenarios_profile_quality(
-        _season_scenarios_payload(
-            _season_scenario_item(
-                scenario_id="A",
-                load_philosophy="Lower feasible kJ-envelope with high recovery margin.",
-                risk_profile="Lowest risk profile.",
-                key_differences="Completion-first with sparse tempo.",
-                cadence="2:1",
-                allowed_domains=["ENDURANCE"],
-                decision_notes=["Use 2:1 cadence to protect recovery margin."],
-                best_suited_if="Choose when continuity priority and uncertain recovery dominate.",
-                risk_flags=["May under-deliver if high load tolerance is available."],
-            ),
-            _season_scenario_item(
-                scenario_id="B",
-                load_philosophy="Realistic target kJ-envelope with systematic long-ride progression.",
-                risk_profile="Balanced recovery risk.",
-                key_differences="Durability-forward target plan.",
-                cadence="2:1:1",
-                allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
-                decision_notes=["Use 2:1:1 cadence to absorb tempo economy work."],
-                best_suited_if="Choose when stable recovery supports systematic progression.",
-                risk_flags=["Less forgiving than A if continuity break or recovery slip appears."],
-            ),
-            _season_scenario_item(
-                scenario_id="C",
-                load_philosophy="Upper plausible kJ-envelope with more event simulation.",
-                risk_profile="Ambitious performance-forward long build with higher specificity under fatigue.",
-                key_differences="More back-to-back and hard-late specificity.",
-                cadence="3:1",
-                allowed_domains=["ENDURANCE", "TEMPO", "VO2MAX"],
-                decision_notes=["Use 3:1 cadence for back-to-back and hard-late specificity under fatigue."],
-                best_suited_if="Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.",
-                risk_flags=["Fatigue risk rises quickly if travel disruption appears."],
-                constraint_summary=["Event simulation and fatigue exposure."],
-                kpi_guardrail_notes=[
-                    "3:1 cadence supports the longer build, and VO2MAX is allowed only as sparse ceiling-support work when fresh-only, while ambition comes from specificity-under-fatigue and load posture."
-                ],
-            ),
-        )
-    )
-
-    assert failed is False
-    assert message == "Scenario C may allow VO2MAX only with explicit sparse ceiling-support rationale."
-
-def test_season_scenarios_profile_quality_rejects_vo2_rationale_missing_specificity_source() -> None:
-    failed, message = season_scenarios_profile_quality(
-        _season_scenarios_payload(
-            _season_scenario_item(
-                scenario_id="A",
-                load_philosophy="Lower feasible kJ-envelope with high recovery margin.",
-                risk_profile="Lowest risk profile.",
-                key_differences="Completion-first with sparse tempo.",
-                cadence="2:1",
-                allowed_domains=["ENDURANCE"],
-                decision_notes=["Use 2:1 cadence to protect recovery margin."],
-                best_suited_if="Choose when continuity priority and uncertain recovery dominate.",
-                risk_flags=["May under-deliver if high load tolerance is available."],
-            ),
-            _season_scenario_item(
-                scenario_id="B",
-                load_philosophy="Realistic target kJ-envelope with systematic long-ride progression.",
-                risk_profile="Balanced recovery risk.",
-                key_differences="Durability-forward target plan.",
-                cadence="2:1:1",
-                allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
-                decision_notes=["Use 2:1:1 cadence to absorb tempo economy work."],
-                best_suited_if="Choose when stable recovery supports systematic progression.",
-                risk_flags=["Less forgiving than A if continuity break or recovery slip appears."],
-            ),
-            _season_scenario_item(
-                scenario_id="C",
-                load_philosophy="Upper plausible kJ-envelope with a larger workload envelope.",
-                risk_profile="Ambitious performance-forward long build with lower recovery margin.",
-                key_differences="More specificity and less recovery margin.",
-                cadence="3:1",
-                allowed_domains=["ENDURANCE", "TEMPO", "VO2MAX"],
-                decision_notes=["Use 3:1 cadence for a longer specificity build."],
-                best_suited_if="Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.",
-                risk_flags=["Fatigue risk rises quickly if travel disruption appears."],
-                constraint_summary=["Longer overload build with reduced recovery margin."],
-                kpi_guardrail_notes=[
-                    "3:1 cadence supports the longer build, and VO2MAX is allowed only as sparse ceiling-support work when fresh-only, not primary identity, while ambition comes from durability ambition and general race readiness."
-                ],
-            ),
-        )
-    )
-
-    assert failed is False
-    assert message == "Scenario C may allow VO2MAX only with explicit sparse ceiling-support rationale."
-
 def test_season_scenarios_profile_quality_accepts_scenario_c_without_vo2max() -> None:
     ok, payload = season_scenarios_profile_quality(
         _season_scenarios_payload(
@@ -962,50 +870,6 @@ def test_season_scenarios_profile_quality_accepts_scenario_c_without_vo2max() ->
 
     assert ok is True
     assert "VO2MAX" not in payload["data"]["scenarios"][2]["scenario_guidance"]["intensity_guidance"]["allowed_domains"]
-
-def test_season_scenarios_profile_quality_rejects_phase_wide_domain_authorization_wording() -> None:
-    failed, message = season_scenarios_profile_quality(
-        _season_scenarios_payload(
-            _season_scenario_item(
-                scenario_id="A",
-                load_philosophy="Low envelope.",
-                risk_profile="Low risk.",
-                key_differences="Conservative.",
-                cadence="2:1",
-                allowed_domains=["ENDURANCE"],
-                decision_notes=["Use 2:1 cadence to protect recovery margin."],
-                best_suited_if="Choose when uncertain recovery makes continuity priority essential.",
-                risk_flags=["May under-deliver if high load tolerance is available."],
-            ),
-            _season_scenario_item(
-                scenario_id="B",
-                load_philosophy="Balanced envelope.",
-                risk_profile="Balanced risk.",
-                key_differences="Default.",
-                cadence="2:1:1",
-                allowed_domains=["ENDURANCE", "TEMPO"],
-                decision_notes=["Use 2:1:1 cadence for balanced durability progression."],
-                best_suited_if="Choose when stable recovery supports systematic progression.",
-                risk_flags=["Less forgiving than A if continuity break appears."],
-            ),
-            _season_scenario_item(
-                scenario_id="C",
-                load_philosophy="Higher envelope with event simulation.",
-                risk_profile="Higher fatigue exposure.",
-                key_differences="Specificity under fatigue.",
-                cadence="3:1",
-                allowed_domains=["ENDURANCE", "TEMPO", "SWEET_SPOT"],
-                decision_notes=["Use 3:1 cadence for hard-late specificity under fatigue."],
-                best_suited_if="Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.",
-                risk_flags=["Too aggressive if travel disruption appears."],
-                constraint_summary=["Event simulation and fatigue exposure."],
-            ),
-            notes=["allowed_domains are globally authorized for all phases."],
-        )
-    )
-
-    assert failed is False
-    assert message == "Season scenarios must state that allowed_domains are eligibility only, not phase-wide authorization."
 
 def test_season_scenarios_task_policy_uses_profile_quality_guardrail() -> None:
     bundle = load_crewai_config_bundle(root=Path(__file__).resolve().parents[1])

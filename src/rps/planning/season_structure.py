@@ -5,10 +5,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 from typing import Any
 
-from rps.workspace.intensity_domains import (
-    CANONICAL_INTENSITY_DOMAINS,
-    normalize_intensity_domain_list,
-)
+from rps.workspace.intensity_domains import CANONICAL_INTENSITY_DOMAINS
 from rps.workspace.iso_helpers import IsoWeek
 from rps.workspace.phase_intents import normalize_season_archetype
 from rps.workspace.phase_resolution import date_to_iso_week
@@ -53,21 +50,16 @@ def _as_str_list(value: object) -> list[str]:
 
 
 def _scenario_intensity_domains(scenario_payload: JsonMap) -> tuple[list[str], list[str]]:
-    """Return normalized season-authority intensity domains for the selected scenario."""
+    """Return season-authority intensity domains for the selected scenario.
 
-    intensity_guidance = _as_map(scenario_payload.get("intensity_guidance"))
-    if not intensity_guidance:
-        intensity_guidance = _as_map(_as_map(scenario_payload.get("scenario_guidance")).get("intensity_guidance"))
-    allowed = normalize_intensity_domain_list(intensity_guidance.get("allowed_domains"))
-    avoid = normalize_intensity_domain_list(intensity_guidance.get("avoid_domains"))
-    forbidden = [
-        domain
-        for domain in CANONICAL_INTENSITY_DOMAINS
-        if domain not in {"NONE", "RECOVERY"} and domain not in allowed
-    ]
-    if avoid:
-        forbidden = list(dict.fromkeys([*forbidden, *[domain for domain in avoid if domain not in {"NONE", "RECOVERY"}]]))
-    return allowed, forbidden
+    All canonical domains are permitted at the season level. Intensity gating is
+    owned entirely by the phase layer via canonical phase-intent semantics
+    (season_phase_allowed_domains in phase_intents.py). The scenario
+    intensity_guidance field remains in the JSON for narrative coherence but is
+    not binding at runtime.
+    """
+    _ = scenario_payload  # advisory only; not read at runtime
+    return list(CANONICAL_INTENSITY_DOMAINS), []
 
 
 def _selected_scenario(
@@ -94,7 +86,6 @@ def _scenario_archetype_context(
     *,
     scenario_payload: JsonMap,
     planning_horizon_weeks: int | None,
-    allowed_domains: list[str],
 ) -> JsonMap:
     """Return normalized season archetype and feasibility flags."""
 
@@ -102,14 +93,11 @@ def _scenario_archetype_context(
     archetype = normalize_season_archetype(guidance.get("season_archetype"))
     horizon = planning_horizon_weeks or 0
     ceiling_first_permitted = archetype == "ceiling_first_durability" and horizon >= 10
-    early_vo2_permitted = ceiling_first_permitted and "VO2MAX" in allowed_domains and horizon >= 12
+    early_vo2_permitted = ceiling_first_permitted and horizon >= 12
     economy_repeat_permitted = ceiling_first_permitted and horizon >= 16
     blocking: list[str] = []
-    if archetype == "ceiling_first_durability":
-        if horizon < 10:
-            blocking.append("planning horizon too short for ceiling-first sequencing")
-        if "VO2MAX" not in allowed_domains:
-            blocking.append("selected scenario does not permit VO2MAX authority for early ceiling support")
+    if archetype == "ceiling_first_durability" and horizon < 10:
+        blocking.append("planning horizon too short for ceiling-first sequencing")
     return {
         "season_archetype": archetype,
         "ceiling_first_permitted": ceiling_first_permitted,
@@ -259,7 +247,6 @@ def build_selected_scenario_structure_context(
     archetype_context = _scenario_archetype_context(
         scenario_payload=selected_scenario,
         planning_horizon_weeks=_as_int(scenarios_data.get("planning_horizon_weeks")),
-        allowed_domains=allowed_domains,
     )
 
     return {

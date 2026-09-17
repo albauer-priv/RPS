@@ -118,9 +118,6 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "`data.notes` = global layer clarifications" in task_config
     assert "mismatch may be named as unresolved input context only" in task_config
     assert "do not resolve it" in task_config
-    assert "If Scenario C includes `VO2MAX`" in scenario_skill
-    assert "Preferred copyable sentence when Scenario C allows `VO2MAX`" in scenario_skill
-    assert "not primary identity" in scenario_skill
     assert "`scenario_guidance.deload_cadence` is not" in task_config
     assert "decorative phase math" in task_config
     assert "coherent cadence" in task_config and "per scenario" in task_config
@@ -130,7 +127,6 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "do not mirror the recommendation cadence blindly into all scenarios" in scenario_skill
     assert "only future / in-horizon events are provided to the scenario agent" in scenario_skill
     assert "do not infer active scenario logic from past or completed events" in scenario_skill
-    assert "`allowed_domains` define eligibility for later assignment only" in scenario_skill
     assert "Examples are illustrative of structure and specificity only, not canonical wording." in prompt
     assert "Do not mechanically reuse example sentences" in prompt
     assert "Fixed rest-day constraint pattern" in prompt
@@ -180,37 +176,24 @@ def test_season_scenario_prompt_carries_local_vo2_guardrail_rule() -> None:
     assert "The active scenario-generation layer must be self-contained for operational posture" in prompt
 
 
-def test_season_scenario_vo2_rule_is_canonical_and_frontloaded() -> None:
+def test_season_scenario_vo2_rule_is_in_prompt_and_task_config() -> None:
+    """VO2MAX advisory guidance remains in prompt and task config (skill guidance is now advisory only)."""
     prompt = _read("prompts/agents/season_scenario.md")
     task_config = _read("config/crewai/tasks.yaml")
-    scenario_skill = _read("skills/season/scenario-generation/SKILL.md")
     canonical_rule = (
         "Scenario C VO2MAX hard rule: Scenario C may include `VO2MAX` only when it is explicitly justified as "
         "`sparse ceiling-support`, `fresh-only`, `not primary identity`, and ambition sourced from "
         "`specificity-under-fatigue`, `density`, `event simulation`, or `load posture`"
     )
-    canonical_omission = (
-        "If that rationale cannot be stated explicitly in `decision_notes` and/or `kpi_guardrail_notes`, "
-        "omit `VO2MAX` from Scenario C `allowed_domains`."
-    )
-    canonical_sentence = (
-        "VO2MAX remains sparse ceiling-support only when fresh-only, not primary identity; "
-        "the scenario ambition comes from specificity-under-fatigue, density, and event simulation."
-    )
 
-    normalized = [" ".join(content.split()) for content in (prompt, task_config, scenario_skill)]
-
+    normalized = [" ".join(content.split()) for content in (prompt, task_config)]
     for content in normalized:
         assert canonical_rule in content
-        assert canonical_omission in content
-        assert canonical_sentence in content
 
     normalized_prompt = " ".join(prompt.split())
     normalized_task = " ".join(task_config.split())
-
     assert normalized_prompt.index(canonical_rule) < normalized_prompt.index("For Scenario A, make `best_suited_if`")
     assert normalized_task.index(canonical_rule) < normalized_task.index("For Scenario A, make")
-    assert scenario_skill.index(canonical_rule) < scenario_skill.index("- Scenarios B and C may legitimately share identical `allowed_domains`")
 
 
 def test_season_scenario_cadence_rule_is_canonical_and_frontloaded() -> None:
@@ -244,10 +227,8 @@ def test_season_scenario_cadence_rule_is_canonical_and_frontloaded() -> None:
 
     normalized_prompt = " ".join(prompt.split())
     normalized_task = " ".join(task_config.split())
-    normalized_skill = " ".join(scenario_skill.split())
     assert normalized_prompt.index(canonical_rule) < normalized_prompt.index("Scenario C VO2MAX hard rule:")
     assert normalized_task.index(canonical_rule) < normalized_task.index("Scenario C VO2MAX hard rule:")
-    assert normalized_skill.index(canonical_rule) < normalized_skill.index("Scenario C VO2MAX hard rule:")
 
 
 def test_season_macrocycle_guidance_supports_multi_a_event_conflict_resolution() -> None:

@@ -55,8 +55,8 @@ def test_selected_scenario_structure_context_derives_phase_math() -> None:
     assert context["full_phases"] == 5
     assert context["reconstructed_horizon_weeks"] == 17
     assert context["consistent_with_horizon"] is True
-    assert context["allowed_intensity_domains"] == ["ENDURANCE", "TEMPO", "SWEET_SPOT"]
-    assert "VO2MAX" in context["forbidden_intensity_domains"]
+    assert context["allowed_intensity_domains"] == ["NONE", "RECOVERY", "ENDURANCE", "TEMPO", "SWEET_SPOT", "THRESHOLD", "VO2MAX"]
+    assert context["forbidden_intensity_domains"] == []
     assert context["season_archetype"] == "none"
     assert context["ceiling_first_permitted"] is False
 

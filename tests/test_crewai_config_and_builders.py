@@ -114,6 +114,7 @@ def test_crewai_config_bundle_loads_known_agents_and_tasks() -> None:
     assert bundle.skills["agents"]["week_revision_specialist"]["skill"] == "skills/week/revision-methodology"
     assert bundle.skills["crews"]["coach_conversation"]["skills"] == [
         "skills/shared/runtime-boundaries",
+        "skills/shared/domain-glossary",
         "skills/shared/resolved-context-consumption",
         "skills/shared/traceability-and-naming",
     ]
@@ -863,6 +864,7 @@ def test_skill_kwargs_resolve_native_crewai_skill_paths() -> None:
     assert profile["agent_skill"] == "skills/week/revision-methodology"
     assert profile["crew_skills"] == [
         "skills/shared/runtime-boundaries",
+        "skills/shared/domain-glossary",
         "skills/shared/resolved-context-consumption",
         "skills/shared/traceability-and-naming",
     ]
