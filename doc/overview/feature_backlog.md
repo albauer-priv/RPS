@@ -1,7 +1,7 @@
 ---
 Version: 2.0
 Status: Updated
-Last-Updated: 2026-09-16
+Last-Updated: 2026-09-17
 Owner: Product
 ---
 # Feature Backlog
@@ -12,10 +12,6 @@ feature spec ([doc/specs/features/FEAT_<slug>.md](/doc/specs/features/FEAT_<slug
 Completed items are removed from this file; CHANGELOG.md is the authoritative record of what shipped.
 
 ---
-
-## In Progress / Partially Done
-
-- [~] FEAT_posting_receipts_inspection — receipt inspection + status (implemented; UX polish ongoing).
 
 ---
 
