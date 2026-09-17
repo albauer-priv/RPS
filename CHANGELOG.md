@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.18] - 2026-09-17
+
+### Changed
+
+- `.clinerules`: added summary pointer in section 6 — when modifying skills, orchestrators, or agent prompts, apply the four agentic-readiness principles (see `.clinerules.d/20-agent-runtime.md`).
+- `.clinerules.d/20-agent-runtime.md`: added **Agentic-readiness principles** section with four operative rules — (1) validate inputs before running crews, return structured errors; (2) cite specific skill/threshold when emitting blocking_issue/warning/corridor values; (3) use canonical domain vocabulary from `domain-glossary` skill, extend there for new terms; (4) respect capability tier authority boundaries. Added `ADR-062` to required canonical reads.
+
 ## [0.37.17] - 2026-09-17
 
 ### Changed
