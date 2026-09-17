@@ -27,16 +27,64 @@ High-level order:
 
 ## Typical season sequence
 
+- General preparation (GPP):
+  - structural robustness, strength maintenance, aerobic base; no high-intensity unless explicitly
+    permitted; cadence `2:1:1` or `2:1` depending on athlete recovery profile.
 - VO2 foundation:
-  - short build of tolerance and repeatability of high-intensity exposure while low intensity remains protected.
+  - short build of tolerance and repeatability of high-intensity exposure while low intensity
+    remains protected; short-interval protocols (e.g. 30/15 s) progress from reduced set/rep count
+    to full protocol over 2–4 weeks before progressing to longer intervals (e.g. 40/20 s).
 - VO2-focused phase:
-  - concentrated VO2 emphasis with protected recovery.
+  - concentrated VO2 emphasis with protected recovery; progress within the interval family before
+    switching to the next (30/15 → 40/20 → longer threshold intervals).
 - Transition coupling:
-  - maintain VO2 exposure while introducing economy/VLamax-lowering emphasis.
+  - maintain VO2 exposure while introducing economy/VLamax-lowering emphasis; intensity density
+    starts to plateau; volume becomes the secondary growth axis.
 - Economy/durability phase:
-  - longer consolidation where volume becomes the primary overload axis and metabolic efficiency is the dominant focus.
+  - longer consolidation where volume becomes the primary overload axis and metabolic efficiency is
+    the dominant focus; sub-threshold and low-cadence work increase; kJ/kg milestones emerge as
+    durability anchors.
+- Specific durability phase:
+  - event-specific kJ/kg exposure under accumulated fatigue conditions; standardized fatigued-state
+    quality checks (normal performance after ≥ 30 kJ/kg preload) become primary quality metrics.
 - Repeatable cycle option:
   - repeat the economy/durability block only when horizon and recovery capacity support it.
+
+## kJ/kg durability milestones
+
+These are indicative season anchors for long-distance brevet athletes:
+
+- Early economy phase: demonstrate normal submaximal performance after 20–25 kJ/kg preload.
+- Mid economy/durability: 28–32 kJ/kg preload with standardized quality check.
+- Late durability: 35–40 kJ/kg back-to-back weekend stimulus.
+- Taper readiness: last major preload stimulus ≥ 4 weeks before A event; no fresh milestones
+  inside the taper window.
+
+Absolute kJ values depend on athlete body mass; use kJ/kg as the normalized reference.
+
+## Fueling as a trainable dimension
+
+Gut tolerance for carbohydrate intake during long events is trainable and must be developed
+progressively across the season:
+
+- Early season long rides: 40–60 g carbohydrate/hour
+- Economy/durability phases: 60–75 g/hour
+- Specific durability phase: 70–90 g/hour as target; begin training real-food + liquid mix
+- Event weeks: no new foods; use only trained fueling protocols
+
+Missed fueling practice degrades event readiness independently of physical fitness. Plan explicit
+fueling targets in every long session from the economy phase onward.
+
+## HR response at high accumulated work
+
+For masters and ultra athletes, a late-session drop in heart rate response at constant power is
+a recognized fatigue / autonomic marker, not a sign of improved efficiency:
+
+- Document the pattern (onset kJ/kg threshold, magnitude) across multiple long rides.
+- Do **not** use late HR suppression as a cue to increase power.
+- Treat it as evidence of accumulated fatigue state; preserve pacing discipline.
+- Use it as a readiness signal: if HR suppression onset moves earlier session-to-session, recovery
+  is incomplete.
 
 ## Compliance characteristics
 

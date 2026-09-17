@@ -17,6 +17,23 @@
 - taper must be explicit and visible in the macrocycle
 - a taper cannot coexist with aggressive overload ramping
 - if the event cluster is too dense, reduce ambition instead of faking taper adequacy
+- minimum effective taper window for ultra/brevet events: 2–3 weeks including the event week;
+  a single event-week taper is insufficient for events longer than ~12 hours
+- the last cadence role of the phase **immediately preceding** a TAPER/A-event phase must not be
+  `RELOAD`; flag `RELOAD → A-event phase` adjacency as a structural **warning** and recommend
+  restructuring the preceding phase's final week to `MINI_RESET` or `DELOAD` — it is a warning,
+  not a hard blocker, unless the taper phase itself is shorter than the minimum effective window
+
+## Progressive brevet event sequencing
+- when a season targets a long-distance ultra (e.g. 600 km), shorter preparatory brevets
+  (200 km → 300 km → 400 km) function as **stress-plus-recovery milestones**, not independent peaks
+- each preparatory brevet deserves a brief recovery window (3–7 days easy) rather than a full
+  re-entry or rebuild block; that window is a `Transition` behavior inside the existing structure
+- a B-priority brevet 2–3 weeks before the A-event peak should be treated as a specificity
+  confirmation + fueling rehearsal: apply minor load reduction in the B-event week, then recovery
+  only, then proceed directly to final taper for the A event
+- do not insert a new Build or reload block between the final B-event and the A-event taper when
+  spacing is ≤ 3 weeks
 
 ## Kinzlbauer-like ultra/brevet template
 - permitted at season architecture level only
