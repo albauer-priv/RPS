@@ -20,52 +20,10 @@ bundles:
       - path: specs/knowledge/_shared/sources/specs/workouts/workout_syntax_and_validation.md
       - path: specs/knowledge/_shared/sources/specs/workouts/intervals_workout_ebnf.md
 
-crews:
-  coach_conversation:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 6, score_threshold: 0.45}
-  workout_editor_conversation:
-    bundles: [factual_interfaces, factual_evidence, factual_week_refs]
-    knowledge_config: {results_limit: 6, score_threshold: 0.45}
-  season_planning:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 8, score_threshold: 0.45}
-  season_review:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 6, score_threshold: 0.45}
-  season_writer:
-    bundles: [factual_interfaces]
-    knowledge_config: {results_limit: 4, score_threshold: 0.5}
-  phase_planning:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 8, score_threshold: 0.45}
-  phase_review:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 6, score_threshold: 0.45}
-  phase_writer:
-    bundles: [factual_interfaces]
-    knowledge_config: {results_limit: 4, score_threshold: 0.5}
-  week_planning:
-    bundles: [factual_interfaces, factual_evidence, factual_week_refs]
-    knowledge_config: {results_limit: 8, score_threshold: 0.45}
-  week_review:
-    bundles: [factual_interfaces, factual_week_refs]
-    knowledge_config: {results_limit: 6, score_threshold: 0.45}
-  week_writer:
-    bundles: [factual_interfaces, factual_week_refs]
-    knowledge_config: {results_limit: 6, score_threshold: 0.45}
-  report_planning:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 8, score_threshold: 0.45}
-  report_review:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 6, score_threshold: 0.45}
-  report_writer:
-    bundles: [factual_interfaces]
-    knowledge_config: {results_limit: 4, score_threshold: 0.5}
-  feed_forward_advisory:
-    bundles: [factual_interfaces, factual_evidence]
-    knowledge_config: {results_limit: 8, score_threshold: 0.45}
+# NOTE: the `crews:` section previously defined here is not used — resolve_crew_knowledge_profile()
+# is defined in knowledge.py but never called. Crew-level shared content uses skills.yaml instead.
+# Knowledge bundles are supplementary reference data only (bibliography, interface specs).
+# Operational planning rules must live in SKILL.md bodies — see doc/adr/ADR-062.
 
 agents:
   conversation_manager: {bundles: [factual_interfaces], knowledge_config: {results_limit: 4, score_threshold: 0.5}}

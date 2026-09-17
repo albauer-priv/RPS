@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.16] - 2026-09-17
+
+### Changed
+
+- `config/crewai/knowledge_sources.yaml`: removed dead `crews:` section — `resolve_crew_knowledge_profile` is never called; crew-level content sharing uses `skills.yaml` instead. Added explanatory comment clarifying knowledge bundles are supplementary only.
+- `doc/architecture/crewai_skills_attachment.md`: added **Content Delivery Architecture** section documenting all three delivery mechanisms, which are guaranteed vs unreliable, and the rule that operational planning rules must live in the SKILL.md body. Strengthened `references/` rule with explicit WHY.
+- `doc/adr/ADR-062-skill-content-delivery-rules.md`: new ADR formalizing the content delivery rule — SKILL.md body is the only guaranteed delivery path; references/ is human documentation only; knowledge bundles are supplementary and unreliable for operational rules; crews: section in knowledge_sources.yaml is dead code.
+
 ## [0.37.15] - 2026-09-17
 
 ### Changed

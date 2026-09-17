@@ -1,7 +1,7 @@
 ---
-Version: 1.1
+Version: 1.2
 Status: Updated
-Last-Updated: 2026-05-17
+Last-Updated: 2026-09-17
 Owner: Architecture
 ---
 # CrewAI Skill Attachment Model
@@ -21,10 +21,52 @@ RPS uses a stricter local rule than raw CrewAI:
 - each agent gets exactly one method skill
 - crew-level attachments are allowed only for operational cross-cutting skills
 - planning methodology must live in the owning agent skill
-- `references/` are supplemental only; `SKILL.md` must be operational on its own
+- **`references/` are human documentation only; `SKILL.md` must be fully operational without them**
 - skills are activated through native CrewAI `skills=[...]`; RPS must not manually append `SKILL.md` bodies into agent `goal`, `backstory`, or task descriptions
 
 This is a local architecture constraint, not a CrewAI platform limitation.
+
+## Content Delivery Architecture
+
+There are three delivery mechanisms in RPS; only the first is guaranteed to reach agents:
+
+### 1. SKILL.md Body (guaranteed)
+
+Every operational planning rule, threshold, decision logic, and behavioral constraint **must** live
+in the `SKILL.md` body of the skill that owns it. This is the only delivery path that is
+deterministic and unconditional.
+
+- `build_crewai_skill_kwargs` passes the skill directory path; CrewAI loads `SKILL.md` body always
+- `references/` subdirectory content is **not** automatically injected — it requires an explicit
+  `load_resources()` call which is not used in this codebase
+- Consequence: any rule added only to `references/` is invisible to the agent
+
+**Rule: when adding a rule to a `references/*.md` file, ask: does the responsible SKILL.md body
+already state this rule? If not, add it there first.**
+
+### 2. Crew-Level Shared Skills (guaranteed for specific crews)
+
+For rules used by multiple agents in the same crew, add a shared skill to `skills/shared/<name>/`
+and register it under `crews:` → `<crew_name>:` → `skills:` in `config/crewai/skills.yaml`.
+
+Pattern used for: `runtime-boundaries`, `resolved-context-consumption`, `traceability-and-naming`,
+`replan-instruction-authoring`, `blueprint-contract-validation`, etc.
+
+### 3. Knowledge Sources / RAG (supplementary, not reliable)
+
+`config/crewai/knowledge_sources.yaml` configures `StringKnowledgeSource` bundles for some agents.
+This mechanism is **not reliable** as the primary delivery path:
+
+- `StringKnowledgeSource` is imported with a try/except — if `lancedb` or `chromadb` fails to
+  import (e.g. missing platform wheel), the import silently returns `None` and no sources are loaded
+- RAG uses semantic search with a score threshold (0.45–0.5) — content only appears when the query
+  matches; critical rules may be missed under unusual phrasing
+- The `crews:` section in `knowledge_sources.yaml` is **dead code** — `resolve_crew_knowledge_profile`
+  is defined but never called; crew-level knowledge bundles have no effect
+
+**Use knowledge bundles for supplementary reference data only** (bibliography, interface specs, workout
+syntax specs) — content that enriches responses when available but whose absence does not break
+correctness. Never rely on knowledge bundles for hard rules or thresholds.
 
 ## Native CrewAI Activation
 
@@ -37,9 +79,8 @@ RPS therefore follows these rules:
 
 - pass configured skill directories to CrewAI through `skills=[...]`
 - do not render `SKILL.md` bodies manually into prompts
-- keep mandatory behavior in `SKILL.md`
-- keep long supporting material in local `references/`
-- use Knowledge sources for broader retrieved facts and bibliography material
+- keep mandatory behavior in `SKILL.md` — not in `references/`
+- keep long supporting / human-readable material in `references/` as documentation
 - do not use cross-skill file paths such as `../...` or `skills/.../references/...`
 
 ## Attachment Layers
