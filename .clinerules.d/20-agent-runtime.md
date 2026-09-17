@@ -75,6 +75,10 @@ When adding or modifying skills, orchestrators, or agent prompts, apply all four
 - These terms are defined once in `skills/shared/domain-glossary/SKILL.md`; reference or extend there.
 - When adding a new domain term used across more than one skill, add it to the domain glossary first.
 
+**Shared skill registration — two places, always both:**
+- When adding a new shared crew skill to `config/crewai/skills.yaml`, also add it to `OPERATIONAL_CREW_SKILLS` in `src/rps/crewai_runtime/config.py`.
+- The Allow-list is a runtime guard; a skill in `skills.yaml` but not in `OPERATIONAL_CREW_SKILLS` raises `ValueError` at crew startup. Missing one of the two causes a production error.
+
 **4. Capability model — respect tier authority**
 - Specialist agents propose and flag; they do not authorize.
 - Manager/synthesis agents aggregate and dispatch; they do not substitute for specialist decisions.
