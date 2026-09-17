@@ -261,6 +261,16 @@ def create_season_scenarios(
             planning_events_payload or {},
             as_of_date=target_week_start,
         )
+        future_events = _as_list(_as_map(future_planning_events_payload.get("data")).get("events"))
+        if not future_events:
+            return {
+                "ok": False,
+                "error": (
+                    "Season planning requires at least one future planning event with a valid date. "
+                    "No events found on or after "
+                    f"{target_week_start}. Add events via the athlete profile before running season planning."
+                ),
+            }
         horizon_context = build_season_scenario_horizon_block(
             planning_events_payload=future_planning_events_payload,
             target_week=target_week,
