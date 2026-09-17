@@ -14,6 +14,14 @@ bundles:
       - path: skills/shared/durability-methodology/references/durability_reference_table_core.md
       - path: skills/shared/durability-methodology/references/durability_reference_table_applied.md
       - path: skills/season/scenario-generation/references/kj_first_durability_philosophy.md
+  factual_macrocycle:
+    sources:
+      - path: skills/season/macrocycle-architecture/references/macrocycle_and_peak_window_rules.md
+      - path: skills/season/macrocycle-architecture/references/kinzlbauer_season_template.md
+  factual_phase_recovery:
+    sources:
+      - path: skills/phase/cadence-recovery/references/deload_and_reentry.md
+      - path: skills/season/load-governance/references/progression_guardrails.md
   factual_week_refs:
     sources:
       - path: specs/knowledge/_shared/sources/specs/workouts/workout_json_spec.md
@@ -28,19 +36,19 @@ crews:
     bundles: [factual_interfaces, factual_evidence, factual_week_refs]
     knowledge_config: {results_limit: 6, score_threshold: 0.45}
   season_planning:
-    bundles: [factual_interfaces, factual_evidence]
+    bundles: [factual_interfaces, factual_evidence, factual_macrocycle]
     knowledge_config: {results_limit: 8, score_threshold: 0.45}
   season_review:
-    bundles: [factual_interfaces, factual_evidence]
+    bundles: [factual_interfaces, factual_evidence, factual_macrocycle]
     knowledge_config: {results_limit: 6, score_threshold: 0.45}
   season_writer:
     bundles: [factual_interfaces]
     knowledge_config: {results_limit: 4, score_threshold: 0.5}
   phase_planning:
-    bundles: [factual_interfaces, factual_evidence]
+    bundles: [factual_interfaces, factual_evidence, factual_phase_recovery]
     knowledge_config: {results_limit: 8, score_threshold: 0.45}
   phase_review:
-    bundles: [factual_interfaces, factual_evidence]
+    bundles: [factual_interfaces, factual_evidence, factual_phase_recovery]
     knowledge_config: {results_limit: 6, score_threshold: 0.45}
   phase_writer:
     bundles: [factual_interfaces]
@@ -85,9 +93,9 @@ agents:
   season_planner: {bundles: [factual_interfaces, factual_evidence], knowledge_config: {results_limit: 8, score_threshold: 0.45}}
   season_context_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   scenario_interpreter: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  event_priority_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  peak_window_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
-  macrocycle_architect: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
+  event_priority_specialist: {bundles: [factual_macrocycle], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  peak_window_specialist: {bundles: [factual_macrocycle], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  macrocycle_architect: {bundles: [factual_macrocycle], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   season_constraint_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   season_historical_context_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   season_kpi_guidance_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
@@ -106,7 +114,7 @@ agents:
   phase_guardrail_band_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   phase_execution_rules_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   phase_structure_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
-  phase_cadence_recovery_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
+  phase_cadence_recovery_specialist: {bundles: [factual_phase_recovery], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   phase_intensity_distribution_specialist: {bundles: [], knowledge_config: {results_limit: 6, score_threshold: 0.45}}
   phase_event_integration_specialist: {bundles: [], knowledge_config: {results_limit: 5, score_threshold: 0.5}}
   phase_preview_synthesizer: {bundles: [], knowledge_config: {results_limit: 4, score_threshold: 0.5}}

@@ -70,6 +70,11 @@ Deload and re-entry:
 - when fatigue remains high, re-entry should be lower rather than forcing the old build target
 - keep normal reload and baseline-anchored re-entry semantically distinct
 
+Disrupted-week re-entry:
+- when `W_prev_actual < BL_kJ × 0.85` (illness, travel, vacation, or other transient factor), classify the prior week as **disrupted**
+- use `BL_kJ` as the re-entry anchor — **not** `W_prev_actual`; a `RE_kJ = BL_kJ × 0.90–1.00` is valid re-entry even if it substantially exceeds `W_prev_actual`
+- do not set `RE_kJ` relative to `W_prev_actual` when that week was disrupted — that propagates a depressed incorrect anchor through the phase
+
 Reload vs re-entry rule:
 - `reload` means the athlete is returning near prior build load after only a limited reset
 - `re-entry` means the athlete is returning from a true deload or unresolved fatigue and must be baseline-anchored rather than prior-build anchored

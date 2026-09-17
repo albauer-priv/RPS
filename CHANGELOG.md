@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.14] - 2026-09-17
+
+### Changed
+
+- `skills/season/macrocycle-architecture/SKILL.md`: moved critical planning rules from references into the SKILL.md body (the only path guaranteed to reach the `macrocycle_architect` agent). Added to **Taper rules**: minimum effective taper window (2–3 weeks including event week for ultra/brevet events > 12 hours); RELOAD→TAPER adjacency as structural **warning**, not blocker. Added new **Progressive brevet / ultra sequencing** section: preparatory brevets as stress-plus-recovery milestones, 3–7 day recovery windows, no rebuild block between final B-event and A-event taper when spacing ≤ 3 weeks. Added **Ultra/brevet durability anchors** section: kJ/kg milestone arc (20–25 / 28–32 / 35–40 kJ/kg), fueling progression (40–60 / 60–75 / 70–90 g/h), HR late-suppression as autonomic fatigue marker.
+- `skills/phase/cadence-recovery/SKILL.md`: added **Disrupted-week re-entry** section — when `W_prev_actual < BL_kJ × 0.85`, classify the week as disrupted, use `BL_kJ` as anchor (not `W_prev_actual`), and do not set `RE_kJ` relative to the depressed actual.
+- `config/crewai/knowledge_sources.yaml`: added `factual_macrocycle` bundle (macrocycle architecture rules + Kinzlbauer template) assigned to `macrocycle_architect`, `peak_window_specialist`, `event_priority_specialist`, `season_planning` crew, and `season_review` crew. Added `factual_phase_recovery` bundle (cadence recovery rules + season load-governance progression guardrails) assigned to `phase_cadence_recovery_specialist`, `phase_planning` crew, and `phase_review` crew. This gives agents a RAG fallback path to the references that could not be reached before.
+
 ## [0.37.13] - 2026-09-17
 
 ### Changed

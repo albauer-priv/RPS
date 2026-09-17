@@ -40,6 +40,12 @@ Permitted ultra/brevet archetype:
 - do not introduce free `THRESHOLD` or `VO2MAX` blocks in the Season Plan artifact; if aerobic-ceiling work is relevant, express it as high-level phase intent only when the selected scenario permits the domain
 - once a scenario is selected, refer to it neutrally as the selected scenario or user-selected scenario; do not re-argue the choice with evaluative language
 
+Ultra/brevet durability anchors (apply when using Kinzlbauer-like template):
+- kJ/kg milestones: early economy phase 20–25 kJ/kg preload; mid economy/durability 28–32 kJ/kg; late durability 35–40 kJ/kg back-to-back; use athlete body mass to convert to absolute kJ targets
+- taper readiness: last major preload stimulus ≥ 4 weeks before A event; no new durability milestones inside the taper window
+- fueling progression (carbohydrate/hour on long rides): early season 40–60 g/h; economy/durability phases 60–75 g/h; specific durability phase 70–90 g/h; event weeks — trained protocols only, no new foods
+- HR late-suppression: a drop in HR response at constant power late in a long session is an autonomic fatigue marker, not improved efficiency; do not cue power increases; use as a readiness signal — if HR suppression onset moves earlier session-to-session, recovery is incomplete
+
 Seasonal availability context:
 - When `seasonal_context` is present in the injected context, read `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, and `outdoor_weekend_max_hours`.
 - For each phase, check whether its ISO-week range falls predominantly inside `indoor_dominant_months` or `outdoor_season_months` and annotate the phase with that character.
@@ -73,6 +79,14 @@ Taper rules:
 - `C` events get none
 - taper depth and duration scale with event duration, accumulated fatigue, and athlete resilience
 - a `B` event constraint must read as rehearsal, pacing/fueling validation, or minor load adjustment; it must not imply a full taper or independent peak
+- minimum effective taper window for ultra/brevet events (events > 12 hours): **2–3 weeks including the event week**; a single event-week taper is insufficient for events of this duration
+- the last cadence role of the phase immediately preceding a TAPER/A-event phase must not be `RELOAD`; flag `RELOAD → A-event phase` adjacency as a structural **warning** and recommend restructuring the preceding phase's final week to `MINI_RESET` or `DELOAD`; it is a **warning**, not a hard blocker, unless the taper phase itself is shorter than the minimum effective window
+
+Progressive brevet / ultra sequencing:
+- shorter preparatory brevets (e.g. 200 → 300 → 400 km) are stress-plus-recovery milestones, not independent peaks
+- each preparatory brevet deserves a brief recovery window (3–7 days easy) inside the existing structure — not a full re-entry or rebuild block
+- a B-priority brevet 2–3 weeks before the A-event peak: apply minor load reduction in the B-event week, then recovery only, then proceed directly to final taper
+- do not insert a new Build or reload block between the final B-event and the A-event taper when spacing is ≤ 3 weeks
 
 Hard rules:
 - keep peak decisions at season architecture level
