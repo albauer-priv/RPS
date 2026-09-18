@@ -3,7 +3,7 @@ name: ultra-endurance-methodology
 description: Scientific methodology for ultra-distance cycling and brevet planning — durability as the primary performance dimension, kJ-first load progression, ENDURANCE-domain dominance (below VT1), and Kinzlbauer metabolic conditioning sequence.
 metadata:
   author: rps
-  version: "1.1"
+  version: "1.2"
 ---
 Plan ultra-distance cycling and brevet events through the lens of durability, aerobic efficiency, and systematic fatigue exposure — not peak power.
 

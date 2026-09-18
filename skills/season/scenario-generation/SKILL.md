@@ -3,7 +3,7 @@ name: scenario-generation
 description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and advisory intensity narrative.
 metadata:
   author: rps
-  version: "4.5"
+  version: "4.6"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
@@ -43,7 +43,8 @@ Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `ph
   - example: `Highest structural risk. A disrupted week in the second or third week of a 3:1 block wastes the accumulated loading context of the entire block. Travel or illness late in a block turns planned fatigue into unmanaged fatigue.`
 
 - `key_differences` — MANDATORY TEMPLATE: `[This scenario's cadence/phase structure vs. the other two, as concrete facts]. [One sentence on what the domain permission means for session character]. [One sentence on which scenario to choose if you want more, and which if you want less].`
-  - example: `A: 2:1 / 3-week → 18 phases, ENDURANCE+TEMPO only. B: 2:1:1 / 4-week → 13 phases, adds THRESHOLD. C: 3:1 / 4-week → 13 phases, adds THRESHOLD+VO2MAX. A resets most often and asks for the least intensity precision; C loads longest and asks for the most execution consistency.`
+  - example (horizon < 20 w, no ceiling-first): `A: 2:1 / 3-week → 18 phases, ENDURANCE+TEMPO only. B: 2:1:1 / 4-week → 13 phases, adds THRESHOLD. C: 3:1 / 4-week → 13 phases, adds THRESHOLD+VO2MAX. A resets most often and asks for the least intensity precision; C loads longest and asks for the most execution consistency.`
+  - example (ceiling-first, horizon ≥ 20 w): `A: 2:1 / 3-week → 18 phases, ceiling-first Kinzlbauer sequence, conservative kJ / highest recovery margin. B: 2:1:1 / 4-week → 13 phases, ceiling-first, target kJ / balanced posture. C: 3:1 / 4-week → 13 phases, ceiling-first, upper kJ / more B2B fatigue exposure. All three follow vo2_base → vo2_build → vlamax_lowering → durability; A resets most often with least accumulated fatigue per block, C loads longest and exposes the most.`
 
 - `typical_week_feel` — MANDATORY TEMPLATE: `Shorter session days are [intensity character: e.g. steady endurance / endurance with one quality session in loading week 2 / deliberately hard on multiple days]. The primary long session is [long session character: e.g. purely aerobic, growing longer each phase / progressively event-specific in the second half / started with prior-day fatigue by design]. The athlete closes most loading weeks feeling [absorbed / carrying useful fatigue / with productive strain].`
   - fill in the slots based on the scenario's intensity narrative and `deload_cadence` — derive session character from the availability structure, not from assumed day names
@@ -176,7 +177,8 @@ Required A/B/C target profiles:
   - preferred example: `Choose when continuity priority and uncertain recovery dominate.`
   - `risk_flags` must say the scenario may `under-deliver` or be `too conservative` if the athlete can tolerate more load
   - preferred example: `May under-deliver if high load tolerance is available.`
-  - `ENDURANCE` is the core domain; `TEMPO` is optional and sparse only when the scenario still reads completion-first
+  - when `ceiling_first_durability` applies (horizon ≥ 20 weeks): `VO2MAX` is in `allowed_intensity_domains`; Scenario A's conservatism shows as lower kJ envelope, 2:1 / 3-week cadence, and highest recovery margin — NOT as VO2MAX exclusion; all three scenarios follow the same Kinzlbauer phase sequence
+  - when NOT ceiling_first (horizon < 20 weeks): `ENDURANCE` is the core domain; `TEMPO` is optional and sparse
 - **Scenario B = durability-forward target plan**
   - realistic target kJ-envelope
   - systematic long-ride progression
@@ -292,11 +294,13 @@ Pass 3 — Cross-scenario differentiation: would a reader know which scenario th
   - GOOD cost (Scenario C): "The 3:1 block commits three weeks of loading before any reset — one disrupted week near the end of a block costs more accumulated quality than in A or B."
 - `key_differences` must name concrete structural facts: cadence (e.g. 2:1 vs 2:1:1), phase length, domain breadth (e.g. "no THRESHOLD"), and what that means in practice.
   - BAD: "Compared with B and C, this scenario keeps week-to-week pressure more controlled and asks for less fatigue exposure."
-  - GOOD: "Scenario A uses 2:1 cadence with 3-week phases and excludes THRESHOLD and VO2MAX — a tighter reset rhythm and narrower domain ceiling than both B (2:1:1, THRESHOLD permitted) and C (3:1, THRESHOLD + VO2MAX). The shorter phase length means 18 phases vs 13 in B and C, with more frequent adaptation checkpoints but less sustained overload per block."
+  - GOOD (horizon < 20 w, no ceiling-first): "Scenario A uses 2:1 cadence with 3-week phases and excludes THRESHOLD and VO2MAX — a tighter reset rhythm and narrower domain ceiling than both B (2:1:1, THRESHOLD permitted) and C (3:1, THRESHOLD + VO2MAX). The shorter phase length means 18 phases vs 13 in B and C, with more frequent adaptation checkpoints but less sustained overload per block."
+  - GOOD (ceiling-first, horizon ≥ 20 w): "All three scenarios follow the same ceiling-first Kinzlbauer phase sequence (vo2_base → vo2_build → vlamax_lowering → durability). Scenario A uses 2:1 cadence with 3-week phases → conservative kJ envelope and highest recovery margin. B uses 2:1:1 / 4-week with target kJ and balanced posture. C uses 3:1 / 4-week with upper kJ and more B2B fatigue exposure. The scenarios differ in how much fatigue load is carried and how long each loading block runs — not in which phases or domains are used."
 - `typical_week_feel` must follow the MANDATORY TEMPLATE exactly: start with "Shorter session days are [character]", then "The primary long session is [character]", then end with the absorbed/fatigue clause. Generic mood words are not acceptable substitutes.
   - BAD: "Structured but manageable; the athlete should usually finish the week feeling contained rather than stretched."
   - BAD: "Purposeful and progressive; work is clearly present, but recovery remains visible and usable."
-  - GOOD (Scenario A / 2:1 / 3-week / ENDURANCE+TEMPO): "Shorter session days are steady endurance or tempo — no intervals, no threshold work in any loading week. The primary long session is purely aerobic, growing progressively longer each phase. The athlete closes most loading weeks feeling absorbed."
+  - GOOD (no ceiling-first, Scenario A / 2:1 / 3-week / ENDURANCE+TEMPO): "Shorter session days are steady endurance or tempo — no intervals, no threshold work in any loading week. The primary long session is purely aerobic, growing progressively longer each phase. The athlete closes most loading weeks feeling absorbed."
+  - GOOD (ceiling-first, Scenario A / 2:1 / 3-week): "Shorter session days are steady endurance in most loading weeks; the VO2 Foundation Base phase adds short-interval VO2 work on one shorter day per loading week. The primary long session is purely aerobic, growing longer each phase. The athlete closes most loading weeks feeling absorbed."
   - GOOD (Scenario B / 2:1:1 / 4-week / adds THRESHOLD): "Shorter session days are mostly endurance; loading week 2 adds a threshold or sweet-spot session on one of them. The primary long session grows progressively and includes event-pace work in the second half. The athlete closes most loading weeks carrying useful fatigue but the quality session remains consistently executable."
   - GOOD (Scenario C / 3:1 / 4-week / THRESHOLD): "Shorter session days are deliberately quality-focused in all three loading weeks — threshold or sweet-spot work appears on at least one shorter session day every week. The primary long session is started with prior-day fatigue already in the legs. The athlete closes most loading weeks carrying productive strain; the deload week is the only recovery window."
 - `constraint_summary` must NOT be identical across scenarios. It must describe how this scenario's specific cadence, phase structure, and domain permission interact with the athlete's available time budget — not just list the static availability table.

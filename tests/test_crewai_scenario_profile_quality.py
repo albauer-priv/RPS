@@ -737,7 +737,66 @@ def test_season_scenarios_profile_quality_rejects_ceiling_first_without_full_rat
     )
 
     assert failed is False
-    assert message.startswith("Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway.")
+    assert message.startswith("ceiling_first_durability requires explicit rationale in at least one scenario's")
+
+
+def test_season_scenarios_profile_quality_rejects_partial_ceiling_first_when_horizon_sufficient() -> None:
+    """When horizon >= 20 weeks, ALL scenarios must use ceiling_first_durability."""
+    failed, message = season_scenarios_profile_quality(
+        {
+            "meta": {"artifact_type": "SEASON_SCENARIOS", "schema_id": "SeasonScenariosInterface"},
+            "data": {
+                "planning_horizon_weeks": 24,
+                "notes": [
+                    "allowed_domains define eligibility for later assignment only; they do not authorize every domain in every phase.",
+                    "objective mismatch remains unresolved upstream input context and is not resolved in the scenario layer.",
+                ],
+                "scenarios": [
+                    _season_scenario_item(
+                        scenario_id="A",
+                        load_philosophy="Low envelope.",
+                        risk_profile="Low risk.",
+                        key_differences="Conservative.",
+                        cadence="2:1",
+                        allowed_domains=["ENDURANCE"],
+                        decision_notes=["Use 2:1 cadence to protect recovery margin."],
+                        best_suited_if="Choose when uncertain recovery makes continuity priority essential.",
+                        risk_flags=["May under-deliver if high load tolerance is available."],
+                    ),
+                    _season_scenario_item(
+                        scenario_id="B",
+                        load_philosophy="Balanced envelope.",
+                        risk_profile="Balanced risk.",
+                        key_differences="Default.",
+                        cadence="2:1:1",
+                        allowed_domains=["ENDURANCE", "TEMPO"],
+                        decision_notes=["Use 2:1:1 cadence for balanced durability progression."],
+                        best_suited_if="Choose when stable recovery supports systematic progression.",
+                        risk_flags=["Less forgiving than A if continuity break appears."],
+                    ),
+                    _season_scenario_item(
+                        scenario_id="C",
+                        load_philosophy="Higher envelope with event simulation.",
+                        risk_profile="Higher fatigue exposure.",
+                        key_differences="Specificity under fatigue.",
+                        cadence="3:1",
+                        allowed_domains=["ENDURANCE", "TEMPO", "VO2MAX"],
+                        decision_notes=["Use 3:1 cadence for early ceiling support via VO2 foundation phase."],
+                        best_suited_if="Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.",
+                        risk_flags=["Too aggressive if travel disruption appears."],
+                        season_archetype="ceiling_first_durability",
+                        season_archetype_rationale=["Early ceiling support required; sufficient runway confirmed; later durability preserved; recovery tolerance supports it."],
+                        constraint_summary=["Event simulation and fatigue exposure."],
+                    ),
+                ],
+            },
+        }
+    )
+
+    assert failed is False
+    assert "A" in message and "B" in message
+    assert "ceiling_first_durability" in message
+
 
 def test_season_scenarios_profile_quality_rejects_missing_selection_gate_semantics() -> None:
     failed, message = season_scenarios_profile_quality(

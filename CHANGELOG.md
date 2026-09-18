@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.42] - 2026-09-18
+
+### Fixed
+
+- `skills/season/macrocycle-architecture/SKILL.md` (v5.4 → v5.5): removed spurious `AND VO2MAX in allowed_intensity_domains` condition from Kinzlbauer sequence activation. `ceiling_first_durability` archetype alone is the trigger — no domain check needed since ceiling-first guarantees the VO2 phase sequence.
+- `skills/season/scenario-generation/SKILL.md` (v4.5 → v4.6): Scenario A profile updated — when `ceiling_first_durability` applies, VO2MAX is in `allowed_intensity_domains`; conservatism shows as lower kJ/cadence/recovery margin, not VO2MAX exclusion. `key_differences` and `typical_week_feel` examples updated to include ceiling-first variants alongside non-ceiling-first (horizon < 20 w) variants.
+- `skills/shared/ultra-endurance-methodology/SKILL.md`: version bumped to v1.2 (content updated in v0.37.35 but version number was missed).
+- `skills/phase/guardrails-authoring/SKILL.md` (v9.0 → v9.1): added `vo2_base` phase-intent entry (ceiling-raising Base, VO2MAX permitted, SWEET_SPOT/THRESHOLD forbidden).
+- `skills/phase/structure-authoring/SKILL.md` (v4.0 → v4.1): added `vo2_base` structure rule (protect ENDURANCE base, short-interval VO2 work, no SS/threshold drift).
+- `tests/test_crewai_scenario_profile_quality.py`: updated stale assertion for `test_..._rejects_ceiling_first_without_full_rationale` to match current rejection message; added `test_..._rejects_partial_ceiling_first_when_horizon_sufficient` covering the ALL-scenarios mandate for horizon ≥ 20 weeks.
+
 ## [0.37.41] - 2026-09-18
 
 ### Changed

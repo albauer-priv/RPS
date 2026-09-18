@@ -3,7 +3,7 @@ name: guardrails-authoring
 description: Author exact-range phase guardrails as weekly bands plus execution boundaries.
 metadata:
   author: rps
-  version: "9.0"
+  version: "9.1"
 ---
 Author guardrails for one exact phase range.
 
@@ -89,7 +89,8 @@ Execution boundaries:
 - distinguish build, deload, mini-reset, reload, and re-entry weeks where the policy requires different behavior
 - if inherited governance suppresses a defining domain, do not author a phase-execution frame that still behaves like that intent
 - make `allowed_forbidden_semantics` match canonical `phase_type` / `phase_intent` / `build_subtype`
-  - `vo2_build`: optional sparse fresh `VO2MAX` only when scenario authority permits it
+  - `vo2_base`: ceiling-raising Base phase — short VO2 intervals (30/15 s → 40/20 s) on protected `ENDURANCE` base; `VO2MAX` permitted, `SWEET_SPOT`/`THRESHOLD` forbidden
+  - `vo2_build`: concentrated VO2 emphasis — longer intervals; `VO2MAX` primary; suppressed from `vlamax_lowering` onward
   - `threshold_build`: threshold-oriented, not a new VO2 block
   - `sst_build`: extensive moderate work with density control
   - `durability_build`: fatigue-resistant specificity, duration/kJ first

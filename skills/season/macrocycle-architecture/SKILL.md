@@ -3,7 +3,7 @@ name: macrocycle-architecture
 description: Reverse-plan season macrocycles, peak windows, and taper structure from event anchors.
 metadata:
   author: rps
-  version: "5.4"
+  version: "5.5"
 ---
 Build macrocycle structure backward from priority events.
 
@@ -56,7 +56,7 @@ Seasonal availability context:
 - If `seasonal_context` is absent, do not invent seasonal annotations — proceed with the static availability table only.
 
 Ceiling-first archetype activation (mandatory when scenario uses it):
-- when the selected scenario has `season_archetype: "ceiling_first_durability"` and `VO2MAX` in its `allowed_intensity_domains`, follow the Kinzlbauer sequence — this ordering is mandatory, not optional:
+- when the selected scenario has `season_archetype: "ceiling_first_durability"`, follow the Kinzlbauer sequence — this ordering is mandatory, not optional:
   1. **GPP** (Base phase, `aerobic_base` intent): structural robustness, aerobic continuity, no `VO2MAX`; 4–6 weeks
   2. **VO2 Foundation** (Base phase, `vo2_base` intent): ceiling-raising within the Base cycle — short VO2 intervals (30/15 s → 40/20 s) on a protected `ENDURANCE` base; `VO2MAX` permitted, `SWEET_SPOT`/`THRESHOLD` forbidden
   3. **VO2-focused peak** (Build phase, `vo2_build` intent): concentrated VO2 emphasis — longer intervals (40/20 s → 3–5 min efforts); `VO2MAX` primary; when planning runway allows this as a separate Build phase after the VO2 Foundation Base

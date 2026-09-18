@@ -3,7 +3,7 @@ name: structure-authoring
 description: Define week roles and structural skeleton for the exact phase range.
 metadata:
   author: rps
-  version: "4.0"
+  version: "4.1"
 ---
 Author the phase structure after guardrails are known.
 
@@ -82,6 +82,7 @@ Structural content rules:
 - preserve conservative Build-entry logic when shortened/base/re-entry context precedes the phase
 - `specificity_build` must push structure toward pacing/fueling/terrain/logistics realism
 - `durability_build` must emphasize B2B, preload, hard-late, and long-ride protection rather than rehearsal semantics
+- `vo2_base` must protect the `ENDURANCE` base while introducing short-interval VO2 work (30/15 s → 40/20 s); `SWEET_SPOT`/`THRESHOLD` forbidden; treat as ceiling-raising Base, not Build
 - `vo2_build` must keep VO2 weeks fresh and bounded rather than broad mixed-density
 - `threshold_build` must center sustained-power structure
 - `sst_build` must keep moderate density bounded
