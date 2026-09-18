@@ -42,7 +42,7 @@ Canonical phase semantics:
   - `TRANSITION`, `PREPARATION`, `BASE`, `BUILD`, `PEAK`, `TAPER`, `RACE`
 - Use canonical `phase_intent` values only:
   - `transition_recovery`, `preparation_re_entry`, `shortened_re_entry`
-  - `general_base`, `aerobic_base`, `strength_endurance_base`, `sweet_spot_base`
+  - `general_base`, `aerobic_base`, `strength_endurance_base`, `sweet_spot_base`, `vo2_base`
   - `vo2_build`, `threshold_build`, `sst_build`, `durability_build`, `specificity_build`, `vlamax_lowering`
   - `peak_sharpening`, `taper_freshening`, `race_execution`
 - For `BUILD`, `build_subtype` is required and must equal `phase_intent`.
@@ -57,6 +57,7 @@ Canonical phase semantics:
 | `BASE` | `aerobic_base` | `null` | prioritize low-intensity aerobic development, routine, and low-risk load tolerance | `ENDURANCE` | very light `TEMPO` only if clearly justified | `THRESHOLD`, `VO2MAX`, frequent `SWEET_SPOT` | `NONE`, `K3` | Early groundwork and low density. |
 | `BASE` | `strength_endurance_base` | `null` | develop torque, musculoskeletal robustness, and force endurance under controlled load | `ENDURANCE`, `TEMPO` | limited `SWEET_SPOT` only if structurally coherent | `THRESHOLD`, repeated `VO2MAX` | `NONE`, `K3` | Torque/structure-oriented base. |
 | `BASE` | `sweet_spot_base` | `null` | raise sustainable sub-threshold capacity while preserving base continuity | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | controlled SST only | frequent `THRESHOLD`, much `VO2MAX` | `NONE`, `K3` | Sustainable-power base. |
+| `BASE` | `vo2_base` | `null` | raise VO2max ceiling as the primary Base objective — Kinzlbauer GPP → VO2 Foundation transition; VO2MAX intervals on a protected ENDURANCE base | `ENDURANCE`, `VO2MAX` | sparse `TEMPO` support only | `SWEET_SPOT`, `THRESHOLD` | `NONE`, `K3` | Ceiling-raising Base. ENDURANCE base protected; no threshold or sweet spot. |
 | `BUILD` | `vo2_build` | `vo2_build` | raise aerobic ceiling as the primary build objective | `ENDURANCE`, `VO2MAX` | sparse `TEMPO`/`SWEET_SPOT` support only | chronic threshold accumulation | `NONE` | Ceiling-oriented build. |
 | `BUILD` | `threshold_build` | `threshold_build` | improve sustained threshold power and clearance under repeatable structure | `ENDURANCE`, `TEMPO`, `THRESHOLD` | `SWEET_SPOT` support | broad VO2 escalation | `NONE`, `K3` | Sustained-power build. |
 | `BUILD` | `sst_build` | `sst_build` | expand extensive sub-threshold capacity without tipping into broad high-intensity load | `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | targeted `THRESHOLD` only if justified | random HI density | `NONE`, `K3` | Extensive sub-threshold build. |

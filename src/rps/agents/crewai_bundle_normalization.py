@@ -346,6 +346,18 @@ def _season_phase_narrative_replacements(
                 ],
             }
         )
+    elif intent == "vo2_base":
+        replacements.update(
+            {
+                "narrative": f"Base work raises the aerobic ceiling through {focus_phrase} on a protected endurance foundation.",
+                "metabolic_focus": f"Aerobic ceiling support through {focus_phrase}.",
+                "typical_focus": "Ceiling-raising Base work with VO2MAX intervals on a protected ENDURANCE base.",
+                "intensity_distribution": f"{focus_phrase.capitalize()} with recovery-bounded ceiling support; no threshold or sweet spot.",
+                "expected_adaptations": [
+                    f"Improved aerobic ceiling and VO2MAX repeatability through {focus_phrase}."
+                ],
+            }
+        )
     elif intent == "vo2_build":
         replacements.update(
             {

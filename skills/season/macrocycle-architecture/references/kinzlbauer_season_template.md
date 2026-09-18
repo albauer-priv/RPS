@@ -95,11 +95,25 @@ a recognized fatigue / autonomic marker, not a sign of improved efficiency:
 - Added low-intensity volume is conditional on fatigue stability, recovery protection, and fueling stability.
 - Durability is explicit through long-duration exposure, late-ride quality, and repeatability.
 
-## Artefact mapping
+## Schema cycle and phase_intent mapping
 
-- Use schema-valid cycles only: `Base`, `Build`, `Peak`, `Transition`.
-- Express the archetype through phase names, phase intent, allowed/suppressed domains, load-governance rationale, and citations.
-- Do not emit `Specificity` or `Taper` as cycle values.
+| Kinzlbauer sub-phase | Schema cycle | phase_intent | build_subtype | Notes |
+|---|---|---|---|---|
+| General preparation (GPP) | `Base` | `aerobic_base` | — | ENDURANCE dominant; no VO2MAX |
+| VO2 foundation | `Base` | `vo2_base` | — | Ceiling-raising Base; 30/15 s → 40/20 s; Z2 base protected |
+| VO2-focused phase | `Build` | `vo2_build` | `vo2_build` | Concentrated VO2 peak; longer intervals |
+| Transition coupling | `Build` | `vlamax_lowering` | `vlamax_lowering` | VO2 maintained; economy emphasis introduced |
+| Economy/durability phase | `Build` | `vlamax_lowering` | `vlamax_lowering` | Volume primary; sub-threshold + low-cadence dominant |
+| Specific durability phase | `Build` | `durability_build` | `durability_build` | kJ/kg preload; fatigued-state quality checks |
+| Taper | `Peak` | `taper_freshening` | — | Volume −41–60%; intensity maintained |
+
+**Schema rules:**
+- `VO2MAX` is forbidden in all default Base `phase_intent` values (e.g. `aerobic_base`, `general_base`)
+  but is explicitly allowed in `vo2_base` — the Kinzlbauer VO2 Foundation sub-phase uses `Base / vo2_base`
+- `Specificity` and `Taper` are not valid cycle values in RPS artifacts
+- "Transition coupling" is not a schema `Transition` — it maps to `Build / vlamax_lowering`
+- The repeatable cycle option (repeat economy/durability block) = additional `Build / vlamax_lowering`
+  or `Build / durability_build` cycle when season horizon permits
 
 ## Scientific backing
 

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.35] - 2026-09-18
+
+### Added
+
+- `vo2_base` phase intent (new canonical BASE intent): enables VO2MAX-allowed Base phases per the Kinzlbauer sequence — the VO2 Foundation sub-phase now maps to `Base / vo2_base` instead of `Build / vo2_build`. Profile: `phase_type=BASE`, `max_allowed_intensity_domains=(RECOVERY, ENDURANCE, TEMPO, VO2MAX)`, `forbidden_intensity_domains=(SWEET_SPOT, THRESHOLD)`, `methodology_family=aerobic_ceiling_base`, `threshold_role=forbidden`. Added to: `CANONICAL_PHASE_INTENTS`, `PHASE_TYPE_INTENT_MAP["BASE"]`, `PHASE_INTENT_LABELS`, `PHASE_SEMANTIC_PROFILES` in `phase_intents.py`; `phase_intent` enums in all 4 main schemas and all 4 bundled schemas; `crewai_bundle_normalization.py` (own ceiling-raising narrative branch); `skills/phase/intensity-distribution/SKILL.md` (new row).
+
+### Fixed
+
+- `skills/shared/ultra-endurance-methodology/SKILL.md`: corrected schema mapping table — Kinzlbauer VO2 Foundation sub-phase maps to `Base / vo2_base` (not `Build / vo2_build`); updated phase content rules to describe GPP as `aerobic_base` and VO2 Foundation as `vo2_base`, both within the `Base` schema cycle; removed incorrect statement "all Base phase_intent values place VO2MAX in default avoid" (now only applies to default Base intents, not `vo2_base`).
+- `skills/season/macrocycle-architecture/references/kinzlbauer_season_template.md`: updated schema mapping table — VO2 Foundation row changed from `Build / vo2_build` to `Base / vo2_base`; schema rules note updated to reflect `vo2_base` exception.
+
 ## [0.37.34] - 2026-09-18
 
 ### Fixed

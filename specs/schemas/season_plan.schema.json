@@ -614,6 +614,7 @@
             "aerobic_base",
             "strength_endurance_base",
             "sweet_spot_base",
+            "vo2_base",
             "vo2_build",
             "threshold_build",
             "sst_build",
