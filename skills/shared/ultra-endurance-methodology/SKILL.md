@@ -1,9 +1,9 @@
 ---
 name: ultra-endurance-methodology
-description: Scientific methodology for ultra-distance cycling and brevet planning — durability as the primary performance dimension, kJ-first load progression, Z1/Z2 dominance, and metabolic conditioning sequence.
+description: Scientific methodology for ultra-distance cycling and brevet planning — durability as the primary performance dimension, kJ-first load progression, ENDURANCE-domain dominance (below VT1), and Kinzlbauer metabolic conditioning sequence.
 metadata:
   author: rps
-  version: "1.0"
+  version: "1.1"
 ---
 Plan ultra-distance cycling and brevet events through the lens of durability, aerobic efficiency, and systematic fatigue exposure — not peak power.
 
@@ -35,6 +35,34 @@ What matters less for ultra/brevet (compared to road/crit racing):
 - Short-duration (1–5 min) power-to-weight ratio
 - Training Stress Score (TSS) or CTL/ATL metrics — these do not capture durability
 
+## Zone model and RPS domain mapping
+
+**Important**: research literature (Seiler, Spragg/Leo) uses a **3-zone physiological model**
+anchored at VT1 (first ventilatory/lactate threshold) and VT2 (second threshold). The RPS
+system uses an **8-zone intervals.icu / Coggan-derived model** (Z1, Z2, Z3, SS, Z4, Z5, Z6, Z7),
+which is NOT the same as the research 3-zone model. The mapping is:
+
+| Research (3-zone) | Physiological boundary | intervals.icu zones | RPS domain | Approx. % FTP |
+|---|---|---|---|---|
+| Below VT1 (research "low") | Below first lactate/ventilatory threshold | Z1 + Z2 | `RECOVERY` + `ENDURANCE` | 0–75% FTP |
+| VT1–VT2 (research "moderate") | Between first and second threshold | Z3 + SS + Z4 | `TEMPO` + `SWEET_SPOT` + `THRESHOLD` | 75–105% FTP |
+| Above VT2 / CP (research "high") | Above second threshold / critical power | Z5 + Z6 + Z7 | `VO2MAX` + anaerobic/neuro | > 105% FTP |
+
+**Critical clarification**:
+- When research says "70–80% of training time below VT1" it means Z1 + Z2 combined — not just Z1
+  (Active Recovery). The primary aerobic base zone is **Z2 (Endurance, 55–75% FTP)**.
+- The intervals.icu Z2 = "Aerobic base / fat oxidation" is the main durability-building zone.
+- Z1 (Active Recovery, < 55% FTP) alone is not a productive training stimulus — it is used only
+  for recovery rides and warmup.
+
+**When this skill says "below VT1" it means `RECOVERY + ENDURANCE` combined** — but in practice
+the productive training time is in `ENDURANCE` (Z2). `RECOVERY` (Z1) is circulation only.
+
+RPS agents must use intensity domain names (`ENDURANCE`, `TEMPO`, `THRESHOLD`, `VO2MAX`) in
+planning output, never zone numbers. Zone numbers Z1–Z7 + SS are used in workout encoding
+only, not in planning-level decisions. The 3-zone research boundaries are used here as
+evidence-level framing to explain WHY the `ENDURANCE` domain is dominant.
+
 ## The kJ-differentiation principle
 
 **Not all kJ are equal.** Accumulated work above the critical power (CP) causes a
@@ -44,32 +72,37 @@ Evidence (`ult_core_002`, Mateo-March, Leo et al. 2024): in professional male cy
 accumulated work **above CP** impairs short-duration performance significantly more than
 equivalent kJ below CP. The implication for planning:
 
-- The majority of weekly kJ must be accumulated **below the first lactate threshold (VT1)** —
-  this is Z1/Z2 in a 3-zone or 5-zone model
-- Every unnecessary session above CP reduces the durability-building value of the training week
-- kJ at Z1/Z2 accumulate aerobic adaptations without the recovery debt that Z4/Z5 sessions carry
+- The majority of weekly kJ must be accumulated **below VT1** (= `RECOVERY + ENDURANCE`
+  domains in RPS terminology)
+- Every unnecessary session above CP (= `THRESHOLD` / `VO2MAX` domains) reduces the
+  durability-building value of the training week
+- kJ in `ENDURANCE` accumulate aerobic adaptations without the recovery debt that
+  `THRESHOLD` / `VO2MAX` sessions carry
 
 This is the scientific foundation for the kJ-first / volume-first approach used throughout RPS.
 
 ## Training distribution for ultra/brevet
 
 Target distribution for athletes building toward ultra/brevet events (evidence: `ult_core_001`,
-`dur_core_010`, `dur_core_011`):
+`dur_core_010`, `dur_core_011`). Research zones are from the 3-zone model; see mapping above.
 
-| Zone | % of training time | Purpose |
-|---|---|---|
-| Z1 (< VT1, < LT1) | 70–80% | Primary durability stimulus; fat oxidation adaptation |
-| Z2 (VT1–VT2, LT1–LT2) | 10–15% | Tempo capacity; not a primary adaptation driver for ultra |
-| Z3–Z4 (> VT2, > CP) | 5–15% | Bounded purpose only; raises VO2max ceiling when needed |
+| Research boundary | intervals.icu zones | RPS domain | % of training time | Purpose |
+|---|---|---|---|---|
+| Below VT1 | Z1 + Z2 | `RECOVERY` + `ENDURANCE` | 70–80% | Primary durability stimulus; fat oxidation; aerobic base |
+| VT1–VT2 | Z3 + SS + Z4 | `TEMPO` + `SWEET_SPOT` + `THRESHOLD` | 10–15% | Submaximal economy; not a primary driver for ultra |
+| Above VT2 / CP | Z5 + Z6 + Z7 | `VO2MAX` | 5–15% | Bounded purpose only; raises VO2max ceiling when needed |
 
-**Polarized distribution** (Z1 + Z3/Z4, minimal Z2) associates with durability improvements
-in professional cyclists (`ult_core_001`). For ultra/brevet, polarized is preferred over
-threshold-heavy distribution — threshold accumulation without Z1 foundation risks high CarbOx
-at race pace.
+In practice: the productive training time below VT1 is predominantly **`ENDURANCE` (Z2)**. Active
+recovery rides (Z1) are not counted toward durability stimulus.
 
-**The key rule**: training time below VT1 is the single best proxy for durability development.
-Weeks where Z1 time falls below 60% should be flagged — not as a strict blocker, but as a
-durability-building risk.
+**Polarized distribution** (`ENDURANCE` dominant + bounded `VO2MAX`, minimal `TEMPO`/`SWEET_SPOT`/`THRESHOLD`)
+associates with durability improvements in professional cyclists (`ult_core_001`). For ultra/brevet,
+polarized is preferred over threshold-heavy distribution — `THRESHOLD`/`SWEET_SPOT` accumulation
+without `ENDURANCE` foundation risks high CarbOx at race pace.
+
+**The key rule**: training time in `ENDURANCE` (Z2) is the single best proxy for durability
+development. Weeks where `ENDURANCE` + `RECOVERY` combined time falls below 60% of total
+training time should be flagged — not as a strict blocker, but as a durability-building risk.
 
 ## Phase sequencing for ultra/brevet
 
@@ -79,18 +112,18 @@ The canonical ultra/brevet season sequence follows the Kinzlbauer archetype (see
 **VO2max ceiling first → VLamax/economy → specific durability**
 
 This ordering is intentional: a higher VO2max makes every subsequent training stimulus more
-productive (the same Z1 pace sits at a lower %VO2max → stronger fat-oxidation signal), and
-high-intensity tolerance built in the ceiling phase reduces the VLamax load of later aerobic work.
+productive (the same `ENDURANCE` pace sits at a lower %VO2max → stronger fat-oxidation signal),
+and high-intensity tolerance built in the ceiling phase reduces the VLamax load of later aerobic work.
 
 ### Metabolic conditioning sequence (across seasons / multi-phase macro)
 
-1. **Raise the aerobic ceiling** (GPP → VO2 foundation → VO2-focused phase): bounded Z3/Z4
-   blocks → VO2max ↑ → same absolute event pace = lower %VO2max → better fat oxidation signal
-   for subsequent phases. Short-interval protocols (30/15 s → 40/20 s → longer threshold)
-   progress within interval family before escalating.
-2. **Lower VLamax / build economy** (economy/durability phase): shift to high Z1/Z2 volume as
-   primary overload axis; sub-threshold and low-cadence work increase; carbohydrate oxidation at
-   submaximal intensity falls; VT1 power rises.
+1. **Raise the aerobic ceiling** (GPP → VO2 foundation → VO2-focused phase): bounded
+   `THRESHOLD` / `VO2MAX` blocks → VO2max ↑ → same absolute event pace = lower %VO2max →
+   better fat oxidation signal for subsequent phases. Short-interval protocols (30/15 s →
+   40/20 s → longer threshold) progress within interval family before escalating.
+2. **Lower VLamax / build economy** (economy/durability phase): shift to high `ENDURANCE`
+   volume as primary overload axis; sub-threshold (`TEMPO`, `SWEET_SPOT`) and low-cadence work
+   increase; carbohydrate oxidation at submaximal intensity falls; VT1 power rises.
 3. **Train specific durability** (specific durability phase): event-specific kJ/kg preload
    exposure under accumulated fatigue; standardized fatigued-state quality checks (normal
    performance after ≥ 30 kJ/kg preload) become primary quality metrics.
@@ -115,13 +148,14 @@ Only `Base`, `Build`, `Peak`, `Transition` are valid schema cycle values.
 
 **Build phase — VO2 ceiling segment**
 - Primary goal: VO2max ceiling tolerance and repeatability
-- Load character: bounded Z3/Z4; short-interval protocols progress within family before escalating;
-  Z1/Z2 remains protected — ceiling work does not replace base volume
+- Load character: bounded `THRESHOLD` / `VO2MAX`; short-interval protocols progress within
+  family before escalating; `ENDURANCE` volume remains protected — ceiling work does not
+  replace base volume
 
 **Build phase — economy/durability segment**
 - Primary goal: VLamax lowering; metabolic efficiency at ultra pace; demonstrated durability
-- Load character: volume becomes primary overload axis; Z3+ bounded; introduce B2B long rides,
-  preload + hard-later sessions
+- Load character: `ENDURANCE` volume becomes primary overload axis; `THRESHOLD`/`VO2MAX`
+  bounded; introduce B2B long rides, preload + hard-later sessions
 - kJ/kg milestones (indicative): 20–25 kJ/kg early → 28–32 kJ/kg mid → 35–40 kJ/kg late
 - Hard-late sessions: planned effort in the final hours of a long ride — trains the durability
   adaptation directly (`ult_core_002`, `dur_core_003`)

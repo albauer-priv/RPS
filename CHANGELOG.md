@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.33] - 2026-09-18
+
+### Fixed
+
+- `skills/shared/ultra-endurance-methodology/SKILL.md` (v1.0 → v1.1): corrected zone model terminology throughout — the RPS system uses an **8-zone intervals.icu / Coggan-derived model** (Z1 Active Recovery, Z2 Endurance, Z3 Tempo, SS Sweet Spot, Z4 Threshold, Z5 VO2max, Z6 Anaerobic, Z7 Neuromuscular), not a 5-zone model. Added explicit zone model and RPS domain mapping table showing research 3-zone (below VT1 / VT1–VT2 / above VT2) → intervals.icu zones → RPS intensity domains. Corrected all Z1/Z2/Z3/Z4 shorthand to use RPS domain names (`ENDURANCE`, `TEMPO`, `THRESHOLD`, `VO2MAX`) with explicit physiological boundaries. Clarified that research "below VT1" = Z1 + Z2 combined = `RECOVERY + ENDURANCE`, and the productive training zone is Z2 `ENDURANCE` (55–75% FTP), not Z1 Active Recovery.
+- `skills/shared/ultra-endurance-methodology/references/fat_adaptation_and_substrate_oxidation.md`: corrected zone references — replaced vague "Z5/Z6" with explicit intervals.icu zone names (Z5 VO2max 105–120% FTP, Z6 Anaerobic 120–150%, Z7 Neuromuscular) and corresponding RPS domain names.
+- `skills/shared/ultra-endurance-methodology/references/ultra_cycling_evidence.md`: replaced "Z3/Z4" with correct RPS domain terms (`VO2MAX` / Z5-Z6).
+- `skills/season/macrocycle-architecture/references/kinzlbauer_season_template.md`: added `dur_core_*` and `ult_core_*` source references at the top — template previously had no direct evidence citations.
+
 ## [0.37.32] - 2026-09-18
 
 ### Added

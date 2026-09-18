@@ -1,6 +1,8 @@
 # Kinzlbauer-Like Ultra/Brevet Season Template
 
 Source: `DurabilityFirstPrinciples`, Section 3.4.
+Scientific backing: `skills/shared/ultra-endurance-methodology/` — verified evidence citations
+(`ult_core_001` Spragg/Leo 2023, `ult_core_002` Mateo-March/Leo 2024, `dur_core_004` Spragg/Leo/Swart 2023).
 
 Status: permitted season-level archetype.
 

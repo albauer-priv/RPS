@@ -59,7 +59,8 @@ volume-first approach throughout all phases.
 - Durable profile is trainable — not fixed at initial fitness level
 
 **Does not justify:**
-- Eliminating all Z3/Z4 work — bounded high-intensity has a role for VO2max ceiling and neuromuscular maintenance
+- Eliminating all high-intensity work — bounded `VO2MAX` / Z5-Z6 has a role for VO2max ceiling
+  and neuromuscular maintenance; the Kinzlbauer sequence explicitly includes a VO2max ceiling phase
 - Specific kJ targets per training day or per week — those are in `load-governance`
 - TSS/CTL/ATL as primary planning currency — these metrics do not capture durability
 - Replacing periodization structure from `periodization-methodology`

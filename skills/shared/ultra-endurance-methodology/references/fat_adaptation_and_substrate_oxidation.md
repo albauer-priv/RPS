@@ -66,11 +66,16 @@ The practical effect: the same absolute watts (ultra event pace) requires less c
 
 ## What raises VLamax (to avoid in Base phase)
 
-VLamax is raised by repeated high-glycolytic loading:
+VLamax is raised by repeated high-glycolytic loading (using intervals.icu zone notation):
 
-- Short-duration high-intensity intervals (Z5/Z6, sprint work, <2-min efforts)
-- High-cadence (high-power) sprint bursts
-- Repeated FTP efforts without Z1/Z2 base
+- Short-duration high-intensity intervals (Z5 VO2max 105–120% FTP, Z6 Anaerobic 120–150% FTP,
+  Z7 Neuromuscular sprints) — any work that repeatedly maxes glycolytic flux
+- High-power sprint bursts
+- Repeated threshold/FTP efforts (Z4, 90–105% FTP) without sufficient Z2 Endurance base to
+  buffer the glycolytic demand
+
+In RPS domain terms: `VO2MAX` intervals and repeated `THRESHOLD` density without `ENDURANCE`
+foundation both raise VLamax.
 
 For ultra athletes in Base phase: Z3/Z4/Z5 work raises VLamax and competes against the
 fat-adaptation signal. This is why Z3+ is strictly bounded in Base phase of `SKILL.md`.
