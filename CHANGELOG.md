@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.38] - 2026-09-18
+
+### Added
+
+- `availability.schema.json` (bundled + bundled_output): added `seasonal_context` object to both the top-level definitions and the `availability_data` weekly entry — captures `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, `outdoor_weekend_max_hours`, and `notes`.
+
 ## [0.37.37] - 2026-09-18
 
 ### Fixed
