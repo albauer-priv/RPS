@@ -1,5 +1,5 @@
 Version: 1.0
-Status: Draft
+Status: Done
 Last-Updated: 2026-05-19
 Owner: Core Runtime
 

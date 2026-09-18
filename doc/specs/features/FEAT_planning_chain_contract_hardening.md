@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Draft
+Status: Done
 Last-Updated: 2026-05-19
 Owner: Planning
 ---
 # FEAT: Planning Chain Contract Hardening
 
 * **ID:** FEAT_planning_chain_contract_hardening
-* **Status:** Draft
+* **Status:** Done
 * **Owner/Area:** Planning
 * **Last-Updated:** 2026-05-19
 * **Related:** ADR-028, ADR-046
@@ -38,15 +38,15 @@ Owner: Planning
 
 **Goals**
 
-* [ ] Make deterministic contracts the structural authority for Scenario → Season → Phase → Week → Workouts.
-* [ ] Validate writer outputs against deterministic context and approved internal blueprints.
-* [ ] Treat fresh snapshot memory as code-owned derived context and stale snapshots as blockers when used authoritatively.
-* [ ] Keep LLMs responsible for narrative and controlled wording, not structural decisions.
+* [x] Make deterministic contracts the structural authority for Scenario → Season → Phase → Week → Workouts.
+* [x] Validate writer outputs against deterministic context and approved internal blueprints.
+* [x] Treat fresh snapshot memory as code-owned derived context and stale snapshots as blockers when used authoritatively.
+* [x] Keep LLMs responsible for narrative and controlled wording, not structural decisions.
 
 **Non-Goals**
 
-* [ ] Persist new schema fields in Season/Phase/Week artifacts.
-* [ ] Replace CrewAI memory with a new memory backend.
+* [x] Persist new schema fields in Season/Phase/Week artifacts.
+* [x] Replace CrewAI memory with a new memory backend.
 
 ---
 
@@ -162,11 +162,11 @@ Owner: Planning
 
 ## 7) Acceptance Criteria
 
-* [ ] Season Plan is rejected when phases do not match selected scenario slots.
-* [ ] Phase artifacts are rejected when week roles or S5 bands do not match phase execution context.
-* [ ] Week Plan is rejected when agenda, load band, availability, quality cap, or workout syntax violates active week context.
-* [ ] Fresh authoritative snapshots are required before Season/Phase/Week authoritative planning.
-* [ ] Validation passes: syntax check, lint, typecheck, targeted pytest.
+* [x] Season Plan is rejected when phases do not match selected scenario slots.
+* [x] Phase artifacts are rejected when week roles or S5 bands do not match phase execution context.
+* [x] Week Plan is rejected when agenda, load band, availability, quality cap, or workout syntax violates active week context.
+* [x] Fresh authoritative snapshots are required before Season/Phase/Week authoritative planning.
+* [x] Validation passes: syntax check, lint, typecheck, targeted pytest.
 
 ---
 
@@ -211,9 +211,9 @@ Owner: Planning
 
 ## 11) Documentation Updates
 
-* [ ] `doc/runbooks/crewai_memory.md` — clarify snapshot freshness vs CrewAI memory.
-* [ ] `doc/architecture/crewai_flows.md` — clarify contract guardrail stage.
-* [ ] Skills under `skills/shared`, `skills/season`, `skills/phase`, and `skills/week` — add contract consumption boundaries.
+* [x] `doc/runbooks/crewai_memory.md` — clarify snapshot freshness vs CrewAI memory.
+* [x] `doc/architecture/crewai_flows.md` — clarify contract guardrail stage.
+* [x] Skills under `skills/shared`, `skills/season`, `skills/phase`, and `skills/week` — add contract consumption boundaries.
 
 ---
 

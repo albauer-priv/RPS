@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Draft
+Status: Done
 Last-Updated: 2026-05-14
 Owner: CrewAI Runtime
 ---
 # FEAT: Skills-First Multi-Crew Planning Runtime
 
 * **ID:** FEAT_skills_first_multi_crew_planning_runtime
-* **Status:** Draft
+* **Status:** Done
 * **Owner/Area:** CrewAI Runtime / Planning
 * **Last-Updated:** 2026-05-14
 * **Related:** `doc/adr/ADR-047-crewai-skills-unified-planning.md`
@@ -40,15 +40,15 @@ Owner: CrewAI Runtime
 
 **Goals**
 
-* [ ] Make skills the primary planning knowledge layer.
-* [ ] Split Season, Phase, Week, and Report into planning, review, and writer crews.
-* [ ] Add explicit internal bundle/review/replan models.
-* [ ] Keep Coach and Workout Editor on the same Week specialist family.
+* [x] Make skills the primary planning knowledge layer.
+* [x] Split Season, Phase, Week, and Report into planning, review, and writer crews.
+* [x] Add explicit internal bundle/review/replan models.
+* [x] Keep Coach and Workout Editor on the same Week specialist family.
 
 **Non-Goals**
 
-* [ ] Replace JSON schemas or artifact contracts with skills.
-* [ ] Remove all legacy source docs in one step; they may remain as migration source until the cutover stabilizes.
+* [x] Replace JSON schemas or artifact contracts with skills.
+* [x] Remove all legacy source docs in one step; they may remain as migration source until the cutover stabilizes.
 
 ---
 
@@ -171,11 +171,11 @@ Owner: CrewAI Runtime
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] Skills contain the primary planning methodology used by runtime specialists.
-* [ ] Season, Phase, Week, and Report outer flows support planning/review/writer routing.
-* [ ] New internal bundle/review/replan models exist and are used.
-* [ ] Coach and Workout Editor reuse the Week specialist family.
-* [ ] Validation passes: syntax, lint, typecheck, relevant pytest suites.
+* [x] Skills contain the primary planning methodology used by runtime specialists.
+* [x] Season, Phase, Week, and Report outer flows support planning/review/writer routing.
+* [x] New internal bundle/review/replan models exist and are used.
+* [x] Coach and Workout Editor reuse the Week specialist family.
+* [x] Validation passes: syntax, lint, typecheck, relevant pytest suites.
 
 ---
 
@@ -229,11 +229,11 @@ Owner: CrewAI Runtime
 
 Update these docs as part of implementation:
 
-* [ ] `doc/architecture/crewai_flows.md` — document multi-crew routed flows
-* [ ] `doc/architecture/agents.md` — update agent taxonomy
-* [ ] `doc/architecture/system_architecture.md` — update runtime layering
-* [ ] `doc/adr/README.md` — index the new ADR
-* [ ] `CHANGELOG.md` — record the runtime cutover
+* [x] `doc/architecture/crewai_flows.md` — document multi-crew routed flows
+* [x] `doc/architecture/agents.md` — update agent taxonomy
+* [x] `doc/architecture/system_architecture.md` — update runtime layering
+* [x] `doc/adr/README.md` — index the new ADR
+* [x] `CHANGELOG.md` — record the runtime cutover
 
 ---
 

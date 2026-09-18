@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Draft
+Status: Done
 Last-Updated: 2026-09-15
 Owner: Planning Runtime
 ---
 # FEAT: Run Scheduler Resilience
 
 * **ID:** FEAT_run_scheduler_resilience
-* **Status:** Draft
+* **Status:** Done
 * **Owner/Area:** Planning Runtime / Queue Scheduler
 * **Last-Updated:** 2026-09-15
 * **Related:** `src/rps/orchestrator/queue_scheduler.py`, `src/rps/orchestrator/plan_hub_worker.py`, `src/rps/ui/run_store.py`
@@ -55,10 +55,10 @@ All three cases share the same observable outcome: planning is permanently block
 
 **Non-Goals**
 
-* [ ] Watchdog thread that interrupts a running LLM call (thread-killing is unsafe; out of scope).
-* [ ] Distributed locking or cross-host coordination.
-* [ ] Automatic retry of failed runs (existing manual retry UX is sufficient).
-* [ ] Changing artifact schemas or run-store record shapes.
+* [x] Watchdog thread that interrupts a running LLM call (thread-killing is unsafe; out of scope).
+* [x] Distributed locking or cross-host coordination.
+* [x] Automatic retry of failed runs (existing manual retry UX is sufficient).
+* [x] Changing artifact schemas or run-store record shapes.
 
 ---
 
@@ -186,16 +186,16 @@ Option A. The scenarios all resolve at one of two deterministic moments: lock ac
 
 ## 7) Acceptance Criteria (Definition of Done)
 
-* [ ] `_lock_is_stale` returns True when run is terminal or missing, or lock age > threshold.
-* [ ] `acquire_athlete_lock` succeeds after recovering a stale lock in a single call.
-* [ ] Recovering a stale lock transitions the stuck RUNNING run to FAILED and emits `RUN_FAILED`.
-* [ ] `_recover_orphaned_active_items` resolves all items in `active/` on startup without touching items already terminal.
-* [ ] Stuck RUNNING runs without a lock file are failed by `_recover_stuck_runs`.
-* [ ] All recovery functions are idempotent (safe to call twice).
-* [ ] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
-* [ ] Validation passes: `./scripts/run_lint.sh`
-* [ ] Validation passes: `./scripts/run_typecheck.sh`
-* [ ] Validation passes: `PYTHONPATH=src .venv/bin/python -m pytest tests/test_run_scheduler_resilience.py -x`
+* [x] `_lock_is_stale` returns True when run is terminal or missing, or lock age > threshold.
+* [x] `acquire_athlete_lock` succeeds after recovering a stale lock in a single call.
+* [x] Recovering a stale lock transitions the stuck RUNNING run to FAILED and emits `RUN_FAILED`.
+* [x] `_recover_orphaned_active_items` resolves all items in `active/` on startup without touching items already terminal.
+* [x] Stuck RUNNING runs without a lock file are failed by `_recover_stuck_runs`.
+* [x] All recovery functions are idempotent (safe to call twice).
+* [x] Validation passes: `python3 -m py_compile $(git ls-files '*.py')`
+* [x] Validation passes: `./scripts/run_lint.sh`
+* [x] Validation passes: `./scripts/run_typecheck.sh`
+* [x] Validation passes: `PYTHONPATH=src .venv/bin/python -m pytest tests/test_run_scheduler_resilience.py -x`
 
 ---
 

@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Draft
+Status: Superseded
 Last-Updated: 2026-02-06
 Owner: Architecture
 ---
 # FEAT: Multi-provider LLM runtime + local vectorstore + orchestration roadmap
 
 * **ID:** FEAT_multi_provider_llm
-* **Status:** Draft
+* **Status:** Superseded
 * **Owner/Area:** OpenAI/Orchestration
 * **Last-Updated:** 2026-02-06
 * **Related:** ADR-025-multi-provider-runtime-and-local-vectorstore.md

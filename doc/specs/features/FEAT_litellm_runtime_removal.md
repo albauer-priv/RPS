@@ -1,6 +1,6 @@
 ---
 Version: 1.0
-Status: Draft
+Status: Done
 Last-Updated: 2026-05-12
 Owner: Runtime
 ---
@@ -39,18 +39,18 @@ Owner: Runtime
 
 **Goals**
 
-* [ ] Remove product/runtime dependence on LiteLLM.
-* [ ] Remove the legacy multi-output runner and old chat transport from active code.
-* [ ] Make `rps.agents.runtime` CrewAI-only.
-* [ ] Move Workout Editor chat to the same CrewAI-native pattern as Coach.
-* [ ] Replace Qdrant embedding calls with direct provider calls.
-* [ ] Remove the `litellm` dependency from packaging.
+* [x] Remove product/runtime dependence on LiteLLM.
+* [x] Remove the legacy multi-output runner and old chat transport from active code.
+* [x] Make `rps.agents.runtime` CrewAI-only.
+* [x] Move Workout Editor chat to the same CrewAI-native pattern as Coach.
+* [x] Replace Qdrant embedding calls with direct provider calls.
+* [x] Remove the `litellm` dependency from packaging.
 
 **Non-Goals**
 
-* [ ] Redesign artifact schemas.
-* [ ] Change guarded store semantics.
-* [ ] Rebuild the full Planner flow topology again.
+* [x] Redesign artifact schemas.
+* [x] Change guarded store semantics.
+* [x] Rebuild the full Planner flow topology again.
 
 ## 3) Proposed Behavior
 
@@ -114,11 +114,11 @@ flowchart TD
 
 ## 7) Acceptance Criteria
 
-* [ ] No active runtime/UI code imports `rps.openai.litellm_runtime`.
-* [ ] No active runtime/UI code imports `rps.agents.multi_output_runner`.
-* [ ] Workout Editor chat no longer imports `rps.ui.rps_chatbot`.
-* [ ] `litellm` removed from dependency manifests.
-* [ ] Syntax, lint, typecheck, and targeted CrewAI/UI tests pass.
+* [x] No active runtime/UI code imports `rps.openai.litellm_runtime`.
+* [x] No active runtime/UI code imports `rps.agents.multi_output_runner`.
+* [x] Workout Editor chat no longer imports `rps.ui.rps_chatbot`.
+* [x] `litellm` removed from dependency manifests.
+* [x] Syntax, lint, typecheck, and targeted CrewAI/UI tests pass.
 
 ## 8) Migration / Rollout
 
@@ -139,10 +139,10 @@ flowchart TD
 
 ## 11) Documentation Updates
 
-* [ ] `CHANGELOG.md`
-* [ ] `doc/overview/feature_backlog.md`
-* [ ] `doc/adr/README.md`
-* [ ] `doc/specs/features/FEAT_crewai_runtime_cutover.md`
+* [x] `CHANGELOG.md`
+* [x] `doc/overview/feature_backlog.md`
+* [x] `doc/adr/README.md`
+* [x] `doc/specs/features/FEAT_crewai_runtime_cutover.md`
 
 ## 12) Link Map
 
