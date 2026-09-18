@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.40] - 2026-09-18
+
+### Fixed
+
+- **Ceiling-first applied to ALL scenarios (not just one)**: when `inclusive_planning_horizon_weeks ≥ 20`, ALL scenarios (A, B, C) must use `season_archetype: ceiling_first_durability`. Ceiling-first is the RPS default methodology; the Kinzlbauer sequence is the base structure for every scenario. Differentiation across A/B/C comes from kJ envelope, cadence, recovery margin, and fatigue exposure only — not from whether ceiling-first applies.
+- `guardrails_season.py`: removed `vo2_mandate` flag gate; guardrail now triggers on `horizon_weeks >= 20` unconditionally; checks that ALL scenarios have `ceiling_first_durability` (previously: only one required); error message names which scenarios are missing it.
+- `skills/season/scenario-generation/SKILL.md` (v4.5 → v4.6): updated step 1a, archetype semantics, ceiling-first section, CEILING-FIRST MANDATE hard rule, and self-check to reflect ALL-scenarios requirement and horizon-only gate.
+- `prompts/agents/season_scenario.md`: rule 19 updated — ALL scenarios mandatory for horizon ≥ 20, no athlete-objective precondition.
+
 ## [0.37.39] - 2026-09-18
 
 ### Fixed

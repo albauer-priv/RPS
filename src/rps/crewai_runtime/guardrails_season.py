@@ -548,22 +548,25 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
         if not has_shared_cadence_rationale:
             return (False, "Season scenarios collapse cadence across A/B/C without explicit justification.")
 
-    # Enforce ceiling_first_durability when athlete objectives mandate it
-    recommendation_ctx = _as_map(current_guardrail_runtime_context().get("season_scenario_recommendation_context"))
-    features_ctx = _as_map(recommendation_ctx.get("features"))
-    vo2_mandate = bool(features_ctx.get("vo2_mandate"))
+    # Ceiling-first is the RPS default methodology for sufficient planning runway
     horizon_weeks = int(_as_map(data).get("planning_horizon_weeks") or 0)
-    if vo2_mandate and horizon_weeks >= 20:
-        archetypes_present = {
-            str(_as_map(by_id[sid].get("scenario_guidance")).get("season_archetype") or "").strip()
-            for sid in by_id
-        }
-        if "ceiling_first_durability" not in archetypes_present:
+    if horizon_weeks >= 20:
+        scenarios_without_ceiling = [
+            sid
+            for sid in sorted(by_id)
+            if str(_as_map(by_id[sid].get("scenario_guidance")).get("season_archetype") or "").strip()
+            != "ceiling_first_durability"
+        ]
+        if scenarios_without_ceiling:
             return (
                 False,
-                "Athlete objectives require VO2max development and planning runway is sufficient (≥ 20 weeks): "
-                "at least one scenario must use season_archetype: ceiling_first_durability. "
-                "Typically Scenario C. Add the archetype and provide the required rationale — do not omit it to avoid the rationale requirement.",
+                f"Planning runway is sufficient (≥ 20 weeks, actual: {horizon_weeks} weeks): "
+                "ceiling-first is the RPS default methodology — ALL scenarios (A, B, C) must use "
+                "season_archetype: ceiling_first_durability. The Kinzlbauer sequence is the base "
+                "structure for every scenario; differentiation comes from kJ envelope, cadence, "
+                "recovery margin, and fatigue exposure, not from whether ceiling-first applies. "
+                f"Scenarios missing ceiling_first_durability: {', '.join(scenarios_without_ceiling)}. "
+                "Add the archetype and provide the required rationale in each scenario.",
             )
 
     scenario_c = by_id["C"]

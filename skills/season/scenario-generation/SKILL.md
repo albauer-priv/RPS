@@ -83,11 +83,11 @@ Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `ph
 Method:
 1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
 1a. **CEILING-FIRST PRE-CHECK — do this before generating any scenario:**
-    - Read `athlete_profile.objectives.secondary` and `objectives.priority_order`. Does any entry contain VO2max development language (e.g. "Increase VO2max", "aerobic capacity", "Increase aerobic capacity", "VO2max-Entwicklung")?
     - Is `inclusive_planning_horizon_weeks` ≥ 20?
-    - If BOTH are true: immediately decide that Scenario C (or Scenario B when C is already differentiated by higher specificity-under-fatigue and kJ-load) will use `season_archetype: "ceiling_first_durability"`. Make this decision now, before writing any scenario narrative.
-    - Shape that scenario to support the ceiling-first archetype from the start — cadence, intensity guidance, phase plan summary, and all narrative fields must reflect the ceiling-first character from the beginning. Do NOT generate it as a generic performance-forward scenario and then patch the `season_archetype` field afterward. Patching an existing scenario that was not shaped for ceiling-first produces an internally inconsistent output.
-    - Carry this decision into steps 2–3 so the ceiling-first scenario's structure is coherent when it is written.
+    - If YES: ALL three scenarios (A, B, C) MUST use `season_archetype: "ceiling_first_durability"`. Ceiling-first is the RPS default methodology — no athlete objective check required. The Kinzlbauer sequence is the base structure for every scenario; differentiation across A/B/C comes from kJ envelope, cadence, recovery margin, and fatigue exposure only.
+    - If NO (< 20 weeks): use `season_archetype: "none"` — insufficient runway for the full Kinzlbauer sequence.
+    - Shape every scenario to support the ceiling-first archetype from the start. Do NOT generate generic scenarios and then patch the `season_archetype` field afterward — this produces internally inconsistent outputs that will be rejected by the guardrail.
+    - Carry this decision into steps 2–3: Scenario A = ceiling-first with conservative kJ and high recovery margin; Scenario B = ceiling-first with target kJ and balanced posture; Scenario C = ceiling-first with upper kJ, higher specificity under fatigue, and more B2B work in the durability phase.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
 3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
 4. Recommendation-default cadence hard rule: deterministic recommendation cadence is advisory for one scenario, not the default cadence for all scenarios.
@@ -191,7 +191,7 @@ Required A/B/C target profiles:
   - upper plausible kJ-envelope
   - higher specificity under fatigue
   - more B2B / hard-late / event simulation
-  - optional `THRESHOLD` or `VO2MAX` only if explicitly justified — **EXCEPTION: when the ceiling-first pre-check (step 1a) mandates `ceiling_first_durability`, Scenario C IS the ceiling-first scenario; shape it accordingly (early VO2max ceiling phases, then economy/durability) — not as a generic specificity-forward scenario**
+  - optional `THRESHOLD` or `VO2MAX` only if explicitly justified — **when ceiling-first is mandated (step 1a), Scenario C uses `ceiling_first_durability` and is shaped as the highest-kJ, highest-specificity ceiling-first variant: more B2B and durability-phase load, not a different phase sequence**
   - `best_suited_if` must say `stable recovery`, `high load tolerance`, or `fatigue exposure tolerance` are already demonstrably present
   - preferred example: `Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.`
   - `risk_flags` must say the scenario becomes `too aggressive` when `fatigue risk`, `travel disruption`, `logistics disruption`, or `insufficient tolerance` appears
@@ -221,8 +221,8 @@ Intensity-domain semantics:
 
 Season archetype semantics:
 - `season_archetype` is a normalized scenario-level semantic, not a new cycle type.
-- Use `none` by default. Only use `ceiling_first_durability` when the "Athlete VO2max development objectives" rule below mandates it for at least one scenario.
-- Use `ceiling_first_durability` when: (a) the athlete profile mandates it (see below) OR (b) the scenario explicitly supports a ceiling-first then economy/durability sequence on other grounds.
+- Use `ceiling_first_durability` for ALL scenarios when `inclusive_planning_horizon_weeks` ≥ 20 — ceiling-first is the RPS default methodology, not a special case.
+- Use `none` only when `inclusive_planning_horizon_weeks` < 20 — insufficient runway for the full Kinzlbauer sequence.
 - `ceiling_first_durability` is supported by:
   - enough planning runway before peak (≥ 20 weeks)
   - explicit aerobic ceiling development goal in athlete profile
@@ -231,19 +231,18 @@ Season archetype semantics:
 - When the athlete profile mandates ceiling_first, the scenario IS the mechanism that justifies it — shape the scenario to support the archetype, not the other way around.
 - If `season_archetype = ceiling_first_durability`, `season_archetype_rationale` must state why early ceiling support is permitted and why later durability/specificity work still has enough runway.
 
-Athlete VO2max development objectives:
-- When `athlete_profile.objectives.secondary` or `objectives.priority_order` contains explicit VO2max development language AND the planning runway is ≥ 20 weeks, the scenario layer MUST generate at least one scenario with `season_archetype: "ceiling_first_durability"`.
-- This is not an objective mismatch — it is a direct and binding planning directive from the athlete profile that must be honoured in at least one scenario.
-- **Guardrail correction rule**: when a guardrail rejects `ceiling_first_durability` for missing rationale or runway statement, the correct fix is to write the required rationale — do NOT remove `ceiling_first_durability` from the scenario. Removing it to avoid the rationale requirement violates the athlete objective mandate and will trigger a separate guardrail failure.
-- The ceiling-first scenario typically shapes Scenario C; it may shape Scenario B when Scenario C is already differentiated by higher specificity-under-fatigue and load rather than intensity archetype.
-- Apply the `ceiling_first_durability` rationale as: long planning runway (≥ 20 weeks), explicit aerobic ceiling development goal, weekday time-crunch with weekend leverage all support conditional early VO2max work before durability volume expansion — with sufficient horizon remaining for the economy/durability block after the VO2 phase.
-- VO2MAX in the ceiling-first scenario must still be framed as early-season ceiling-support: fresh-only, time-limited to the first two phases, and not a season-wide permission.
-- Write the `season_archetype_rationale` using concrete athlete-profile facts (planning runway in weeks, explicit VO2max objective text, weekday vs. weekend availability asymmetry) so the rationale is unambiguous to the macrocycle-architecture task.
-- POSITIVE EXAMPLE — what a correct ceiling_first_durability scenario C looks like:
-  - `season_archetype: "ceiling_first_durability"`
-  - `season_archetype_rationale`: `["52-week planning runway provides enough horizon for VO2 Foundation (Base/vo2_base, ~4 weeks) + concentrated VO2 peak (Build/vo2_build, ~4 weeks) before the durability block, leaving ≥ 30 weeks for economy, VLamax-lowering (Build/vlamax_lowering), specific durability (Build/durability_build), and specificity/taper. Athlete profile explicitly states 'Increase aerobic capacity (VO2max)' and 'Increase VO2max, lower VLamax' as priority 3. Weekend leverage (up to 8h outdoor / 4h indoor) can support fresh VO2max intervals within compact weekday windows. VO2MAX is permitted only in the early Base/vo2_base and Build/vo2_build phases; from the vlamax_lowering phase onward the emphasis shifts to durability, economy, and VLamax-lowering."]`
+Ceiling-first as RPS default methodology:
+- Ceiling-first is the default RPS planning approach for any season with `inclusive_planning_horizon_weeks` ≥ 20. No athlete objective check required — this applies to every athlete, every plan.
+- The Kinzlbauer phase sequence is the base structure for ALL scenarios: `aerobic_base` (GPP) → `vo2_base` (VO2 Foundation) → `vo2_build` (VO2 Build) → `vlamax_lowering` (economy/VLamax-lowering) → `durability_build` (specific durability). Scenarios A/B/C share this sequence and differ in kJ envelope, cadence, recovery margin, and fatigue exposure only.
+- **Guardrail correction rule**: when a guardrail rejects scenarios for missing `ceiling_first_durability`, the correct fix is to add the archetype to ALL scenarios and write the required rationale — do NOT remove it from any scenario. Removing it from any scenario is a hard error.
+- VO2MAX must be framed as early-season ceiling-support in ALL scenarios: fresh-only, time-limited to the `vo2_base` + `vo2_build` phases, and not a season-wide permission. From `vlamax_lowering` onward the emphasis shifts to economy and durability in all scenarios.
+- Write the `season_archetype_rationale` using concrete context facts (planning runway in weeks, weekday vs. weekend availability asymmetry, remaining horizon after VO2 phases) so the rationale is unambiguous to the macrocycle-architecture task.
+- POSITIVE EXAMPLE — how all three scenarios look:
+  - **Shared across A/B/C**: `season_archetype: "ceiling_first_durability"`, same Kinzlbauer phase sequence: `aerobic_base` → `vo2_base` → `vo2_build` → `vlamax_lowering` → `durability_build`.
+  - **Differentiation axis**: Scenario A = conservative kJ envelope, 2:1 cadence, high recovery margin; Scenario B = target kJ envelope, 2:1:1 or 3:1 cadence, balanced recovery margin; Scenario C = upper kJ envelope, 3:1 cadence, more B2B and specificity in the durability phase.
+  - `season_archetype_rationale` (same substance for all three, adapted to each scenario's posture): `["52-week planning runway provides enough horizon for VO2 Foundation (Base/vo2_base, ~4 weeks) + concentrated VO2 peak (Build/vo2_build, ~4 weeks) before the durability block, leaving ≥ 30 weeks for economy, VLamax-lowering (Build/vlamax_lowering), specific durability (Build/durability_build), and specificity/taper. Weekend leverage (up to 8h outdoor / 4h indoor) can support fresh VO2max intervals within compact weekday windows. VO2MAX is permitted only in the early Base/vo2_base and Build/vo2_build phases; from the vlamax_lowering phase onward the emphasis shifts to durability, economy, and VLamax-lowering."]`
   - `intensity_guidance.allowed_domains`: `["RECOVERY", "ENDURANCE", "TEMPO", "VO2MAX"]` (documentary: VO2MAX active in early phases, THRESHOLD suppressed in the VO2 block; the macrocycle layer maps these to canonical phase-intent semantics: `vo2_base` for VO2 Foundation Base phase, `vo2_build` for concentrated VO2 Build phase)
-  - `decision_notes` must include: "VO2MAX is permitted as an early-season aerobic-ceiling build (Base/vo2_base + Build/vo2_build) only; from the vlamax_lowering phase onward the emphasis shifts to durability, economy, and VLamax-lowering."
+  - `decision_notes` must include in each scenario: "VO2MAX is permitted as early-season aerobic-ceiling support (Base/vo2_base + Build/vo2_build) only; from the vlamax_lowering phase onward the emphasis shifts to durability, economy, and VLamax-lowering."
 
 Seasonal availability context:
 - When `seasonal_context` is present in the injected context, read `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, and `outdoor_weekend_max_hours`.
@@ -257,7 +256,7 @@ Objective mismatch semantics:
 - If the scenario layer notices a mismatch between upstream objective language and active event hierarchy, treat it as unresolved upstream input context only.
 - You may name that mismatch in notes, assumptions, unknowns, or caution fields.
 - Do not claim that the scenario layer resolved or replaced the objective/event hierarchy.
-- CRITICAL EXCEPTION — VO2max development objective is NOT an objective mismatch: language like "Increase aerobic capacity (VO2max)", "Increase VO2max", or similar in `objectives.secondary` or `objectives.priority_order` is a physiological training directive, categorically different from a competitive-ambition mismatch. DO NOT bundle VO2max development into the same mismatch note as competitive ambition. Treat it as an active, binding planning directive and honour it in the ceiling-first scenario. Surfacing VO2max development as a warning-only note or mismatch when the planning runway supports ceiling-first is a skill error.
+- NOTE: VO2max development language in athlete objectives is never an objective mismatch — it is consistent with the RPS ceiling-first methodology. Do not bundle it with competitive-ambition mismatches.
 
 Internal consistency checks:
 - Ask whether the scenario is more than just a different weekly-kJ number.
@@ -310,7 +309,7 @@ Hard rules:
 - the active scenario-generation layer is the front-loaded source of operational posture; do not defer recovery, fatigue, or specificity stance to Selection, Season planning, review, writer, or renderer
 - the active scenario-generation layer must be self-contained for operational posture: define `recovery_margin`, `fatigue_exposure`, and `specificity_density` locally here and serialize them directly
 - examples illustrate structure and specificity only; do not mechanically reuse example sentences in `constraint_summary`, and apply the same principle to `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes`
-- CEILING-FIRST MANDATE: if `athlete_profile.objectives.secondary` or `objectives.priority_order` contains VO2max development language AND planning runway ≥ 20 weeks, emitting `season_archetype: "none"` for all three scenarios is a hard error — at least one scenario MUST use `ceiling_first_durability`; check this before returning and revise if violated
+- CEILING-FIRST MANDATE: if `athlete_profile.objectives.secondary` or `objectives.priority_order` contains VO2max development language AND planning runway ≥ 20 weeks, emitting `season_archetype: "none"` for ANY scenario is a hard error — ALL THREE scenarios MUST use `ceiling_first_durability`; check this before returning and revise every scenario that is missing it
 - output exactly three scenarios
 - keep numeric weekly kJ targets for season/phase planning tasks
 - use canonical intensity domains
@@ -351,7 +350,7 @@ Positive execution pattern:
 - Use the precomputed phase math, event-distance facts, and availability context to set realistic scenario structure.
 - Explain the tradeoff between robust, balanced, and ambitious choices in terms of exposure, recovery margin, specificity, and failure tolerance.
 - Carry the code-owned recommendation into scenario notes so the selection page can explain why one cadence is currently favored, but do not mirror the recommendation cadence blindly into all scenarios.
-- Before returning, run this self-check: (1) Does the athlete profile contain VO2max development language? (2) Is the planning runway ≥ 20 weeks? If both are true and all three scenarios still have `season_archetype: "none"`, stop — revise the highest-ambition scenario to use `ceiling_first_durability` before returning. This check is mandatory, not optional.
+- Before returning, run this self-check: (1) Does the athlete profile contain VO2max development language? (2) Is the planning runway ≥ 20 weeks? If both are true, check every scenario — ALL three must have `season_archetype: "ceiling_first_durability"`. If any scenario still has `season_archetype: "none"`, stop — revise it to use `ceiling_first_durability` and update its narrative to reflect the ceiling-first character before returning. This check is mandatory, not optional.
 - Return scenarios that are complete, differentiated, traceable, and ready for direct selection.
 
 Output format:

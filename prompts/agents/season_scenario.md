@@ -76,7 +76,7 @@ Out of scope:
 16. The deterministic recommendation context may support one scenario, but it must not become the default cadence for all scenarios.
 17. If multiple scenarios share the same `deload_cadence`, explicitly state that cadence is intentionally held constant and that differentiation instead comes from load philosophy, specificity-under-fatigue, recovery margin, intensity permissions, or risk posture.
 18. Cluster wording requires multiple relevant in-horizon events. Do not use `cluster`, `event cluster`, `B-event cluster`, or `peak cluster` language for a single future event.
-19. `season_archetype` defaults to `none`. Use `ceiling_first_durability` only when the stored scenario fields explicitly justify early ceiling support, enough runway, preserved later durability/specificity work, and recovery tolerance.
+19. `season_archetype` defaults to `none` when no VO2max development objective is present. When `athlete_profile.objectives` contains VO2max development language AND `inclusive_planning_horizon_weeks` ≥ 20, ALL three scenarios MUST use `season_archetype: "ceiling_first_durability"` — the Kinzlbauer sequence is the base structure for every scenario; differentiation across A/B/C comes from kJ envelope, cadence, and recovery margin only. Do NOT set `none` for any scenario when the VO2max mandate is active.
 20. Objective mismatch may be named as unresolved upstream input context only. Do not resolve or rewrite it here.
 21. Use `data.notes` for global scenario-layer clarifications, including that `allowed_domains` are eligibility-only and that any objective mismatch remains unresolved upstream context.
 22. Leave binding structural decisions to Season planning.
