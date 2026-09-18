@@ -368,6 +368,20 @@ def _runtime_for_agent(agent_name: str) -> AgentRuntime:
     )
 
 
+@st.cache_resource
+def _get_scheduler() -> JsonMap:
+    """Start (or return the already-running) queue scheduler. Module-level so the
+    scheduler starts on first hub page load, not only on first button click."""
+    return start_queue_scheduler(
+        root=SETTINGS.workspace_root,
+        runtime_for_agent=_runtime_for_agent,
+        model_resolver=SETTINGS.model_for_agent,
+        temperature_resolver=SETTINGS.temperature_for_agent,
+        reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
+        reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
+    )
+
+
 @dataclass(frozen=True)
 class ReadinessStep:
     """Represents readiness status for a planning pipeline step."""
@@ -1325,23 +1339,10 @@ def _ensure_worker(
     process_subtype: str | None,
 ) -> None:
     """Ensure scheduler is running and enqueue the run."""
-    @st.cache_resource
-    def _get_scheduler() -> JsonMap:
-        return start_queue_scheduler(
-            root=root,
-            runtime_for_agent=_runtime_for_agent,
-            model_resolver=SETTINGS.model_for_agent,
-            temperature_resolver=SETTINGS.temperature_for_agent,
-            reasoning_effort_resolver=SETTINGS.reasoning_effort_for_agent,
-            reasoning_summary_resolver=SETTINGS.reasoning_summary_for_agent,
-        )
-
     ensure_queue_dirs(root)
-    scheduler = _get_scheduler()
-    thread = scheduler.get("thread")
-    if not hasattr(thread, "is_alive") or not thread.is_alive():
-        _get_scheduler.clear()
-        scheduler = _get_scheduler()
+    # Enqueue before starting the scheduler so that startup recovery
+    # (_recover_orphaned_queued_runs) sees the pending item and does not
+    # immediately fail this run as orphaned.
     enqueue_run(
         root,
         run_id,
@@ -1352,6 +1353,11 @@ def _ensure_worker(
             "allow_delete_intervals": allow_delete,
         },
     )
+    scheduler = _get_scheduler()
+    thread = scheduler.get("thread")
+    if not hasattr(thread, "is_alive") or not thread.is_alive():
+        _get_scheduler.clear()
+        _get_scheduler()
 
 
 def _mark_runs_superseded(root: Path, athlete_id: str, run_ids: list[str], new_run_id: str) -> None:
@@ -2283,6 +2289,10 @@ if active_run:
 else:
     st.info("No active run. Start planning to see execution steps.")
 logger = logging.getLogger(__name__)
+
+# Warm up the scheduler on every page load so it is ready before the first
+# button click (avoids the startup-race double-click bug).
+_get_scheduler()
 
 st.session_state["plan_hub_was_running"] = run_state
 if run_state:

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.27] - 2026-09-18
+
+### Fixed
+
+- `src/rps/ui/pages/plan/hub.py`: fixed double-click bug on first planning run caused by a startup race condition in the queue scheduler.
+  - **Root cause**: `_recover_orphaned_queued_runs()` runs during scheduler startup and used to find a freshly-created QUEUED run with no corresponding `pending/` queue item (the item was created *after* the scheduler started), causing it to immediately mark the run as FAILED.
+  - **Fix 1**: `enqueue_run()` is now called *before* `_get_scheduler()` in `_ensure_worker()` so the queue item is already present when startup recovery scans.
+  - **Fix 2**: `_get_scheduler` is now a module-level `@st.cache_resource` function (eager start) and is called at page load. The scheduler is therefore already running before the user clicks any button, eliminating the first-start delay entirely.
+
 ## [0.37.26] - 2026-09-18
 
 ### Added
