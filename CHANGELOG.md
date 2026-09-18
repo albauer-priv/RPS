@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.28] - 2026-09-18
+
+### Fixed
+
+- `skills/season/macrocycle-architecture/SKILL.md` (v5.1): added explicit backward-planning algorithm anchored at the A event week; added "cadence week-role override in Peak phases" section — when a phase is designated `Peak` and contains the A event, cadence week roles (`LOAD_2`, `MINI_RESET`, `RELOAD`) are overridden by taper/event semantics and must not be used as taper-adequacy evidence; added "B event + A event in same phase" rule — the B event week = final specificity stimulus, all subsequent weeks = taper, the phase as a whole = `Peak`.
+- `skills/season/constraint-synthesis/SKILL.md` (v3.1): added explicit non-blocker rules for cadence role labels inside `Peak` phases, and for B event + A event co-residence in the same `Peak` phase — valid when (a) phase is explicitly `Peak`, (b) ≥ 2 weeks between B event and A event, (c) macrocycle architect has documented the taper override.
+- `skills/season/macrocycle-architecture/references/macrocycle_and_peak_window_rules.md`: added "Backward planning from A event" section (5-step algorithm), "Cadence week-role override in Peak phases" section with concrete week-by-week structure for B+A same-phase scenario.
+
+Root cause fixed: season plan creation was consistently rejected (3 retries) because the constraint specialist raised a hard blocker for the Brevet 400km B event (W2027-18) and Brevet 600km A event (W2027-21) co-residing in Phase 9 — the RELOAD cadence label in the A event week was incorrectly interpreted as taper collapse. All three skill updates now explicitly define valid taper structure for this calendar pattern.
+
 ## [0.37.27] - 2026-09-18
 
 ### Fixed

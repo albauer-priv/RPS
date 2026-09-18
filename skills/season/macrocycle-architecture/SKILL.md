@@ -3,7 +3,7 @@ name: macrocycle-architecture
 description: Reverse-plan season macrocycles, peak windows, and taper structure from event anchors.
 metadata:
   author: rps
-  version: "5.0"
+  version: "5.1"
 ---
 Build macrocycle structure backward from priority events.
 
@@ -82,10 +82,26 @@ Taper rules:
 - minimum effective taper window for ultra/brevet events (events > 12 hours): **2–3 weeks including the event week**; a single event-week taper is insufficient for events of this duration
 - the last cadence role of the phase immediately preceding a TAPER/A-event phase must not be `RELOAD`; flag `RELOAD → A-event phase` adjacency as a structural **warning** and recommend restructuring the preceding phase's final week to `MINI_RESET` or `DELOAD`; it is a **warning**, not a hard blocker, unless the taper phase itself is shorter than the minimum effective window
 
+Cadence week-role override in `Peak` phases (mandatory when A event is in the phase):
+- cadence week roles (`LOAD_1`, `LOAD_2`, `MINI_RESET`, `RELOAD`) are deterministic PLANNING CONTEXT only; they describe a generic load pattern
+- when a phase is designated as `Peak` cycle type and contains the A event week, the cadence week roles MUST be overridden by event-driven taper semantics in the phase narrative and intent
+- the A event week — regardless of its cadence role label (`MINI_RESET`, `RELOAD`, or other) — is the **event week**: zero training load before the start, the event itself
+- weeks between the last B event and the A event week within the `Peak` phase represent recovery + taper, NOT regular load weeks — do not treat `LOAD_2` or `RELOAD` role labels as training load prescriptions when they fall within the taper window of a `Peak` phase
+- explicitly state the cadence role override in the phase description: e.g., "Week 1 (B_EVENT): B event + immediate recovery; Week 2 (POST_B_RECOVERY): recovery only, taper deepening; Week 3 (PRE_EVENT_TAPER): minimal volume, maintain feel; Week 4 (A_EVENT): race day"
+- this override must be visible in the phase rationale so the constraint specialist can recognise it as valid taper structure
+
+Backward planning from A event (mandatory):
+- all season architecture is anchored at the A event week: the final phase ends at (or includes) the A event week
+- allocate backward: Peak phase (taper + A event) → Build 2 (event-specific) → Build 1 (progressive durability) → Base (aerobic foundation)
+- assign cycle types working backward from the A event: the phase containing the A event = `Peak`; preceding phases = `Build` until aerobic foundation work begins = `Base`; recovery/re-entry blocks = `Transition`
+- if a phase boundary does not naturally land at the A event week, the phase immediately containing the A event is still the Peak phase; do not split the taper across two phases
+- if the calendar is compressed (B event in same phase as A event), use the B event as the final specificity stimulus and start the taper from the week immediately after the B event; the phase as a whole is `Peak` cycle type
+
 Progressive brevet / ultra sequencing:
 - shorter preparatory brevets (e.g. 200 → 300 → 400 km) are stress-plus-recovery milestones, not independent peaks
 - each preparatory brevet deserves a brief recovery window (3–7 days easy) inside the existing structure — not a full re-entry or rebuild block
-- a B-priority brevet 2–3 weeks before the A-event peak: apply minor load reduction in the B-event week, then recovery only, then proceed directly to final taper
+- a B-priority brevet 2–3 weeks before the A-event peak: the B event week is the final specificity rehearsal; subsequent weeks are recovery-only, then direct taper; do not insert any new loading or reload stimulus
+- when a B event and the A event are in the same phase (spacing ≤ 4 weeks): designate the full phase as `Peak`, assign the B event week as final specificity stimulus, and treat all remaining weeks of the phase as taper — this is a valid taper structure as long as there are ≥ 2 weeks between the B event week and the A event week (inclusive of the A event week)
 - do not insert a new Build or reload block between the final B-event and the A-event taper when spacing is ≤ 3 weeks
 
 Hard rules:

@@ -3,7 +3,7 @@ name: constraint-synthesis
 description: Preserve athlete, availability, logistics, and event constraints in season planning and review.
 metadata:
   author: rps
-  version: "3.0"
+  version: "3.1"
 ---
 Synthesize binding season constraints into explicit planning boundaries.
 
@@ -36,6 +36,21 @@ Blocker vs warning discipline:
   - active-replan status remaining `replan_required` from a prior REDO cycle — that is evidence
     context, not a constraint; the planner must resolve or acknowledge it, but it is not a blocker
     unless the replan instruction itself contains an unresolvable physical impossibility
+  - cadence week role labels (`LOAD_1`, `LOAD_2`, `MINI_RESET`, `RELOAD`) within a `Peak` cycle
+    phase that contains the A event — cadence roles are planning context only and are overridden
+    by event-driven taper semantics inside a `Peak` phase; do not treat a `RELOAD` or `LOAD_2`
+    label in an A-event-containing `Peak` phase as evidence of taper collapse; the `Peak`
+    designation itself overrides the cadence week loading intent
+  - a B event and the primary A event both appearing in the same `Peak` cycle phase, when:
+    (a) the macrocycle architect has explicitly designated the phase as `Peak` cycle type,
+    (b) there are ≥ 2 weeks between the B event week and the A event week (inclusive of the A week),
+    and (c) the macrocycle architect has documented that weeks after the B event are recovery/taper
+    — this is a valid taper structure (B event = final specificity; remaining weeks = taper window)
+  - a phase where the A event falls in the last week and the preceding 1–2 weeks have cadence
+    roles `MINI_RESET` or `RELOAD` — within a `Peak` phase these labels represent reduced-load
+    and event-week semantics respectively, which meets the minimum taper standard for all but the
+    longest ultra events; only flag a blocker if the macrocycle architect has not designated the
+    phase as `Peak` or has not documented the taper-week override
 
 Hard rules:
 - use explicit athlete and logistics facts from upstream context
