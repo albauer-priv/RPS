@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.37] - 2026-09-18
+
+### Fixed
+
+- `src/rps/planning/phase_authority.py` (`choose_quality_domain`): added `vo2_base` branch that returns `VO2MAX` as the preferred quality domain when allowed — previously fell through to the generic loop and returned `TEMPO` first (which is secondary to VO2MAX in the ceiling-raising Base phase).
+- `src/rps/planning/load_bands.py` (`_derive_phase_intents_for_slots`): Kinzlbauer-correct deterministic phase intent derivation for ceiling-first seasons — last non-shortened BASE slot is now assigned `vo2_base` (VO2 Foundation) when `early_vo2_permitted`; first post-VO2 BUILD slot is assigned `vlamax_lowering` (economy/VLamax-lowering) before `durability_build`.
+- `skills/season/plan-synthesis/SKILL.md` (v3.0 → v3.1): added `vo2_base` to canonical phase_intent list and phase-intent table; corrected line 108 to reference `vo2_base` (Base VO2 Foundation) and `vo2_build` (Build VO2 peak) per Kinzlbauer sequence instead of generic "early `vo2_build`".
+- `skills/week/plan-synthesis/SKILL.md`: added `vo2_base` week-shape entry — VO2MAX-oriented short-interval quality on protected ENDURANCE base; no SWEET_SPOT/THRESHOLD.
+- `skills/week/workout-construction/SKILL.md` (v7.0 → v7.1): added `vo2_base` family-bias entry — bias toward VO2-oriented short-interval families (30/15 s → 40/20 s); avoid SWEET_SPOT/THRESHOLD drift; ceiling-raising Base treatment.
+
 ## [0.37.36] - 2026-09-18
 
 ### Fixed

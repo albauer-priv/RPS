@@ -74,6 +74,7 @@ Required bundle semantics:
   - `general_base` / `aerobic_base`: endurance-dominant support with conservative moderate work
   - `strength_endurance_base`: torque/K3-capable support only when legal
   - `sweet_spot_base`: moderate SST support without drifting into build density
+  - `vo2_base`: VO2MAX-oriented short-interval quality (30/15 s → 40/20 s) on protected ENDURANCE base; no SWEET_SPOT/THRESHOLD; ceiling-raising Base phase
   - `vo2_build`: limited fresh VO2-oriented quality when allowed; `build_subtype` is authoritative
   - `threshold_build`: threshold-oriented quality, not generic VO2 or SST drift
   - `sst_build`: extensive sub-threshold structure with density control

@@ -3,7 +3,7 @@ name: workout-construction
 description: Construct valid workouts for the RPS project subset and execution intent.
 metadata:
   author: rps
-  version: "7.0"
+  version: "7.1"
 ---
 Author workout text only after the governing role, duration, and load intent are already set.
 
@@ -108,6 +108,8 @@ Canonical family bias:
   - bias toward K3/tempo support where legal; avoid VO2 drift
 - `sweet_spot_base`
   - bias toward moderate SST support; avoid extensive build-style accumulation
+- `vo2_base`
+  - bias toward VO2-oriented short-interval families (30/15 s → 40/20 s) on protected ENDURANCE base; avoid SWEET_SPOT/THRESHOLD drift; treat as ceiling-raising Base, not a full Build
 - `vo2_build`
   - may use VO2-oriented families only when fresh, explicitly allowed, and `build_subtype` confirms VO2 priority
 - `threshold_build`

@@ -1284,6 +1284,20 @@ def _derive_phase_intents_for_slots(
 
     early_vo2 = bool(_as_map(selected_structure_context).get("early_vo2_permitted"))
     economy_repeat = bool(_as_map(selected_structure_context).get("economy_repeat_permitted"))
+
+    # Kinzlbauer: VO2 Foundation is a BASE phase (vo2_base), not a BUILD phase.
+    # Assign vo2_base to the last non-shortened BASE slot so the deterministic
+    # contract matches what the macrocycle agent is instructed to emit.
+    if early_vo2:
+        base_slot_ids = [
+            str(slot.get("phase_id") or f"P{idx:02d}")
+            for idx, slot in enumerate(slots, start=1)
+            if default_cycles.get(str(slot.get("phase_id") or f"P{idx:02d}"), "") == "BASE"
+            and not bool(slot.get("is_shortened"))
+        ]
+        if base_slot_ids:
+            intents[base_slot_ids[-1]] = "vo2_base"
+
     cursor = 0
     remaining = len(eligible)
     ceiling_slots = 0
@@ -1293,7 +1307,12 @@ def _derive_phase_intents_for_slots(
             intents[eligible[cursor]] = "vo2_build"
             cursor += 1
         remaining = len(eligible) - cursor
-    if remaining >= 3:
+    # Kinzlbauer: first post-VO2 BUILD phase is economy/VLamax-lowering
+    if ceiling_slots > 0 and remaining >= 1:
+        intents[eligible[cursor]] = "vlamax_lowering"
+        cursor += 1
+        remaining = len(eligible) - cursor
+    elif remaining >= 3:
         intents[eligible[cursor]] = "durability_build"
         cursor += 1
         remaining = len(eligible) - cursor

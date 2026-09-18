@@ -161,6 +161,9 @@ def choose_quality_domain(*, phase_intent: str, allowed_domains: list[str]) -> s
     if phase_intent in {"shortened_re_entry", "general_base", "aerobic_base", "strength_endurance_base"}:
         if "TEMPO" in normalized_set:
             return "TEMPO"
+    if phase_intent == "vo2_base":
+        if "VO2MAX" in normalized_set:
+            return "VO2MAX"
     for candidate in ("TEMPO", "SWEET_SPOT", "THRESHOLD", "VO2MAX", "ENDURANCE"):
         if candidate in normalized_set:
             return candidate

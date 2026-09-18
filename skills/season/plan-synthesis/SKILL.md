@@ -3,7 +3,7 @@ name: plan-synthesis
 description: Synthesize season specialist drafts into one internal season bundle.
 metadata:
   author: rps
-  version: "3.0"
+  version: "3.1"
 ---
 Consolidate season drafts into one candidate bundle.
 
@@ -105,7 +105,7 @@ Operational overload-policy translation into season blueprints:
    - explicit `forbidden_domains`
    - explicit `semantic_contract`
 24. Keep `phase_type`, `phase_intent`, and `build_subtype` coherent with cycle, event position, phase role, and allowed-domain narrowing.
-25. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `vo2_build` only when explicitly justified, then preserve `durability_build` / `specificity_build` runway only when the deterministic context permits it.
+25. Treat `season_archetype` from the selected scenario as advisory upper-order sequencing authority; if it is `ceiling_first_durability`, derive early `vo2_base` (Base VO2 Foundation) and/or `vo2_build` (concentrated VO2 Build) only when the deterministic context permits it; follow the Kinzlbauer sequence: `aerobic_base` → `vo2_base` → `vo2_build` → `vlamax_lowering` → `durability_build` → `specificity_build`.
 26. Pass 2 - semantic finalization: finalize must leave review with a nearly writer-ready bundle. Do not rely on the writer to repair semantic contradictions that are already decidable here.
 27. Pass 3 - planner self-audit: before handoff, explicitly self-check:
    - no phantom event placeholders
@@ -143,6 +143,7 @@ Canonical phase semantics:
   - `aerobic_base`
   - `strength_endurance_base`
   - `sweet_spot_base`
+  - `vo2_base`
   - `vo2_build`
   - `threshold_build`
   - `sst_build`
@@ -164,7 +165,8 @@ Canonical phase semantics:
 | `BASE` | `aerobic_base` | `null` | prioritize low-intensity aerobic development, routine, and low-risk load tolerance | `RECOVERY`, `ENDURANCE` | very light `TEMPO` only if clearly justified | `THRESHOLD`, `VO2MAX`, frequent `SWEET_SPOT` | `NONE`, `K3` | Aerobic routine, kJ tolerance, low density. |
 | `BASE` | `strength_endurance_base` | `null` | develop torque, musculoskeletal robustness, and force endurance under controlled load | `RECOVERY`, `ENDURANCE`, `TEMPO` | `SWEET_SPOT` only if structurally coherent | `THRESHOLD`, repeated `VO2MAX` | `NONE`, `K3` | Torque/structure-oriented base with explicit K3 pathway. |
 | `BASE` | `sweet_spot_base` | `null` | raise sustainable sub-threshold capacity while preserving base continuity | `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | controlled SST only | `VO2MAX`, frequent `THRESHOLD` | `NONE`, `K3` | Sustainable-power base without broad build drift. |
-| `BUILD` | `vo2_build` | `vo2_build` | raise aerobic ceiling as the primary build objective | `RECOVERY`, `ENDURANCE`, `VO2MAX` | sparse `TEMPO` support only | chronic threshold accumulation | `NONE`, `K3` | Aerobic-ceiling build; VO2 is primary. |
+| `BASE` | `vo2_base` | `null` | raise VO2max ceiling as the primary Base objective — Kinzlbauer VO2 Foundation; VO2MAX intervals on a protected ENDURANCE base | `RECOVERY`, `ENDURANCE`, `VO2MAX` | sparse `TEMPO` support only | `SWEET_SPOT`, `THRESHOLD` | `NONE`, `K3` | Ceiling-raising Base. ENDURANCE base protected; SWEET_SPOT/THRESHOLD forbidden. Use for `ceiling_first_durability` Base VO2 Foundation slot. |
+| `BUILD` | `vo2_build` | `vo2_build` | raise aerobic ceiling as the primary build objective — concentrated VO2 peak after `vo2_base` Foundation | `RECOVERY`, `ENDURANCE`, `VO2MAX` | sparse `TEMPO` support only | chronic threshold accumulation | `NONE`, `K3` | Aerobic-ceiling build; VO2 is primary. |
 | `BUILD` | `threshold_build` | `threshold_build` | improve sustained threshold power and clearance under repeatable structure | `RECOVERY`, `ENDURANCE`, `TEMPO`, `THRESHOLD` | `SWEET_SPOT` support | broad VO2 escalation | `NONE`, `K3` | Sustained-power / threshold-oriented build. |
 | `BUILD` | `sst_build` | `sst_build` | expand extensive sub-threshold capacity without tipping into broad high-intensity load | `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | targeted `THRESHOLD` only if explicitly justified | random HI density | `NONE`, `K3` | Extensive sub-threshold build. |
 | `BUILD` | `durability_build` | `durability_build` | improve fatigue resistance, hard-late stability, and long-duration output under preload | `RECOVERY`, `ENDURANCE`, `TEMPO`, `SWEET_SPOT` | targeted `THRESHOLD` only | high HI density, VO2 escalation | `NONE`, `K3` | Hard-late, B2B, preload, long-ride kJ, specific work under fatigue. |
