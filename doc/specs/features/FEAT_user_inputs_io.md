@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Draft
+Status: Done
 Last-Updated: 2026-09-15
 Owner: UI / Data Model
 ---
 # FEAT: User Inputs I/O (Export / Import per Input Type)
 
 * **ID:** FEAT_user_inputs_io
-* **Status:** Draft
+* **Status:** Done
 * **Owner/Area:** UI / Data Model
 * **Last-Updated:** 2026-09-15
 * **Related:** `src/rps/ui/pages/athlete_profile/`, `src/rps/workspace/local_store.py`, `FEAT_user_inputs_modular`
