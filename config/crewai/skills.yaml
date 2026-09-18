@@ -19,6 +19,7 @@ crews:
       - skills/shared/contract-context-consumption
       - skills/shared/traceability-and-naming
       - skills/shared/periodization-methodology
+      - skills/shared/ultra-endurance-methodology
   season_review:
     skills:
       - skills/shared/runtime-boundaries
@@ -44,6 +45,7 @@ crews:
       - skills/shared/contract-context-consumption
       - skills/shared/traceability-and-naming
       - skills/shared/periodization-methodology
+      - skills/shared/ultra-endurance-methodology
   phase_review:
     skills:
       - skills/shared/runtime-boundaries

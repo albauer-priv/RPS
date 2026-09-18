@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.32] - 2026-09-18
+
+### Added
+
+- `skills/shared/ultra-endurance-methodology/` (new shared skill, v1.0): scientific and methodological ground truth for ultra-distance cycling and brevet planning — durability as the primary performance dimension (over VO2max or peak power), kJ-differentiation principle (work above CP impairs subsequent performance disproportionately more than kJ-matched work below CP — `ult_core_002`), training distribution for ultra/brevet (70–80% Z1 below VT1, 10–15% Z2, 5–15% Z3+), phase sequencing (Base → aerobic efficiency; Build → durability under fatigue; Peak → taper), metabolic conditioning sequence (raise aerobic floor before ceiling), and Kinzlbauer prepared-state framework (metabolic efficiency + demonstrated durability + repeatability + mental/logistical exposure). Registered in `season_planning` and `phase_planning` crews, validated in `OPERATIONAL_CREW_SKILLS`.
+- `skills/shared/ultra-endurance-methodology/references/ultra_cycling_evidence.md` (new): verified evidence table — `ult_core_001` (Spragg/Leo/Swart 2023, PMID 35239466: training below VT1 → durability improvement), `ult_core_002` (Mateo-March/Leo et al. 2024, PMID 38604818: work above CP impairs more than kJ-matched below CP), `ult_core_003` (Leo/Mateo-March et al. 2024, PMID 38531349: high-intensity work → record power profile impact), `ult_core_004` (Voet et al. 2025, PMID 40054482: training characteristics and durability changes in semi-professional cyclists), `ult_applied_001` (Kinzlbauer 2024, Sitzfleisch Podcast #154: practitioner synthesis, prepared-state concept for ultra cycling). Transfer boundaries and evidence scope explicitly stated.
+- `skills/shared/ultra-endurance-methodology/references/fat_adaptation_and_substrate_oxidation.md` (new): metabolic basis for ultra performance — VLamax/VO2max framework (FTP = f(VO2max, VLamax, efficiency)), how high-volume Z1 training lowers VLamax and shifts the fat oxidation curve rightward, what raises VLamax (to avoid in Base phase), quantitative fat oxidation rates by athlete level, and the CarbOx/durability link (`dur_core_004`).
+
+### Changed
+
+- `config/crewai/skills.yaml`: added `skills/shared/ultra-endurance-methodology` to `season_planning` and `phase_planning` crew skill lists.
+- `src/rps/crewai_runtime/config.py`: added `skills/shared/ultra-endurance-methodology` to `OPERATIONAL_CREW_SKILLS` whitelist.
+
+Motivation: agents need a complete scientific and methodological ground truth for ultra cycling and brevet to produce top-level training plans — not just periodization structure but also the durability-first methodology, kJ-differentiation principle, metabolic substrate basis, and practitioner synthesis (Kinzlbauer, Peter Leo). This release adds that layer as a registered shared skill that season and phase planning agents receive at runtime.
+
 ## [0.37.31] - 2026-09-18
 
 ### Added

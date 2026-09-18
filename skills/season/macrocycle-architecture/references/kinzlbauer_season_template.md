@@ -98,3 +98,10 @@ a recognized fatigue / autonomic marker, not a sign of improved efficiency:
 - Use schema-valid cycles only: `Base`, `Build`, `Peak`, `Transition`.
 - Express the archetype through phase names, phase intent, allowed/suppressed domains, load-governance rationale, and citations.
 - Do not emit `Specificity` or `Taper` as cycle values.
+
+## Scientific backing
+
+The scientific rationale for the Kinzlbauer sequence — why VO2max ceiling first, then VLamax
+lowering, then specific durability — is documented in
+`skills/shared/ultra-endurance-methodology/SKILL.md` with verified evidence citations
+(`ult_core_001` through `ult_core_004`, `dur_core_004`).
