@@ -3,7 +3,7 @@ name: periodization-methodology
 description: General periodization methodology for season and phase planning — phase structure, backward planning from A event, taper rules, and event hierarchy.
 metadata:
   author: rps
-  version: "1.0"
+  version: "1.1"
 ---
 Structure a training season backward from priority events.
 
@@ -15,8 +15,11 @@ contradict it.
 ## Phase semantics
 
 Four schema-valid cycle types:
-- `Base`: aerobic foundation, durability, repeatability, and volume tolerance; low event-specific
-  intensity; primary goal is to safely raise the aerobic ceiling
+- `Base`: aerobic foundation, durability, repeatability, and volume tolerance; primary goal is to
+  safely raise the aerobic ceiling; may include `vo2_base` sub-intent (Kinzlbauer VO2 Foundation:
+  short VO2-interval work on a protected ENDURANCE base, no SWEET_SPOT/THRESHOLD) or the standard
+  `aerobic_base` sub-intent (GPP, robustness, no high-intensity); event-specific intensity is low
+  in `aerobic_base` but VO2MAX intervals are valid in `vo2_base`
 - `Build`: progressive event-relevant load; event-specific emphasis increases; durability-first
   ramp limits apply; intensity is the last overload lever, not the first
 - `Peak`: final event-specific sharpening and mandatory taper behavior before the A event; taper

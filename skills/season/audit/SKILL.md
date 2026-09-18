@@ -3,7 +3,7 @@ name: audit
 description: Audit season bundles for macrocycle coherence, taper validity, and durability-first governance.
 metadata:
   author: rps
-  version: "5.0"
+  version: "5.1"
 ---
 Audit the candidate season bundle holistically.
 
@@ -39,6 +39,8 @@ Block approval when:
 - corridors copy availability capacity across unrelated phases instead of expressing progression, re-entry, rehearsal, or taper intent
 - durability-first is collapsed into intensity-free planning without `RECOVERY`/dominant `ENDURANCE` plus scenario-permitted targeted quality semantics
 - all phases collapse to `ENDURANCE only` even though the selected scenario permits broader season intensity domains
+- selected scenario has `season_archetype: ceiling_first_durability` but early Base phases use `aerobic_base` intent only (missing `vo2_base` / `vo2_build`) — unless deterministic phase-slot context explicitly shortened or excluded them
+- `ceiling_first_durability` archetype is present but `vlamax_lowering` / `durability_build` / `specificity_build` Build phases are absent without explicit horizon rationale
 - missed-load compensation or hidden catch-up behavior appears in season reasoning
 - a phase cycle is outside `Base | Build | Peak | Transition`
 - deload rationale is missing where deload intent is present

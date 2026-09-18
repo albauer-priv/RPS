@@ -3,7 +3,7 @@ name: structure-authoring
 description: Define week roles and structural skeleton for the exact phase range.
 metadata:
   author: rps
-  version: "4.1"
+  version: "4.2"
 ---
 Author the phase structure after guardrails are known.
 
@@ -84,6 +84,7 @@ Structural content rules:
 - `durability_build` must emphasize B2B, preload, hard-late, and long-ride protection rather than rehearsal semantics
 - `vo2_base` must protect the `ENDURANCE` base while introducing short-interval VO2 work (30/15 s → 40/20 s); `SWEET_SPOT`/`THRESHOLD` forbidden; treat as ceiling-raising Base, not Build
 - `vo2_build` must keep VO2 weeks fresh and bounded rather than broad mixed-density
+- `vlamax_lowering` must center sub-threshold volume and low-cadence work; suppress VO2MAX; no anaerobic drift; volume is the primary overload axis
 - `threshold_build` must center sustained-power structure
 - `sst_build` must keep moderate density bounded
 - `taper_freshening` must preserve freshness and reduce accumulation patterns — apply taper week content rules from `skills/shared/periodization-methodology`: volume −41–60% from pre-taper peak, intensity MAINTAINED (reducing intensity >30% causes 20–30% performance loss), frequency ≥ 80% of pre-taper session count (`tap_core_001`, `tap_core_002`)

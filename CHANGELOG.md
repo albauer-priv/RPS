@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.43] - 2026-09-18
+
+### Fixed
+
+- `skills/phase/structure-authoring/SKILL.md` (v4.1 → v4.2): added `vlamax_lowering` structure rule (sub-threshold volume, low-cadence work, no VO2MAX, no anaerobic drift).
+- `skills/season/audit/SKILL.md` (v5.0 → v5.1): added ceiling-first Kinzlbauer compliance checks — blocks when `ceiling_first_durability` is selected but `vo2_base`/`vo2_build` are absent from early Base phases, and when `vlamax_lowering`/`durability_build`/`specificity_build` Build phases are absent without rationale.
+- `skills/shared/periodization-methodology/SKILL.md` (v1.0 → v1.1): Base phase description extended to clarify that `vo2_base` sub-intent (Kinzlbauer VO2 Foundation) is valid in Base phases — VO2MAX intervals on a protected ENDURANCE base are not a Build concept.
+
 ## [0.37.42] - 2026-09-18
 
 ### Fixed
