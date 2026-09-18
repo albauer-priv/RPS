@@ -3,7 +3,7 @@ name: scenario-generation
 description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and advisory intensity narrative.
 metadata:
   author: rps
-  version: "4.3"
+  version: "4.4"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
@@ -235,9 +235,9 @@ Athlete VO2max development objectives:
 - Write the `season_archetype_rationale` using concrete athlete-profile facts (planning runway in weeks, explicit VO2max objective text, weekday vs. weekend availability asymmetry) so the rationale is unambiguous to the macrocycle-architecture task.
 - POSITIVE EXAMPLE — what a correct ceiling_first_durability scenario C looks like:
   - `season_archetype: "ceiling_first_durability"`
-  - `season_archetype_rationale`: `["52-week planning runway provides enough horizon for 2 VO2-build phases (~8 weeks) before the durability block, leaving ≥ 30 weeks for economy, VLamax-lowering, and specificity. Athlete profile explicitly states 'Increase aerobic capacity (VO2max)' and 'Increase VO2max, lower VLamax' as priority 3. Weekend leverage (up to 8h outdoor / 4h indoor) can support fresh VO2max intervals within compact weekday windows. VO2MAX is permitted only in phases 1–2 as an early aerobic ceiling build; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering."]`
-  - `intensity_guidance.allowed_domains`: `["RECOVERY", "ENDURANCE", "TEMPO", "VO2MAX"]` (documentary: VO2MAX active in early phases, THRESHOLD suppressed in the VO2 block; the phase layer maps these to canonical phase-intent semantics)
-  - `decision_notes` must include: "VO2MAX is permitted as an early-season aerobic-ceiling build in the first two phases only; from phase 3 onward the emphasis shifts to durability, economy, and VLamax-lowering."
+  - `season_archetype_rationale`: `["52-week planning runway provides enough horizon for VO2 Foundation (Base/vo2_base, ~4 weeks) + concentrated VO2 peak (Build/vo2_build, ~4 weeks) before the durability block, leaving ≥ 30 weeks for economy, VLamax-lowering (Build/vlamax_lowering), specific durability (Build/durability_build), and specificity/taper. Athlete profile explicitly states 'Increase aerobic capacity (VO2max)' and 'Increase VO2max, lower VLamax' as priority 3. Weekend leverage (up to 8h outdoor / 4h indoor) can support fresh VO2max intervals within compact weekday windows. VO2MAX is permitted only in the early Base/vo2_base and Build/vo2_build phases; from the vlamax_lowering phase onward the emphasis shifts to durability, economy, and VLamax-lowering."]`
+  - `intensity_guidance.allowed_domains`: `["RECOVERY", "ENDURANCE", "TEMPO", "VO2MAX"]` (documentary: VO2MAX active in early phases, THRESHOLD suppressed in the VO2 block; the macrocycle layer maps these to canonical phase-intent semantics: `vo2_base` for VO2 Foundation Base phase, `vo2_build` for concentrated VO2 Build phase)
+  - `decision_notes` must include: "VO2MAX is permitted as an early-season aerobic-ceiling build (Base/vo2_base + Build/vo2_build) only; from the vlamax_lowering phase onward the emphasis shifts to durability, economy, and VLamax-lowering."
 
 Seasonal availability context:
 - When `seasonal_context` is present in the injected context, read `outdoor_season_months`, `indoor_dominant_months`, `indoor_weekend_max_hours`, and `outdoor_weekend_max_hours`.

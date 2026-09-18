@@ -3,7 +3,7 @@ name: macrocycle-architecture
 description: Reverse-plan season macrocycles, peak windows, and taper structure from event anchors.
 metadata:
   author: rps
-  version: "5.3"
+  version: "5.4"
 ---
 Build macrocycle structure backward from priority events.
 
@@ -56,10 +56,15 @@ Seasonal availability context:
 - If `seasonal_context` is absent, do not invent seasonal annotations — proceed with the static availability table only.
 
 Ceiling-first archetype activation (mandatory when scenario uses it):
-- when the selected scenario has `season_archetype: "ceiling_first_durability"` and `VO2MAX` in its `allowed_intensity_domains`, the macrocycle MUST map the first one or two phases (typically the opening 6–10 weeks of the horizon) to `vo2_build` intent with `VO2MAX` permitted — this is mandatory, not optional, when the scenario explicitly activates the archetype
-- after the VO2 foundation block, from the third phase onward, transition to `durability_build` intent and suppress `VO2MAX` — economy, VLamax-lowering, and long-ride volume become the primary overload axis from that point
-- size the VO2 block to leave enough horizon for at least three durability-build phases plus specificity and taper; do not extend it so far that the durability runway is compromised
-- cite the selected scenario's `season_archetype_rationale` when explaining why the first phases use `vo2_build` intent
+- when the selected scenario has `season_archetype: "ceiling_first_durability"` and `VO2MAX` in its `allowed_intensity_domains`, follow the Kinzlbauer sequence — this ordering is mandatory, not optional:
+  1. **GPP** (Base phase, `aerobic_base` intent): structural robustness, aerobic continuity, no `VO2MAX`; 4–6 weeks
+  2. **VO2 Foundation** (Base phase, `vo2_base` intent): ceiling-raising within the Base cycle — short VO2 intervals (30/15 s → 40/20 s) on a protected `ENDURANCE` base; `VO2MAX` permitted, `SWEET_SPOT`/`THRESHOLD` forbidden
+  3. **VO2-focused peak** (Build phase, `vo2_build` intent): concentrated VO2 emphasis — longer intervals (40/20 s → 3–5 min efforts); `VO2MAX` primary; when planning runway allows this as a separate Build phase after the VO2 Foundation Base
+  4. **Economy / VLamax-lowering** (Build phase, `vlamax_lowering` intent): `VO2MAX` suppressed; volume becomes the primary overload axis; sub-threshold and low-cadence work increase
+  5. **Specific durability** (Build phase, `durability_build` intent): kJ/kg preload, fatigued-state quality checks, back-to-back long rides
+- if planning horizon is short: compress by merging VO2 Foundation and VO2-focused into a single `Base / vo2_base` phase; do not skip economy/VLamax work
+- `VO2MAX` is suppressed from `vlamax_lowering` onward — cite the scenario's `season_archetype_rationale` and the Kinzlbauer sequence when explaining why the early Base and/or Build phases use `vo2_base` / `vo2_build` intent
+- size the combined VO2 block (Foundation + concentrated peak) to leave enough horizon for at least two `vlamax_lowering` / `durability_build` Build phases plus specificity and taper
 
 Allowed multi-`A` models:
 - `multiple macrocycles`: only when `A` events are separated enough for full recovery and rebuild

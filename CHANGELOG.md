@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.36] - 2026-09-18
+
+### Fixed
+
+- `skills/season/macrocycle-architecture/SKILL.md` (v5.3 → v5.4): corrected ceiling-first archetype activation block — previously told the macrocycle agent to map the first phases to `vo2_build` (Build intent) and skip `vlamax_lowering` entirely. Now reflects the correct Kinzlbauer sequence: (1) `Base / aerobic_base` = GPP; (2) `Base / vo2_base` = VO2 Foundation — ceiling-raising within the Base cycle; (3) `Build / vo2_build` = concentrated VO2 peak; (4) `Build / vlamax_lowering` = economy/VLamax-lowering; (5) `Build / durability_build` = specific durability. Also updated: `VO2MAX` is suppressed from `vlamax_lowering` onward, not only from the third phase; short-horizon compression guidance added.
+- `skills/season/scenario-generation/SKILL.md` (v4.3 → v4.4): updated positive ceiling-first example — rationale text now names `Base/vo2_base` + `Build/vo2_build` instead of vague "2 VO2-build phases"; `decision_notes` and `intensity_guidance` inline commentary updated to match the `vo2_base`/`vo2_build` phase_intent distinction.
+
 ## [0.37.35] - 2026-09-18
 
 ### Added
