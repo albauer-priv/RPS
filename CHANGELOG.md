@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.30] - 2026-09-18
+
+### Changed
+
+- `skills/season/macrocycle-architecture/references/taper_and_peaking_evidence.md` (new): evidence table for taper week content rules with verified scientific sources — Bosquet et al. 2007 (tap_core_001, PMID 17762369, meta-analysis of 27 studies: 41–60% volume reduction, intensity maintained), Mujika & Padilla 2003 (tap_core_002, also in durability library as dur_core_012: intensity maintained, frequency ≤20% reduction), plus applied practitioner sources (Friel, TrainingPeaks, TORQ). Transfer boundaries and what the evidence does/does not justify are explicitly stated.
+- `skills/season/macrocycle-architecture/references/macrocycle_and_peak_window_rules.md`: added tap_core_001/002/applied citations to each rule in the "Taper week content" section.
+- `skills/season/macrocycle-architecture/SKILL.md` (v5.3): taper week content rule now references the evidence file and cites tap_core_001 and tap_core_002 inline.
+
+All taper rules are now traceable to verified primary sources and consistent with the evidence-backed standard used in the durability-methodology skill.
+
 ## [0.37.29] - 2026-09-18
 
 ### Changed

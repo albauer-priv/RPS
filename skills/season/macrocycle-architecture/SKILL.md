@@ -3,7 +3,7 @@ name: macrocycle-architecture
 description: Reverse-plan season macrocycles, peak windows, and taper structure from event anchors.
 metadata:
   author: rps
-  version: "5.2"
+  version: "5.3"
 ---
 Build macrocycle structure backward from priority events.
 
@@ -80,7 +80,7 @@ Taper rules:
 - a `B` event constraint must read as rehearsal, pacing/fueling validation, or minor load adjustment; it must not imply a full taper or independent peak
 - minimum effective taper window for ultra/brevet events (events > 12 hours): **2–3 weeks including the event week**; a single event-week taper is insufficient for events of this duration
 - the last cadence role of the phase immediately preceding a TAPER/A-event phase must not be `RELOAD`; flag `RELOAD → A-event phase` adjacency as a structural **warning** and recommend restructuring the preceding phase's final week to `MINI_RESET` or `DELOAD`; it is a **warning**, not a hard blocker, unless the taper phase itself is shorter than the minimum effective window
-- taper week content (research-backed): **volume** reduced 41–60% from peak load; **intensity** MAINTAINED — reducing intensity by >30% causes 20–30% performance loss ("halten" principle: fitness is held, not built); **frequency** maintained at ≥ 80% of pre-taper sessions; no new high-volume stimuli inside the taper window
+- taper week content (see `references/taper_and_peaking_evidence.md` for sources): **volume** reduced 41–60% from peak load (`tap_core_001`); **intensity** MAINTAINED — reducing intensity by >30% causes 20–30% performance loss, "halten" principle: fitness is held not built (`tap_core_001`, `tap_core_002`); **frequency** maintained at ≥ 80% of pre-taper sessions (`tap_core_002`); no new high-volume stimuli inside the taper window
 
 Cadence week-role override in `Peak` phases (mandatory when A event is in the phase):
 - cadence week roles (`LOAD_1`, `LOAD_2`, `MINI_RESET`, `RELOAD`) are deterministic PLANNING CONTEXT only; they describe a generic load pattern
