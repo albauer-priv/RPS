@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.39] - 2026-09-18
+
+### Fixed
+
+- `skills/season/scenario-generation/SKILL.md` (v4.4 → v4.5): eliminated first-pass ceiling-first guardrail failures. Root cause: agent was generating all three scenarios against the A/B/C profiles first, then running the VO2max self-check afterward — resulting in a post-generation "patch" that produced inconsistent scenario narratives. Fix: added **Method step 1a** (ceiling-first pre-check) that runs BEFORE any scenario is generated; agent now decides upfront which scenario will be `ceiling_first_durability` and shapes it from the start. Added exception note to Scenario C profile so "optional VO2MAX only if explicitly justified" does not suppress ceiling-first when the athlete's VO2max objective IS the justification.
+
 ## [0.37.38] - 2026-09-18
 
 ### Added

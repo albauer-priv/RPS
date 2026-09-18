@@ -3,7 +3,7 @@ name: scenario-generation
 description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and advisory intensity narrative.
 metadata:
   author: rps
-  version: "4.4"
+  version: "4.5"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
@@ -82,6 +82,12 @@ Each scenario has structured fields (`deload_cadence`, `phase_length_weeks`, `ph
 
 Method:
 1. Respect the injected deterministic horizon context, future-only A/B/C event inventory, athlete profile, availability, logistics, and KPI context.
+1a. **CEILING-FIRST PRE-CHECK — do this before generating any scenario:**
+    - Read `athlete_profile.objectives.secondary` and `objectives.priority_order`. Does any entry contain VO2max development language (e.g. "Increase VO2max", "aerobic capacity", "Increase aerobic capacity", "VO2max-Entwicklung")?
+    - Is `inclusive_planning_horizon_weeks` ≥ 20?
+    - If BOTH are true: immediately decide that Scenario C (or Scenario B when C is already differentiated by higher specificity-under-fatigue and kJ-load) will use `season_archetype: "ceiling_first_durability"`. Make this decision now, before writing any scenario narrative.
+    - Shape that scenario to support the ceiling-first archetype from the start — cadence, intensity guidance, phase plan summary, and all narrative fields must reflect the ceiling-first character from the beginning. Do NOT generate it as a generic performance-forward scenario and then patch the `season_archetype` field afterward. Patching an existing scenario that was not shaped for ceiling-first produces an internally inconsistent output.
+    - Carry this decision into steps 2–3 so the ceiling-first scenario's structure is coherent when it is written.
 2. Produce exactly three coherent scenarios with ids `A`, `B`, and `C`.
 3. Vary scenarios first by kJ-envelope, fatigue exposure, specificity, density, cadence rhythm, recovery tolerance, and risk contract; use intensity guidance only as a downstream permission layer.
 4. Recommendation-default cadence hard rule: deterministic recommendation cadence is advisory for one scenario, not the default cadence for all scenarios.
@@ -185,7 +191,7 @@ Required A/B/C target profiles:
   - upper plausible kJ-envelope
   - higher specificity under fatigue
   - more B2B / hard-late / event simulation
-  - optional `THRESHOLD` or `VO2MAX` only if explicitly justified
+  - optional `THRESHOLD` or `VO2MAX` only if explicitly justified — **EXCEPTION: when the ceiling-first pre-check (step 1a) mandates `ceiling_first_durability`, Scenario C IS the ceiling-first scenario; shape it accordingly (early VO2max ceiling phases, then economy/durability) — not as a generic specificity-forward scenario**
   - `best_suited_if` must say `stable recovery`, `high load tolerance`, or `fatigue exposure tolerance` are already demonstrably present
   - preferred example: `Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.`
   - `risk_flags` must say the scenario becomes `too aggressive` when `fatigue risk`, `travel disruption`, `logistics disruption`, or `insufficient tolerance` appears
