@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-05-21
 Owner: Planning Semantics
 ---
 # FEAT: Canonical Phase Taxonomy Skill Migration
 
 * **ID:** FEAT_canonical_phase_taxonomy_skill_migration
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Planning Skills
 * **Last-Updated:** 2026-05-21
 * **Related:** [FEAT_canonical_phase_taxonomy_migration](/doc/specs/features/FEAT_canonical_phase_taxonomy_migration.md)

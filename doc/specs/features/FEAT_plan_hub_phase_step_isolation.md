@@ -1,13 +1,13 @@
 ---
 Version: 1.0
-Status: Approved
+Status: Done
 Last-Updated: 2026-04-13
 Owner: UI / Orchestration
 ---
 # FEAT: Plan Hub Phase Step Isolation
 
 * **ID:** FEAT_plan_hub_phase_step_isolation
-* **Status:** Approved
+* **Status:** Done
 * **Owner/Area:** Plan Hub UI / Plan Week Orchestrator
 * **Last-Updated:** 2026-04-13
 * **Related:** `src/rps/ui/pages/plan/hub.py`, `src/rps/orchestrator/plan_week.py`, `tests/test_plan_pages.py`
