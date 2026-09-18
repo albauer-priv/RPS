@@ -339,13 +339,6 @@ def build_scenario_recommendation_context(
             or (avg8_decoupling is not None and avg8_decoupling > 5.0)
         ),
         "has_future_b_event": bool(events.get("future_b_events")),
-        "vo2_mandate": bool(
-            "vo2max" in objectives_text
-            or "vo2 max" in objectives_text
-            or "increase aerobic capacity" in objectives_text
-            or "increase vo2" in objectives_text
-            or "raise vo2" in objectives_text
-        ),
     }
 
     ranked: list[JsonMap] = []

@@ -569,19 +569,39 @@ def season_scenarios_profile_quality(result: Any) -> GuardrailResult:
                 "Add the archetype and provide the required rationale in each scenario.",
             )
 
-    scenario_c = by_id["C"]
-    guidance_c = _as_map(scenario_c.get("scenario_guidance"))
-    season_archetype = str(guidance_c.get("season_archetype") or "").strip()
-    archetype_rationale = " ".join(_string_list(guidance_c.get("season_archetype_rationale"))).lower()
-    if season_archetype == "ceiling_first_durability":
-        decision_text = " ".join(_string_list(guidance_c.get("decision_notes"))).lower()
-        joined_text = f"{archetype_rationale} {decision_text}"
-        if not all(any(marker in joined_text for marker in group) for group in _ARCHETYPE_REQUIRED_MARKER_GROUPS):
+    # Verify at least one ceiling_first scenario carries the required rationale markers
+    ceiling_first_sids = [
+        sid
+        for sid in by_id
+        if str(_as_map(by_id[sid].get("scenario_guidance")).get("season_archetype") or "").strip()
+        == "ceiling_first_durability"
+    ]
+    if ceiling_first_sids:
+        rationale_ok = any(
+            all(
+                any(
+                    marker
+                    in (
+                        " ".join(_string_list(_as_map(by_id[sid].get("scenario_guidance")).get("season_archetype_rationale")))
+                        + " "
+                        + " ".join(_string_list(_as_map(by_id[sid].get("scenario_guidance")).get("decision_notes")))
+                    ).lower()
+                    for marker in group
+                )
+                for group in _ARCHETYPE_REQUIRED_MARKER_GROUPS
+            )
+            for sid in ceiling_first_sids
+        )
+        if not rationale_ok:
             return (
                 False,
-                "Scenario C may use ceiling_first_durability only with explicit rationale and preserved runway. "
-                "Fix: add the required rationale to season_archetype_rationale and decision_notes — do not remove the archetype.",
+                "ceiling_first_durability requires explicit rationale in at least one scenario's "
+                "season_archetype_rationale and decision_notes covering: early ceiling support, "
+                "sufficient runway, preserved later durability/specificity, and recovery tolerance. "
+                "Fix: add the required rationale — do not remove the archetype.",
             )
+    scenario_c = by_id["C"]
+    guidance_c = _as_map(scenario_c.get("scenario_guidance"))
     c_story = " ".join(
         [
             str(scenario_c.get("load_philosophy") or ""),

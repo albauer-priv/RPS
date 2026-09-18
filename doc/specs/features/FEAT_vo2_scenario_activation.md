@@ -1,7 +1,12 @@
 ---
 Status: Implemented
-Version: 1.0
-Last-Updated: 2026-09-16
+Version: 1.1
+Last-Updated: 2026-09-18
+Notes: >
+  v1.0 required only one scenario to use ceiling_first_durability and gated on athlete VO2max objectives.
+  v1.1 (v0.37.40): ceiling_first is the RPS default methodology — ALL scenarios use ceiling_first_durability
+  when inclusive_planning_horizon_weeks ≥ 20, regardless of athlete objective text. vo2_mandate feature
+  flag removed. Guardrail now triggers unconditionally on horizon ≥ 20 weeks.
 ---
 # FEAT_vo2_scenario_activation
 

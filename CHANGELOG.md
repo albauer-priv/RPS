@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.41] - 2026-09-18
+
+### Changed
+
+- `prompts/agents/season_scenario.md`: trimmed to role + scope + definitions only — all operational rules now live exclusively in `skills/season/scenario-generation/SKILL.md` (single source of truth). Eliminates the contradictions between prompt and skill that caused ceiling-first failures.
+
+### Fixed
+
+- `guardrails_season.py`: rationale check for `ceiling_first_durability` now scans all ceiling-first scenarios instead of only Scenario C; passes when at least one scenario has the full rationale markers.
+- `src/rps/planning/scenario_recommendation.py`: removed `vo2_mandate` dead code from `features` dict (no longer consumed by the guardrail since v0.37.40).
+- `doc/specs/features/FEAT_vo2_scenario_activation.md`: updated status notes to reflect v1.1 semantics (ALL scenarios, horizon-only gate).
+
 ## [0.37.40] - 2026-09-18
 
 ### Fixed
