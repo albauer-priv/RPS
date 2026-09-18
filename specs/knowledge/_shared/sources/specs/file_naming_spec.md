@@ -56,7 +56,7 @@ Define consistent filenames for all artefacts to support:
 - `wellness_yyyy-ww.json`
 
 ### Season-Planner
-- `season_plan_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json` (range may be 8–32 weeks)
+- `season_plan_yyyy-ww--yyyy-ww__yyyymmdd_HHMMSS.json` (range: 8 weeks minimum)
 - `season_phase_feed_forward_yyyy-ww__yyyymmdd_HHMMSS.json`
 
 ### Phase-Architect

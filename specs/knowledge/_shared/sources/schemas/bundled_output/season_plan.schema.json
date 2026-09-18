@@ -340,8 +340,7 @@
             },
             "planning_horizon_weeks": {
               "type": "integer",
-              "minimum": 8,
-              "maximum": 32
+              "minimum": 8
             },
             "kpi_profile_ref": {
               "type": "string",
@@ -2167,8 +2166,7 @@
             },
             "planning_horizon_weeks": {
               "type": "integer",
-              "minimum": 8,
-              "maximum": 32
+              "minimum": 8
             },
             "kpi_profile_ref": {
               "type": "string",

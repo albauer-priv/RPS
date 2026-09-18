@@ -50,7 +50,7 @@ trace versions. The Workspace layer overwrites schema-critical fields before sav
 
 #### 3) `data.body_metadata`
 Required:
-- `planning_horizon_weeks` (integer, **8–32**)
+- `planning_horizon_weeks` (integer, **minimum 8**)
 - `kpi_profile_ref` (KPI_PROFILE id)
 - `moving_time_rate_guidance`:
   - `segment` (string label used, e.g., `"fast_competitive"`)

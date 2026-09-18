@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.24] - 2026-09-18
+
+### Changed
+
+- `specs/schemas/season_plan.schema.json`: removed the upper bound of 32 weeks from `planning_horizon_weeks` — only the minimum of 8 weeks is enforced. Season plans can now span a full year or longer without schema rejection.
+- `specs/knowledge/_shared/sources/specs/mandatory_output_season_plan.md`: updated `planning_horizon_weeks` description from "8–32" to "minimum 8".
+- `specs/knowledge/_shared/sources/specs/file_naming_spec.md`: updated season plan filename comment from "8–32 weeks" to "8 weeks minimum".
+- Bundled schemas regenerated.
+
 ## [0.37.23] - 2026-09-17
 
 ### Fixed
