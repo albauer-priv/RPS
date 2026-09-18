@@ -3,7 +3,7 @@ name: scenario-generation
 description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and advisory intensity narrative.
 metadata:
   author: rps
-  version: "4.6"
+  version: "4.7"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
@@ -175,7 +175,7 @@ Required A/B/C target profiles:
   - high executability under work stress, illness risk, or masters recovery limits
   - `best_suited_if` must say `continuity priority`, `uncertain recovery`, `recoverability`, or `logistics robustness` are the reason to choose it
   - preferred example: `Choose when continuity priority and uncertain recovery dominate.`
-  - `risk_flags` must say the scenario may `under-deliver` or be `too conservative` if the athlete can tolerate more load
+  - `risk_flags` must say the scenario may `under-deliver` or be `too conservative` if the athlete can tolerate more load — this applies in ceiling-first scenarios too: the conservatism is in the kJ load and recovery margin, not in domain selection, so the `under-deliver` / `too conservative` marker is still required
   - preferred example: `May under-deliver if high load tolerance is available.`
   - when `ceiling_first_durability` applies (horizon ≥ 20 weeks): `VO2MAX` is in `allowed_intensity_domains`; Scenario A's conservatism shows as lower kJ envelope, 2:1 / 3-week cadence, and highest recovery margin — NOT as VO2MAX exclusion; all three scenarios follow the same Kinzlbauer phase sequence
   - when NOT ceiling_first (horizon < 20 weeks): `ENDURANCE` is the core domain; `TEMPO` is optional and sparse

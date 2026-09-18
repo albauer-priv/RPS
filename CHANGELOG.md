@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.45] - 2026-09-20
+
+### Fixed
+
+- `skills/season/scenario-generation/SKILL.md` (v4.6 → v4.7): Scenario A `risk_flags` requirement now explicitly states the `under-deliver`/`too conservative` marker is required even in ceiling-first scenarios — the conservatism is in kJ load and recovery margin, not domain selection; the v4.6 ceiling-first note was causing the LLM to write architecture-focused risk_flags without the guardrail-required caution markers.
+
 ## [0.37.44] - 2026-09-18
 
 ### Tests
