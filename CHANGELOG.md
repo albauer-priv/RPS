@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.29] - 2026-09-18
+
+### Changed
+
+- `skills/season/macrocycle-architecture/SKILL.md` (v5.2): added research-backed taper week content rule — volume reduced 41–60%, intensity MAINTAINED ("halten" principle: fitness is held not built in the taper window; reducing intensity >30% causes 20–30% performance loss), frequency ≥ 80% of pre-taper sessions.
+- `skills/season/macrocycle-architecture/references/macrocycle_and_peak_window_rules.md`: added "Taper week content (research-backed general rules)" section with the volume/intensity/frequency breakdown, the "halten" principle (fitness held not built), the B-event-as-final-stimulus rule (near-peak form maintainable 2–4 weeks), and the B+A same-phase validity condition.
+
+Motivation: prior skill formulations described structural taper validity (phase designations, cadence overrides) but did not articulate the underlying universal taper science — specifically that intensity must be preserved while volume is reduced. This distinction is the reason the B+A same-phase pattern is valid: the B event provides the final specificity stimulus at race intensity, and the body enters supercompensation during the subsequent low-volume (but intensity-preserving) taper weeks.
+
 ## [0.37.28] - 2026-09-18
 
 ### Fixed

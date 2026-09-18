@@ -36,6 +36,16 @@ Build the macrocycle backward from the primary A event anchor:
   cadence label to assess taper adequacy within a `Peak` phase; the `Peak` designation and the
   macrocycle architect's explicit taper narrative are the authoritative taper signal
 
+## Taper week content (research-backed general rules)
+The taper achieves supercompensation by clearing accumulated fatigue while preserving the fitness already built:
+- **Volume**: reduce 41–60% from pre-taper peak load progressively — a sudden cut is less effective than a stepped reduction
+- **Intensity**: MAINTAIN at or near pre-taper level — this is the single most critical taper rule; reducing intensity by 30–60% causes a 20–30% performance loss and negates the taper benefit; short sharp efforts at race pace are encouraged to keep the neuromuscular system sharp
+- **Frequency**: maintain ≥ 80% of pre-taper session count; shorten individual sessions rather than removing training days
+- **Duration**: 1–3 weeks for most events; ultra/brevet events (> 12 hours): 2–3 weeks minimum including the event week
+- **Fitness is held, not built ("halten")**: the taper window cannot generate new training adaptations — its sole purpose is fatigue clearance and supercompensation; any high-volume overload stimulus in this window carries fatigue into the event start line
+- **B event as final high-load stimulus**: when a B event falls 2–4 weeks before the A event, it is the last full specificity stimulus; all weeks after the B event are taper — near-peak form can be maintained for 2–4 weeks with correct taper structure, so this is physiologically sound
+- **B+A in the same Peak phase**: valid when (a) B event is the final specificity dose, (b) ≥ 2 full taper weeks follow the B event before the A event, (c) the phase as a whole is designated `Peak`; the B event week itself is NOT a taper week — it is the last hard event/training week
+
 ## Cadence week-role override in Peak phases
 When the macrocycle architect designates a phase as `Peak` containing the A event:
 - A event week (regardless of cadence role: `RELOAD`, `MINI_RESET`, etc.) = **event week** (zero training load + the event)
