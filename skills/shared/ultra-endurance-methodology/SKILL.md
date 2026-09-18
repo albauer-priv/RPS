@@ -130,35 +130,68 @@ and high-intensity tolerance built in the ceiling phase reduces the VLamax load 
 
 ### Mapping to schema-valid phases
 
-| Schema cycle | Kinzlbauer phase | Ultra emphasis |
-|---|---|---|
-| `Base` | GPP + VO2 foundation | Structural robustness; early ceiling work |
-| `Build` | VO2-focused + economy/durability | Ceiling peak → transition to VLamax/economy |
-| `Build` | Specific durability | kJ/kg preload; fatigued-state quality checks |
-| `Peak` | Taper | Volume −41–60%, intensity maintained (see `periodization-methodology`) |
+| Schema cycle | Kinzlbauer sub-phase | Primary work | Intensity domains |
+|---|---|---|---|
+| `Base` — GPP | General preparation | Structural robustness, aerobic continuity | `ENDURANCE`; minimal `TEMPO` |
+| `Base` — VO2 foundation | **VO2max ceiling starts here** | Short VO2 intervals on top of Z2 base | `ENDURANCE` + bounded `VO2MAX` |
+| `Build` | VO2-focused peak | Concentrated VO2 peak (longer intervals) | `ENDURANCE` + `VO2MAX` + `THRESHOLD` support |
+| `Build` | Economy / VLamax lowering | VLamax ↓, FatOx ↑ | `ENDURANCE` dominant; `TEMPO` / `SWEET_SPOT` |
+| `Build` | Specific durability | kJ/kg preload; fatigued-state checks | `ENDURANCE` B2B; `TEMPO`/`SWEET_SPOT` hard-late |
+| `Peak` | Taper | Volume −41–60%, intensity maintained | `ENDURANCE` + short openers |
 
 Only `Base`, `Build`, `Peak`, `Transition` are valid schema cycle values.
 
 ### Phase content rules
 
-**Base phase (ultra context)**
-- Primary goal: structural robustness + early aerobic base; no high-intensity unless explicitly
-  permitted; cadence `2:1:1` or `2:1` depending on athlete recovery profile
-- Duration: minimum 4–6 weeks before progressing to ceiling work
+**Base phase (ultra context) — two mandatory sub-phases**
 
-**Build phase — VO2 ceiling segment**
-- Primary goal: VO2max ceiling tolerance and repeatability
-- Load character: bounded `THRESHOLD` / `VO2MAX`; short-interval protocols progress within
-  family before escalating; `ENDURANCE` volume remains protected — ceiling work does not
-  replace base volume
+The Base cycle contains two structurally distinct sub-phases. Agents must read `build_subtype`
+and phase intent to distinguish them; both map to the schema cycle `Base`.
+
+*Sub-phase 1: GPP (General Preparation)*
+- Primary goal: structural robustness, musculoskeletal readiness, aerobic continuity
+- Intensity: `ENDURANCE` dominant; no `THRESHOLD` / `VO2MAX`; very light `TEMPO` only if
+  continuity is stable and recovery is established
+- Cadence: `2:1:1` or `2:1` depending on athlete recovery profile
+- Duration: 4–6 weeks minimum
+- This sub-phase is NOT the whole Base — it is the foundation before the VO2 ceiling work begins
+
+*Sub-phase 2: VO2 Foundation (still within the Base cycle)*
+- Primary goal: **VO2max ceiling tolerance — this is where the major ceiling-raising work happens**
+  (per Kinzlbauer: the ceiling must be raised BEFORE shifting to VLamax/economy work)
+- Intensity: introduce `VO2MAX` (Z5, 105–120% FTP) via short-interval protocols; Z2 `ENDURANCE`
+  volume remains protected — ceiling work is added on top of base volume, not instead of it
+- Interval progression within the VO2 foundation: 30/15 s protocols from reduced set/rep count
+  to full protocol over 2–4 weeks, before progressing to longer intervals (40/20 s)
+- Do NOT proceed to economy/VLamax phase before meaningful VO2max adaptation is established
+
+**Why VO2max ceiling work belongs in Base, not only in Build:**
+A higher VO2max lowers the relative intensity of subsequent aerobic base training — the same
+Z2 watts sit at a lower %VO2max → the fat-oxidation signal is stronger, VLamax falls more
+effectively. Building the ceiling first makes every subsequent `ENDURANCE`-dominant week
+more metabolically productive. This is the core Kinzlbauer sequencing rationale.
+
+**Build phase — VO2 ceiling peak segment**
+- Primary goal: concentrated VO2max emphasis; peak ceiling tolerance
+- Intensity: progress to longer VO2max intervals (40/20 s → 3–5 min efforts); `THRESHOLD`
+  for clearance support; `ENDURANCE` volume remains protected
+- Follows VO2 foundation within Base; represents the concentrated VO2 peak before transitioning
+  to economy work
 
 **Build phase — economy/durability segment**
 - Primary goal: VLamax lowering; metabolic efficiency at ultra pace; demonstrated durability
 - Load character: `ENDURANCE` volume becomes primary overload axis; `THRESHOLD`/`VO2MAX`
   bounded; introduce B2B long rides, preload + hard-later sessions
+- Sub-threshold (`TEMPO`, `SWEET_SPOT`) and low-cadence (`K3`) increase → VLamax ↓, CarbOx ↓
 - kJ/kg milestones (indicative): 20–25 kJ/kg early → 28–32 kJ/kg mid → 35–40 kJ/kg late
 - Hard-late sessions: planned effort in the final hours of a long ride — trains the durability
   adaptation directly (`ult_core_002`, `dur_core_003`)
+
+**Build phase — specific durability segment**
+- Primary goal: event-specific kJ/kg preload exposure under accumulated fatigue
+- Standardized fatigued-state quality checks: normal performance after ≥ 30 kJ/kg preload
+  becomes the primary quality metric
+- B2B long rides that simulate the metabolic fatigue pattern of the target event
 
 **Peak phase (ultra context)**
 - Same taper rules as in `periodization-methodology`: volume −41–60%, intensity maintained

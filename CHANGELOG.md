@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.34] - 2026-09-18
+
+### Fixed
+
+- `skills/shared/ultra-endurance-methodology/SKILL.md` (v1.1 → v1.2): corrected Base phase description — in the Kinzlbauer sequence, the Base cycle contains TWO mandatory sub-phases: (1) GPP (General Preparation): structural robustness, `ENDURANCE` dominant, no `VO2MAX`; (2) VO2 Foundation: **VO2max ceiling-raising work starts here**, inside the Base cycle, not after it. Short VO2 intervals (30/15 s → 40/20 s) on top of protected Z2 `ENDURANCE` volume. Previous version incorrectly described Base as "no high-intensity unless explicitly permitted" — that applies only to the GPP sub-phase. Added rationale: raising VO2max ceiling first makes all subsequent `ENDURANCE`-dominant work more metabolically productive (lower %VO2max → stronger fat-oxidation/VLamax-lowering signal). Updated phase mapping table to show six distinct sub-phases across Base/Build/Peak with intensity domain labels.
+
 ## [0.37.33] - 2026-09-18
 
 ### Fixed
