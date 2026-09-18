@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.44] - 2026-09-18
+
+### Tests
+
+- `tests/test_load_bands.py`: added 3 `choose_quality_domain` tests (vo2_base → VO2MAX, not TEMPO; fallback when VO2MAX absent; aerobic_base still → TEMPO) and 3 `_derive_phase_intents_for_slots` tests (6-slot ceiling-first Kinzlbauer sequence, 4-slot single-vo2-build sequence, non-ceiling-first leaves defaults). These were the only untested critical logic paths from v0.37.37.
+
 ## [0.37.43] - 2026-09-18
 
 ### Fixed

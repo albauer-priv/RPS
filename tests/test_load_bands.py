@@ -6,6 +6,7 @@ from rps.planning.load_bands import (
     DEFAULT_IF_REF_LOAD,
     LoadBandError,
     NumberBand,
+    _derive_phase_intents_for_slots,
     build_load_capacity_context,
     build_season_phase_load_context,
     calculate_availability_feasible_band,
@@ -16,6 +17,7 @@ from rps.planning.load_bands import (
     resolve_if_ref_load,
     selected_kpi_rate_band_from_selection,
 )
+from rps.planning.phase_authority import choose_quality_domain
 from rps.workspace.iso_helpers import IsoWeek, IsoWeekRange
 from rps.workspace.phase_intents import validate_phase_semantics
 
@@ -755,3 +757,89 @@ def test_build_load_capacity_context_stops_when_kpi_active_without_body_mass() -
 
     assert "missing_body_mass_for_kpi_rate" in context["warnings"]
     assert context["s5_bands"][0]["error"] == "missing_body_mass_for_kpi_rate"
+
+
+# --- choose_quality_domain tests ---
+
+
+def test_choose_quality_domain_vo2_base_prefers_vo2max() -> None:
+    """vo2_base must resolve to VO2MAX, not TEMPO (the generic fallback for early base)."""
+    result = choose_quality_domain(
+        phase_intent="vo2_base",
+        allowed_domains=["ENDURANCE", "TEMPO", "VO2MAX"],
+    )
+    assert result == "VO2MAX"
+
+
+def test_choose_quality_domain_vo2_base_falls_through_when_vo2max_absent() -> None:
+    result = choose_quality_domain(
+        phase_intent="vo2_base",
+        allowed_domains=["ENDURANCE", "TEMPO"],
+    )
+    assert result == "TEMPO"
+
+
+def test_choose_quality_domain_aerobic_base_prefers_tempo() -> None:
+    result = choose_quality_domain(
+        phase_intent="aerobic_base",
+        allowed_domains=["ENDURANCE", "TEMPO", "VO2MAX"],
+    )
+    assert result == "TEMPO"
+
+
+# --- _derive_phase_intents_for_slots tests ---
+
+_CEILING_FIRST_CONTEXT = {
+    "season_archetype": "ceiling_first_durability",
+    "ceiling_first_permitted": True,
+    "early_vo2_permitted": True,
+    "economy_repeat_permitted": False,
+}
+
+_SIX_SLOTS = [
+    {"phase_id": "P01"},
+    {"phase_id": "P02"},
+    {"phase_id": "P03"},
+    {"phase_id": "P04"},
+    {"phase_id": "P05"},
+    {"phase_id": "P06"},
+]
+
+
+def test_derive_phase_intents_ceiling_first_six_slots_kinzlbauer_sequence() -> None:
+    """Ceiling-first 6-slot season must yield the full Kinzlbauer sequence."""
+    intents = _derive_phase_intents_for_slots(
+        slots=_SIX_SLOTS,
+        selected_structure_context=_CEILING_FIRST_CONTEXT,
+        planning_events_payload={},
+    )
+    assert intents["P01"] == "vo2_base", f"expected vo2_base for P01, got {intents['P01']}"
+    assert intents["P02"] == "vo2_build", f"expected vo2_build for P02, got {intents['P02']}"
+    assert intents["P03"] == "vo2_build", f"expected vo2_build for P03, got {intents['P03']}"
+    assert intents["P04"] == "vlamax_lowering", f"expected vlamax_lowering for P04, got {intents['P04']}"
+    assert intents["P05"] == "specificity_build", f"expected specificity_build for P05, got {intents['P05']}"
+
+
+def test_derive_phase_intents_ceiling_first_four_slots_single_vo2_build() -> None:
+    """4-slot season: 1 BASE → vo2_base, 1 BUILD → vo2_build, 1 BUILD → vlamax_lowering, 1 PEAK."""
+    slots = [{"phase_id": f"P0{i}"} for i in range(1, 5)]
+    intents = _derive_phase_intents_for_slots(
+        slots=slots,
+        selected_structure_context=_CEILING_FIRST_CONTEXT,
+        planning_events_payload={},
+    )
+    assert intents["P01"] == "vo2_base"
+    assert intents["P02"] == "vo2_build"
+    assert intents["P03"] == "vlamax_lowering"
+
+
+def test_derive_phase_intents_no_ceiling_first_leaves_defaults() -> None:
+    """Without ceiling_first archetype, intents are the standard season-role defaults."""
+    non_ceiling = {"season_archetype": "none", "ceiling_first_permitted": False}
+    intents = _derive_phase_intents_for_slots(
+        slots=_SIX_SLOTS,
+        selected_structure_context=non_ceiling,
+        planning_events_payload={},
+    )
+    assert intents["P01"] != "vo2_base"
+    assert "vlamax_lowering" not in intents.values()
