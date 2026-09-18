@@ -46,8 +46,9 @@ Evidence-source handling:
 - The canonical operative source is the local evidence library under `skills/shared/durability-methodology/references/library/`; the markdown tables are generated views.
 - Use peer-reviewed durability and training-science sources before practitioner media.
 - Preferred authors for scientific rationale include Maunder, Seiler, Kilding, Plews, Valenzuela, Leo, Spragg, Mujika, Jones, Barsumyan, Meixner, Joyner, Sperlich, Peeters, Podlogar, Ronnestad, Buchheit, Laursen, San Millan, Brooks, Coggan, Allen, Friel, and Olbrecht.
-- Preferred domains for verification are `pubmed.ncbi.nlm.nih.gov`, `doi.org`, `crossref.org`, official journal/publisher landing pages, `pmc.ncbi.nlm.nih.gov`, and official OA repositories.
-- Use CTS, FastTalk Labs, INSCYD, TrainingPeaks, Joe Friel, Science2Performance, Empirical Cycling, TrainerRoad, Scientific Triathlon, and SILCA as applied interpretation sources, not as authority over active RPS governance.
+- Restrict web verification to primary-source domains: `pubmed.ncbi.nlm.nih.gov`, `doi.org`, `crossref.org`, official journal/publisher landing pages, `pmc.ncbi.nlm.nih.gov`, and official OA repositories.
+- Use applied/practitioner domains only after primary sources or for practical framing: `fasttalklabs.com`, `trainright.com`, `inscyd.com`, `trainingpeaks.com`, `joefrieltraining.com`, `science2performance.at`, `max-training.pro`, `empiricalcycling.com`, `trainerroad.com`, `scientifictriathlon.com`, `silca.cc`.
+- Do not search outside these domains.
 - Cite only sources that are present in retrieved knowledge or verified by an available primary-source result.
 - Search the curated core table first for scientific references; use the applied table only for practical framing after stronger sources or when stronger sources are not available.
 - If a locator is uncertain, omit it instead of inventing PMID, DOI, URL, journal, or year details.

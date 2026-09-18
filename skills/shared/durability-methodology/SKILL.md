@@ -88,5 +88,7 @@ Evidence-use boundary:
 - Use practitioner sources only for implementation/practice translation while keeping thresholds and active plan governance from authoritative RPS context.
 - Decommissioned bibliography files are not operative lookup inputs.
 - If a source-backed answer needs web research, search by exact author/title from the canonical library first.
-- Verify only against primary sources: PubMed, DOI/Crossref, official publisher/journal landing pages, NIH/PMC, or official OA repositories.
+- Restrict web verification to primary-source domains only: `pubmed.ncbi.nlm.nih.gov`, `doi.org`, `crossref.org`, official journal/publisher landing pages, `pmc.ncbi.nlm.nih.gov`, and official OA repositories.
+- Use applied/practitioner domains only after primary sources or for practical framing: `fasttalklabs.com`, `trainright.com`, `inscyd.com`, `trainingpeaks.com`, `joefrieltraining.com`, `science2performance.at`, `max-training.pro`, `empiricalcycling.com`, `trainerroad.com`, `scientifictriathlon.com`, `silca.cc`.
+- Do not search outside these domains.
 - If a locator is uncertain, omit it instead of inventing PMID, DOI, URL, journal, or year details.

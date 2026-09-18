@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.25] - 2026-09-18
+
+### Changed
+
+- `skills/shared/durability-methodology/SKILL.md`: replaced prose description of allowed web-search sources ("PubMed, DOI/Crossref") with explicit domain URLs (`pubmed.ncbi.nlm.nih.gov`, `doi.org`, `crossref.org`, `pmc.ncbi.nlm.nih.gov`); added explicit applied/practitioner domain list (`fasttalklabs.com`, `trainright.com`, `inscyd.com`, `trainingpeaks.com`, `joefrieltraining.com`, `science2performance.at`, `max-training.pro`, `empiricalcycling.com`, `trainerroad.com`, `scientifictriathlon.com`, `silca.cc`); added hard "Do not search outside these domains" rule.
+- `skills/week/recommendation-and-adjustment/SKILL.md`: aligned applied/practitioner sources from prose names to explicit domain URLs; added "Do not search outside these domains" rule to match the standard in `guarded-operations`.
+
+Closes #4 (websearch domain restriction for Coach).
+
 ## [0.37.24] - 2026-09-18
 
 ### Changed
