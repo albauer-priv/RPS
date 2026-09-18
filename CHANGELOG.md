@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.31] - 2026-09-18
+
+### Added
+
+- `skills/shared/periodization-methodology/` (new shared skill, v1.0): single authoritative source for general periodization methodology — phase semantics (Base/Build/Peak/Transition operational detail), backward planning from A event (mandatory 5-step algorithm), event hierarchy (A/B/C treatment including B+A same-phase pattern), taper week content with evidence citations (tap_core_001/002), cadence week-role override in Peak phases, and minimum taper adequacy standards. Registered in `season_planning` and `phase_planning` crews, validated in `OPERATIONAL_CREW_SKILLS`.
+- `skills/shared/periodization-methodology/references/phase_structure_and_event_hierarchy.md` (new): extended reference for phase types (operational content rules per Base/Build/Peak/Transition), event hierarchy (A/B/C with spacing and treatment), macrocycle structure patterns (single A, two A events, A-event cluster, B+A same phase), phase length guidelines table, and compression rules.
+- `skills/shared/periodization-methodology/references/taper_and_peaking_evidence.md` (new): evidence table for taper rules — shared version accessible to all layers. Cross-references `skills/season/macrocycle-architecture/references/taper_and_peaking_evidence.md`.
+- `skills/shared/periodization-methodology/references/skill_layer_overview.md` (new): complete skill layer architecture overview for the periodization and load methodology stack — shows all existing operational skills by layer, what each covers, information flow between layers, and progressive overload coverage mapping.
+
+### Changed
+
+- `skills/phase/structure-authoring/SKILL.md` (v4.0 → v4.1): `taper_freshening` rule now references `skills/shared/periodization-methodology` for explicit taper week content — volume −41–60% from pre-taper peak, intensity MAINTAINED, frequency ≥ 80% of pre-taper session count with evidence citations (tap_core_001, tap_core_002). Previously a one-liner with no methodological content.
+- `skills/phase/event-integration/SKILL.md` (v1.0 → v1.1): added explicit B/C event semantics from `skills/shared/periodization-methodology` — B event ≤4 weeks before A = final specificity stimulus with direct taper follow; B event >4 weeks = minor adjustment only; C event = no adjustment. Previously had no content for B event treatment.
+- `config/crewai/skills.yaml`: added `skills/shared/periodization-methodology` to `season_planning` and `phase_planning` crew skill lists so all planning agents share the periodization methodology foundation.
+- `src/rps/crewai_runtime/config.py`: added `skills/shared/periodization-methodology` to `OPERATIONAL_CREW_SKILLS` whitelist.
+
+Motivation: the season plan constraint blocker fix (v0.37.28) resolved the immediate crash but treated symptoms reactively. This release adds the structural methodological foundation that all planning agents need to reason coherently about phase structure, backward planning, and taper content — so constraint decisions are principle-based rather than pattern-matched from specific non-blocker rules.
+
 ## [0.37.30] - 2026-09-18
 
 ### Changed

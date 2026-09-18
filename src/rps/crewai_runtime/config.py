@@ -20,6 +20,7 @@ OPERATIONAL_CREW_SKILLS: tuple[str, ...] = (
     "skills/shared/blueprint-bound-writing",
     "skills/shared/traceability-and-naming",
     "skills/shared/replan-instruction-authoring",
+    "skills/shared/periodization-methodology",
 )
 
 

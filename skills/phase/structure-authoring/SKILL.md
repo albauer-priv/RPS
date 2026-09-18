@@ -85,7 +85,7 @@ Structural content rules:
 - `vo2_build` must keep VO2 weeks fresh and bounded rather than broad mixed-density
 - `threshold_build` must center sustained-power structure
 - `sst_build` must keep moderate density bounded
-- `taper_freshening` must preserve freshness and reduce accumulation patterns
+- `taper_freshening` must preserve freshness and reduce accumulation patterns — apply taper week content rules from `skills/shared/periodization-methodology`: volume −41–60% from pre-taper peak, intensity MAINTAINED (reducing intensity >30% causes 20–30% performance loss), frequency ≥ 80% of pre-taper session count (`tap_core_001`, `tap_core_002`)
 - `race_execution` must keep event logistics and recovery runway explicit
 
 Progression axes in structure:

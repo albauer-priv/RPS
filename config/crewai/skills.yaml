@@ -18,6 +18,7 @@ crews:
       - skills/shared/snapshot-memory-consumption
       - skills/shared/contract-context-consumption
       - skills/shared/traceability-and-naming
+      - skills/shared/periodization-methodology
   season_review:
     skills:
       - skills/shared/runtime-boundaries
@@ -42,6 +43,7 @@ crews:
       - skills/shared/snapshot-memory-consumption
       - skills/shared/contract-context-consumption
       - skills/shared/traceability-and-naming
+      - skills/shared/periodization-methodology
   phase_review:
     skills:
       - skills/shared/runtime-boundaries
