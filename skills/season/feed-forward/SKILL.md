@@ -35,12 +35,6 @@ Hard rules:
 - store only schema-valid outputs with complete adjustment fields
 - do not ask coworkers to rediscover season-plan authority or upstream report facts during feed-forward authoring
 
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Output format:
 - Return the task expected_output as advisory feed-forward guidance.

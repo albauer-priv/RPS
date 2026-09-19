@@ -36,12 +36,6 @@ Hard rules:
 - do not reopen preview/apply boundaries, pending-resolution scope, or selected-week authority after the specialist result is available
 - do not ask coworkers to rediscover bounded context that is already present in the active specialist result or injected runtime context
 
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Output format:
 - Return the active task expected_output in a conversational, bounded, and directly actionable form.

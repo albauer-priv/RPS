@@ -132,12 +132,6 @@ Hard rules:
 - emit `upstream_intent.build_subtype` explicitly for `BUILD` phases and keep it identical to upstream authority
 - freeze `inherited_scenario_contract` exactly from injected deterministic authority; do not summarize, paraphrase, compress, or rewrite nested `inherited_scenario_contract` fields such as `constraint_summary` or `risk_flags`
 
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Output format:
 - Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.

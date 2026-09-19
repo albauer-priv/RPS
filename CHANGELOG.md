@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.37.46] - 2026-09-21
+
+### Refactor
+
+- **Skill QS Phase 1+2 — economy of language pass across all skills** (26 files):
+  - Removed identical 5-line "Positive operating guidance" boilerplate from 23 skills (adds no information; each skill already has a method and hard rules).
+  - Removed "Positive execution pattern" from 3 skills (`phase/intensity-distribution`, `week/workout-construction`, `report/analysis-methodology`) — same rationale.
+  - Removed generic 2-line output-format footers from 3 skills (`phase/intensity-distribution`, `phase/execution-rules`, `week/revision-methodology`) — added no skill-specific guidance.
+  - `skills/phase/intensity-distribution/SKILL.md`: removed duplicate "Phase intent and intensity semantics" section (was a restatement of "Canonical phase semantics"); folded unique "do not invent new phase labels" rule into canonical section header.
+  - `skills/season/scenario-generation/SKILL.md` (v4.7 → v4.8): removed "Season archetype semantics" section — contained rule+undermining-conditional anti-pattern (listed "explicit aerobic ceiling development goal in athlete profile" as a supporting condition for `ceiling_first_durability`, which the LLM could read as making ceiling-first conditional on the objective; the mandate is unconditional for ≥ 20-week horizons). All valid content is already stated correctly in the "Ceiling-first as RPS default methodology" section. Also restructured A/B/C profiles and added pre-return self-check to replace 30+ lines of boilerplate execution guidance.
+
 ## [0.37.45] - 2026-09-20
 
 ### Fixed

@@ -32,12 +32,8 @@ Phase-level usage rules:
 - place high-intensity work only when freshness supports clean repeat quality and weekly kJ still leaves recovery margin
 - near the A event, specificity rises through event-like duration, pace stability, fueling stability, back-to-back or hard-late relevance, not random extra moderate work
 
-Phase intent and intensity semantics:
-- Read inherited `phase_type`, `phase_intent`, and `build_subtype` as binding upstream semantics before shaping any allowed/suppressed intensity mix.
-- Keep phase-level intensity decisions inside the canonical taxonomy; do not invent new phase labels to express specificity, peak, or recovery nuance.
-
 Canonical phase semantics:
-- Read inherited `phase_type`, `phase_intent`, and `build_subtype` as binding upstream semantics.
+- Read inherited `phase_type`, `phase_intent`, and `build_subtype` as binding upstream semantics; do not invent new phase labels to express specificity, peak, or recovery nuance.
 - Use canonical `phase_type` values only:
   - `TRANSITION`, `PREPARATION`, `BASE`, `BUILD`, `PEAK`, `TAPER`, `RACE`
 - Use canonical `phase_intent` values only:
@@ -86,20 +82,3 @@ Hard rules:
 - keep workout details in downstream week/workout tasks
 - keep intensity inside recovery, durability, and corridor constraints
 - infer governance actions from active artifacts and review tasks
-
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
-
-Positive execution pattern:
-- Choose the intensity distribution that best supports the phase role, active deload intent, available recovery, and event proximity.
-- Build the distribution from allowed domains, quality-day limits, and durability-first priorities.
-- Summarize the selected emphasis, explain why it fits the current phase, and include the practical boundaries for downstream week planning.
-- Produce clear guidance that helps the week planner place easy, endurance, tempo, or quality work without adding hidden load.
-
-Output format:
-- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
-- Include only information needed by the active task and downstream consumer.

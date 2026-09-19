@@ -390,22 +390,6 @@ Required text discipline:
 - use the exact line form `- <duration> <target> <cadence>`; generic prose about power or cadence is not sufficient
 - if you cannot express the workout cleanly in the subset, do not approximate it with prose
 
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
-
-Positive execution pattern:
-- Build workout text from the allowed subset, selected day role, active duration, load intent, and export constraints.
-- Choose one canonical workout family that matches the intended domain, load modality, and day role before writing steps.
-- Use QUALITY intent and workout-family ranges to place %FTP targets without redefining the domain.
-- Choose warm-up, main-set, aerobic add-on, and cooldown wording that matches the planned purpose and available time.
-- Keep each workout structurally recognizable as its chosen family.
-- Include clear syntax decisions and export-safe structure so the reviewer can validate the workout without guessing.
-- Produce concise workout-authoring guidance that helps the Week Plan writer emit valid workout text.
-
 Retrieval policy:
 - Injected day-role, load-intent, deterministic week execution context, athlete-managed inputs, and latest authoritative planning artefacts/snapshots are already provided as injected context. No workspace tools are available or needed for this task.
 

@@ -138,12 +138,6 @@ Hard rules:
 - emit `body_metadata.phase_type`, `body_metadata.phase_intent`, and `body_metadata.phase_taxonomy_version` explicitly and keep them identical to upstream authority
 - emit `body_metadata.build_subtype` explicitly for `BUILD` phases and keep it identical to upstream authority
 
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Output format:
 - Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.

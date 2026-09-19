@@ -72,12 +72,6 @@ Failure triggers:
 - if week-role/load-shape implies threshold-led work while `THRESHOLD` is suppressed upstream, choose `replan_required`
 - if early Build entry is too aggressive for the inherited shortened/base/re-entry context and no explicit readiness gate is carried, choose `replan_required`
 
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
 
 Output format:
 - Return the task expected_output with a clear decision status: `approved`, `replan_required`, or `rejected`.

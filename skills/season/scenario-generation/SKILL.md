@@ -3,7 +3,7 @@ name: scenario-generation
 description: Generate three advisory season scenarios with coherent cadence, selection gates, future-only event logic, and advisory intensity narrative.
 metadata:
   author: rps
-  version: "4.7"
+  version: "4.8"
 ---
 Generate `SEASON_SCENARIOS` as three advisory alternatives only.
 
@@ -168,37 +168,26 @@ Required content per scenario:
 
 Required A/B/C target profiles:
 - **Scenario A = robust completion-first**
-  - lower feasible kJ-envelope
-  - high recovery margin
-  - low density
-  - minimal intensity allowance
+  - lower feasible kJ-envelope, high recovery margin, low density, minimal intensity allowance
   - high executability under work stress, illness risk, or masters recovery limits
-  - `best_suited_if` must say `continuity priority`, `uncertain recovery`, `recoverability`, or `logistics robustness` are the reason to choose it
+  - `best_suited_if` must name `continuity priority`, `uncertain recovery`, `recoverability`, or `logistics robustness`
   - preferred example: `Choose when continuity priority and uncertain recovery dominate.`
-  - `risk_flags` must say the scenario may `under-deliver` or be `too conservative` if the athlete can tolerate more load — this applies in ceiling-first scenarios too: the conservatism is in the kJ load and recovery margin, not in domain selection, so the `under-deliver` / `too conservative` marker is still required
+  - `risk_flags` must name `under-deliver` or `too conservative` (required in all contexts — in ceiling-first the conservatism is in kJ load and recovery margin, not domain selection)
   - preferred example: `May under-deliver if high load tolerance is available.`
-  - when `ceiling_first_durability` applies (horizon ≥ 20 weeks): `VO2MAX` is in `allowed_intensity_domains`; Scenario A's conservatism shows as lower kJ envelope, 2:1 / 3-week cadence, and highest recovery margin — NOT as VO2MAX exclusion; all three scenarios follow the same Kinzlbauer phase sequence
-  - when NOT ceiling_first (horizon < 20 weeks): `ENDURANCE` is the core domain; `TEMPO` is optional and sparse
 - **Scenario B = durability-forward target plan**
-  - realistic target kJ-envelope
-  - systematic long-ride progression
-  - selected `TEMPO` / optional `SWEET_SPOT` economy work
-  - balanced recovery risk
+  - realistic target kJ-envelope, systematic long-ride progression, selected `TEMPO` / optional `SWEET_SPOT`, balanced recovery risk
   - `best_suited_if` must say `stable recovery` supports `systematic progression`
   - preferred example: `Choose when stable recovery supports systematic progression.`
-  - `risk_flags` must say the scenario is less forgiving than A if `continuity break` or `recovery slip` appears
+  - `risk_flags` must name `continuity break` or `recovery slip`
   - preferred example: `Less forgiving than A if continuity break or recovery slip appears.`
-  - default shape for many brevet/ultra seasons when performance should improve without compromising robustness
 - **Scenario C = ambitious performance-forward long build**
-  - upper plausible kJ-envelope
-  - higher specificity under fatigue
-  - more B2B / hard-late / event simulation
-  - optional `THRESHOLD` or `VO2MAX` only if explicitly justified — **when ceiling-first is mandated (step 1a), Scenario C uses `ceiling_first_durability` and is shaped as the highest-kJ, highest-specificity ceiling-first variant: more B2B and durability-phase load, not a different phase sequence**
-  - `best_suited_if` must say `stable recovery`, `high load tolerance`, or `fatigue exposure tolerance` are already demonstrably present
+  - upper plausible kJ-envelope, higher specificity under fatigue, more B2B / hard-late / event simulation
+  - in ceiling-first: highest-kJ ceiling-first variant — more B2B and durability-phase load, same Kinzlbauer phase sequence as A and B
+  - `best_suited_if` must say `stable recovery`, `high load tolerance`, or `fatigue exposure tolerance`
   - preferred example: `Choose only when stable recovery and high load tolerance support fatigue exposure tolerance.`
-  - `risk_flags` must say the scenario becomes `too aggressive` when `fatigue risk`, `travel disruption`, `logistics disruption`, or `insufficient tolerance` appears
+  - `risk_flags` must name `too aggressive` when `fatigue risk`, `travel disruption`, `logistics disruption`, or `insufficient tolerance` appears
   - preferred example: `Too aggressive if fatigue risk or travel disruption appears.`
-  - ambition comes primarily from specificity and fatigue exposure, not from automatic high-intensity escalation
+  - ambition comes from specificity and fatigue exposure, not from automatic high-intensity escalation
 
 Scenario math rules:
 - `planning_horizon_weeks` must match the inclusive week span of `meta.iso_week_range`.
@@ -220,18 +209,6 @@ Intensity-domain semantics:
 - Scenario C is not defined by `VO2MAX`.
 - Scenarios may share identical `deload_cadence` only when the stored scenario fields explicitly say cadence is intentionally held constant and explain which other axes carry the differentiation.
 - Cluster wording (`cluster`, `event cluster`, `B-event cluster`, `peak cluster`) requires multiple relevant in-horizon events; otherwise use singular event wording.
-
-Season archetype semantics:
-- `season_archetype` is a normalized scenario-level semantic, not a new cycle type.
-- Use `ceiling_first_durability` for ALL scenarios when `inclusive_planning_horizon_weeks` ≥ 20 — ceiling-first is the RPS default methodology, not a special case.
-- Use `none` only when `inclusive_planning_horizon_weeks` < 20 — insufficient runway for the full Kinzlbauer sequence.
-- `ceiling_first_durability` is supported by:
-  - enough planning runway before peak (≥ 20 weeks)
-  - explicit aerobic ceiling development goal in athlete profile
-  - weekday time-crunch / weekend leverage
-  - recovery tolerance that can support conditional early VO2
-- When the athlete profile mandates ceiling_first, the scenario IS the mechanism that justifies it — shape the scenario to support the archetype, not the other way around.
-- If `season_archetype = ceiling_first_durability`, `season_archetype_rationale` must state why early ceiling support is permitted and why later durability/specificity work still has enough runway.
 
 Ceiling-first as RPS default methodology:
 - Ceiling-first is the default RPS planning approach for any season with `inclusive_planning_horizon_weeks` ≥ 20. No athlete objective check required — this applies to every athlete, every plan.
@@ -328,34 +305,10 @@ Hard rules:
 - do not claim that objective mismatch is resolved in this layer
 - do not invent fake kJ separation when the actual time budget cannot support it
 
-Positive operating guidance:
-- Use the active task, injected context, and configured skill role to choose the smallest coherent contribution.
-- Read the available evidence, check the governing constraints, and explain the decision path in direct operational language.
-- Produce actionable content that helps the next task continue without recomputing or guessing.
-- Include required facts, assumptions, warnings, and trace cues when they are available.
-- Return a concise result that supports the task expected_output and preserves the authoritative runtime context.
-
-Positive execution pattern:
-- Build three distinct scenario options from the injected horizon, cadence options, event priorities, athlete constraints, and kJ-first risk/exposure logic.
-- Describe each scenario with a clear purpose, load philosophy, cadence structure, event alignment, risk profile, and best-fit condition.
-- Fill every required narrative field with concrete scenario content; do not leave any field as generic filler that could fit all three scenarios equally.
-- Keep event alignment future-only: active rehearsal, anchor, and cluster language may refer only to injected in-horizon events.
-- Treat cadence as an explicit scenario dimension: even when two scenarios share cadence, explain why that is intentional and where the real differentiation sits.
-- Add five short user-facing differentiators that make scenario selection easier without reading the whole prose:
-  - `typical_week_feel`
-  - `main_payoff`
-  - `main_cost`
-  - `what_gets_prioritized`
-  - `what_gets_de_emphasized`
-- Include assumptions and unknowns so selection can happen without recomputing dates or phase counts.
-- Produce scenario guidance that helps Season Planning choose a coherent direction while preserving informational authority.
-- Serialize operational posture directly in `scenario_guidance`: emit `recovery_margin`, `fatigue_exposure`, and `specificity_density` as explicit non-empty strings.
-- Keep `constraint_summary`, `event_alignment_notes`, `risk_flags`, `kpi_guardrail_notes`, and `decision_notes` as structured string arrays.
-- Use the precomputed phase math, event-distance facts, and availability context to set realistic scenario structure.
-- Explain the tradeoff between robust, balanced, and ambitious choices in terms of exposure, recovery margin, specificity, and failure tolerance.
-- Carry the code-owned recommendation into scenario notes so the selection page can explain why one cadence is currently favored, but do not mirror the recommendation cadence blindly into all scenarios.
-- Before returning, run this self-check: (1) Does the athlete profile contain VO2max development language? (2) Is the planning runway ≥ 20 weeks? If both are true, check every scenario — ALL three must have `season_archetype: "ceiling_first_durability"`. If any scenario still has `season_archetype: "none"`, stop — revise it to use `ceiling_first_durability` and update its narrative to reflect the ceiling-first character before returning. This check is mandatory, not optional.
-- Return scenarios that are complete, differentiated, traceable, and ready for direct selection.
+Pre-return self-check (mandatory):
+- Does `inclusive_planning_horizon_weeks` ≥ 20? If yes, ALL three scenarios must have `season_archetype: "ceiling_first_durability"`. If any still has `none`, stop — revise before returning.
+- Are `recovery_margin`, `fatigue_exposure`, and `specificity_density` non-empty explicit strings in all three `scenario_guidance` blocks?
+- Would a reader know which scenario they are reading without seeing the `scenario_id`? If not, rewrite the generic sentences.
 
 Output format:
 - Return the task expected_output with scenario or scenario-interpretation fields filled explicitly.

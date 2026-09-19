@@ -21,6 +21,3 @@ Hard rules:
 Retrieval policy:
 - Authoritative week execution values, athlete-managed inputs, and latest authoritative planning artefacts/snapshots are already provided as injected context. No workspace tools are available or needed for this task.
 
-Output format:
-- Return the active task expected_output with clear sections for facts, decision, rationale, warnings, and next action when applicable.
-- Include only information needed by the active task and downstream consumer.
